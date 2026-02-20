@@ -4,7 +4,7 @@
       <ion-card-title>Path visibility (local only)</ion-card-title>
     </ion-card-header>
     <ion-card-content>
-      <ion-button size="small" @click="refreshPaths">Refresh paths</ion-button>
+      <ion-button size="small" @click="refetch">Refresh paths</ion-button>
       <ion-item lines="none">
         <ion-label>Show hidden paths</ion-label>
         <ion-toggle v-model="showHidden"></ion-toggle>
@@ -28,36 +28,39 @@
 
 <script setup lang="ts">
 import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChip, IonItem, IonLabel, IonList, IonToggle, type ToggleCustomEvent } from '@ionic/vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import type { PathResponse } from '../generated/types';
 import { isPathHidden, setPathHidden } from '../lib/db';
-import { listPathsV1PathsGet } from '../generated/apiClient';
+import { usePaths } from '../composables/usePaths';
 
 const emit = defineEmits<{
   pathSelected: [pathId: string];
   pathsUpdated: [paths: PathResponse[]];
 }>();
 
-const paths = ref<PathResponse[]>((await listPathsV1PathsGet()).data);
+const { data: paths, refetch } = usePaths();
 const hiddenByPath = ref<Record<string, boolean>>({});
 const showHidden = ref(false);
 
-const hiddenEntries = await Promise.all(paths.value.map(async (path) => [path.path_id, await isPathHidden(path.path_id)] as const));
-hiddenByPath.value = Object.fromEntries(hiddenEntries);
-emit('pathsUpdated', paths.value);
+watch(
+  paths,
+  async (newPaths) => {
+    if (!newPaths) return;
+    const hiddenEntries = await Promise.all(newPaths.map(async (path: PathResponse) => [path.path_id, await isPathHidden(path.path_id)] as const));
+    hiddenByPath.value = Object.fromEntries(hiddenEntries);
+    emit('pathsUpdated', newPaths);
+  },
+  { immediate: true }
+);
 
 const displayPaths = computed(() => {
+  if (!paths.value) return [];
   if (showHidden.value) {
     return paths.value;
   }
-  return paths.value.filter((path) => !hiddenByPath.value[path.path_id]);
+  return paths.value.filter((path: PathResponse) => !hiddenByPath.value[path.path_id]);
 });
-
-async function refreshPaths() {
-  paths.value = (await listPathsV1PathsGet()).data;
-  emit('pathsUpdated', paths.value);
-}
 
 async function togglePath(pathId: string, event: ToggleCustomEvent) {
   const visible = Boolean(event.detail.checked);

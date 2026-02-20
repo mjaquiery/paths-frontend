@@ -19,19 +19,11 @@
 
 <script setup lang="ts">
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonItem, IonLabel, IonList } from '@ionic/vue';
-import { ref, watch } from 'vue';
+import { computed } from 'vue';
 
-import type { EntryResponse } from '../generated/types';
-import { listEntriesV1PathIdEntriesGet } from '../generated/apiClient';
+import { useEntries } from '../composables/useEntries';
 
 const props = defineProps<{ pathId: string }>();
-const entries = ref<EntryResponse[]>([]);
 
-watch(
-  () => props.pathId,
-  async (pathId) => {
-    entries.value = pathId ? (await listEntriesV1PathIdEntriesGet(pathId)).data : [];
-  },
-  { immediate: true }
-);
+const { data: entries } = useEntries(computed(() => props.pathId));
 </script>
