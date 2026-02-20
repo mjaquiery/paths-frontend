@@ -9,9 +9,9 @@ const preview: Preview = {
   loaders: [mswLoader],
   parameters: {
     msw: {
-      handlers: getPathsBackendAPIMock()
-    }
-  }
+      handlers: getPathsBackendAPIMock(),
+    },
+  },
 };
 
 export default preview;

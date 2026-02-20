@@ -18,12 +18,12 @@ const db = new Dexie('pathsFrontend') as Dexie & {
 export { db };
 
 db.version(1).stores({
-  pathPreferences: '&pathId,hidden'
+  pathPreferences: '&pathId,hidden',
 });
 
 db.version(2).stores({
   pathPreferences: '&pathId,hidden',
-  queryCache: '&key'
+  queryCache: '&key',
 });
 
 export async function isPathHidden(pathId: string) {

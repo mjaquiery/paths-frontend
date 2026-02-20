@@ -1,0 +1,44 @@
+name: Prettier
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+      - name: Check if last commit was a prettier CI commit
+        id: last-commit
+        run: |
+          LAST_COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an')
+          LAST_COMMIT_MSG=$(git log -1 --pretty=format:'%s')
+          if [[ "$LAST_COMMIT_AUTHOR" == "github-actions[bot]" && "$LAST_COMMIT_MSG" == "chore: apply prettier formatting" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Setup Node
+        if: steps.last-commit.outputs.skip == 'false'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        if: steps.last-commit.outputs.skip == 'false'
+        run: npm ci
+      - name: Run Prettier
+        if: steps.last-commit.outputs.skip == 'false'
+        run: npm run format
+      - name: Commit formatted files
+        if: steps.last-commit.outputs.skip == 'false'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: apply prettier formatting'

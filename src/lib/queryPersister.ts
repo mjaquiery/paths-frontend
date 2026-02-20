@@ -5,7 +5,10 @@ const CACHE_KEY = 'tanstack-query-cache';
 
 export const dexiePersister: Persister = {
   async persistClient(persistedClient) {
-    await db.queryCache.put({ key: CACHE_KEY, value: JSON.stringify(persistedClient) });
+    await db.queryCache.put({
+      key: CACHE_KEY,
+      value: JSON.stringify(persistedClient),
+    });
   },
   async restoreClient() {
     const entry = await db.queryCache.get(CACHE_KEY);
