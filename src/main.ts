@@ -9,6 +9,7 @@ import '@ionic/vue/css/structure.css';
 import '@ionic/vue/css/typography.css';
 
 import App from './App.vue';
+import router from './router';
 import { dexiePersister } from './lib/queryPersister';
 
 const queryClient = new QueryClient({
@@ -25,4 +26,8 @@ persistQueryClient({
   persister: dexiePersister,
 });
 
-createApp(App).use(IonicVue).use(VueQueryPlugin, { queryClient }).mount('#app');
+createApp(App)
+  .use(IonicVue)
+  .use(VueQueryPlugin, { queryClient })
+  .use(router)
+  .mount('#app');
