@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "codegen:openapi": "python scripts/generate_openapi.py",
+    "codegen:openapi": "node scripts/generate_openapi.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -28,6 +28,7 @@
     "jsdom": "^26.0.0",
     "msw": "^2.7.0",
     "msw-storybook-addon": "^2.0.4",
+    "openapi-typescript": "^7.13.0",
     "storybook": "^8.6.3",
     "typescript": "^5.8.2",
     "vite": "^6.2.0",
