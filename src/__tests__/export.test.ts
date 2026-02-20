@@ -13,8 +13,8 @@ describe('export status', () => {
         updated_at: '',
         expires_at: null,
         failure_code: null,
-        attempt_count: 1
-      })
+        attempt_count: 1,
+      }),
     ).toBe(true);
   });
 
@@ -28,8 +28,8 @@ describe('export status', () => {
         updated_at: '',
         expires_at: null,
         failure_code: null,
-        attempt_count: 1
-      })
+        attempt_count: 1,
+      }),
     ).toBe(true);
   });
 });

@@ -4,7 +4,7 @@ import App from './App.vue';
 
 const meta: Meta<typeof App> = {
   title: 'App/AppShell',
-  component: App
+  component: App,
 };
 
 export default meta;

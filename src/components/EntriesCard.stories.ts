@@ -6,8 +6,8 @@ const meta: Meta<typeof EntriesCard> = {
   title: 'Components/EntriesCard',
   component: EntriesCard,
   args: {
-    pathId: 'path-1'
-  }
+    pathId: 'path-1',
+  },
 };
 
 export default meta;

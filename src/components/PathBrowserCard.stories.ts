@@ -4,7 +4,7 @@ import PathBrowserCard from './PathBrowserCard.vue';
 
 const meta: Meta<typeof PathBrowserCard> = {
   title: 'Components/PathBrowserCard',
-  component: PathBrowserCard
+  component: PathBrowserCard,
 };
 
 export default meta;

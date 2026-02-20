@@ -15,10 +15,10 @@ const meta: Meta<typeof ExportCard> = {
         color: '#3366ff',
         is_public: false,
         created_at: '2025-01-01T00:00:00Z',
-        updated_at: '2025-01-01T00:00:00Z'
-      }
-    ]
-  }
+        updated_at: '2025-01-01T00:00:00Z',
+      },
+    ],
+  },
 };
 
 export default meta;

@@ -9,7 +9,10 @@
       <ion-content class="ion-padding">
         <Suspense>
           <template #default>
-            <PathBrowserCard @path-selected="selectedPathId = $event" @paths-updated="paths = $event" />
+            <PathBrowserCard
+              @path-selected="selectedPathId = $event"
+              @paths-updated="paths = $event"
+            />
           </template>
           <template #fallback><p>Loading Paths...</p></template>
         </Suspense>
@@ -33,7 +36,14 @@
 </template>
 
 <script setup lang="ts">
-import { IonApp, IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+import {
+  IonApp,
+  IonContent,
+  IonHeader,
+  IonPage,
+  IonTitle,
+  IonToolbar,
+} from '@ionic/vue';
 import { ref } from 'vue';
 
 import PathBrowserCard from './components/PathBrowserCard.vue';

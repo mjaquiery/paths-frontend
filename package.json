@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "codegen:openapi": "orval",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@ionic/vue": "^8.4.3",
@@ -32,6 +34,7 @@
     "msw": "^2.7.0",
     "msw-storybook-addon": "^2.0.4",
     "orval": "^8.4.1",
+    "prettier": "^3.8.1",
     "storybook": "^8.6.3",
     "typescript": "^5.8.2",
     "vite": "^6.2.0",
