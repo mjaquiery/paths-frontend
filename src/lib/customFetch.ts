@@ -5,6 +5,6 @@ export const customFetch = async <T>(url: string, options?: RequestInit): Promis
     ...options,
   });
   if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+  const data = response.status === 204 ? undefined : await response.json();
+  return { data, status: response.status, headers: response.headers } as T;
 };
