@@ -5,8 +5,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ExportJobResponseState = typeof ExportJobResponseState[keyof typeof ExportJobResponseState];
-
+export type ExportJobResponseState =
+  (typeof ExportJobResponseState)[keyof typeof ExportJobResponseState];
 
 export const ExportJobResponseState = {
   queued: 'queued',
