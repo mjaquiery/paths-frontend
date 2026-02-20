@@ -1,7 +1,7 @@
 import type { Preview } from '@storybook/vue3-vite';
 import { initialize, mswLoader } from 'msw-storybook-addon';
 
-import { generatedHandlers } from '../src/generated/mswHandlers';
+import { getPathsBackendAPIMock } from '../src/generated/apiClient';
 
 initialize();
 
@@ -9,7 +9,7 @@ const preview: Preview = {
   loaders: [mswLoader],
   parameters: {
     msw: {
-      handlers: generatedHandlers
+      handlers: getPathsBackendAPIMock()
     }
   }
 };
