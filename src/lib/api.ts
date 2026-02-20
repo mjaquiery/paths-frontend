@@ -1,3 +1,1 @@
-import { createApiClient } from '../generated/apiClient';
-
-export const api = createApiClient();
+export * from '../generated/apiClient';

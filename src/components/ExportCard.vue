@@ -27,7 +27,12 @@ import { IonButton, IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonChe
 import { ref } from 'vue';
 
 import type { ExportJobResponse, PathResponse } from '../generated/types';
-import { api } from '../lib/api';
+import {
+  createExportV1ExportsPost,
+  getExportV1ExportsExportIdGet,
+  downloadJsonV1ExportsExportIdDownloadJsonGet,
+  downloadImagesV1ExportsExportIdDownloadImagesGet,
+} from '../generated/apiClient';
 import { isExportReady, isExportTerminal } from '../utils/export';
 
 defineProps<{ paths: PathResponse[] }>();
@@ -45,21 +50,21 @@ function setExportPath(pathId: string, event: CheckboxCustomEvent) {
 async function triggerExport() {
   jsonDownloadUrl.value = '';
   imagesDownloadUrl.value = '';
-  exportJob.value = await api.create_export_v1_exports_post({ path_ids: [...selectedForExport.value] });
+  exportJob.value = (await createExportV1ExportsPost({ path_ids: [...selectedForExport.value] })).data;
   await pollExport();
 }
 
 async function pollExport() {
   if (!exportJob.value) return;
-  const latest = await api.get_export_v1_exports__export_id__get({ export_id: exportJob.value.id });
+  const latest = (await getExportV1ExportsExportIdGet(exportJob.value.id)).data;
   exportJob.value = latest;
   if (isExportReady(latest)) {
     const [jsonUrl, imagesUrl] = await Promise.all([
-      api.download_json_v1_exports__export_id__download_json_get({ export_id: latest.id }),
-      api.download_images_v1_exports__export_id__download_images_get({ export_id: latest.id })
+      downloadJsonV1ExportsExportIdDownloadJsonGet(latest.id),
+      downloadImagesV1ExportsExportIdDownloadImagesGet(latest.id)
     ]);
-    jsonDownloadUrl.value = jsonUrl.url;
-    imagesDownloadUrl.value = imagesUrl.url;
+    jsonDownloadUrl.value = jsonUrl.data.url;
+    imagesDownloadUrl.value = imagesUrl.data.url;
   } else if (!isExportTerminal(latest)) {
     window.setTimeout(pollExport, 2000);
   }

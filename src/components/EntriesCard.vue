@@ -22,7 +22,7 @@ import { IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonItem, IonLabel
 import { ref, watch } from 'vue';
 
 import type { EntryResponse } from '../generated/types';
-import { api } from '../lib/api';
+import { listEntriesV1PathIdEntriesGet } from '../generated/apiClient';
 
 const props = defineProps<{ pathId: string }>();
 const entries = ref<EntryResponse[]>([]);
@@ -30,7 +30,7 @@ const entries = ref<EntryResponse[]>([]);
 watch(
   () => props.pathId,
   async (pathId) => {
-    entries.value = pathId ? await api.list_entries_v1__path_id__entries_get({ path_id: pathId }) : [];
+    entries.value = pathId ? (await listEntriesV1PathIdEntriesGet(pathId)).data : [];
   },
   { immediate: true }
 );

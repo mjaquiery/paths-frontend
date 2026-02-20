@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "codegen:openapi": "node scripts/generate_openapi.mjs",
+    "codegen:openapi": "orval",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -20,6 +20,7 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.3.0",
     "@storybook/addon-essentials": "^8.6.3",
     "@storybook/vue3-vite": "^8.6.3",
     "@types/node": "^22.13.10",
@@ -28,7 +29,7 @@
     "jsdom": "^26.0.0",
     "msw": "^2.7.0",
     "msw-storybook-addon": "^2.0.4",
-    "openapi-typescript": "^7.13.0",
+    "orval": "^8.4.1",
     "storybook": "^8.6.3",
     "typescript": "^5.8.2",
     "vite": "^6.2.0",

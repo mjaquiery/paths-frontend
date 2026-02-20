@@ -32,14 +32,14 @@ import { computed, ref } from 'vue';
 
 import type { PathResponse } from '../generated/types';
 import { isPathHidden, setPathHidden } from '../lib/db';
-import { api } from '../lib/api';
+import { listPathsV1PathsGet } from '../generated/apiClient';
 
 const emit = defineEmits<{
   pathSelected: [pathId: string];
   pathsUpdated: [paths: PathResponse[]];
 }>();
 
-const paths = ref<PathResponse[]>(await api.list_paths_v1_paths_get());
+const paths = ref<PathResponse[]>((await listPathsV1PathsGet()).data);
 const hiddenByPath = ref<Record<string, boolean>>({});
 const showHidden = ref(false);
 
@@ -55,7 +55,7 @@ const displayPaths = computed(() => {
 });
 
 async function refreshPaths() {
-  paths.value = await api.list_paths_v1_paths_get();
+  paths.value = (await listPathsV1PathsGet()).data;
   emit('pathsUpdated', paths.value);
 }
 
