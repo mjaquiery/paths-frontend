@@ -30,7 +30,12 @@
           </ion-item>
           <ion-item>
             <ion-label position="stacked">Color</ion-label>
-            <ion-input v-model="newPath.color" :placeholder="DEFAULT_COLOR" />
+            <ion-input
+              v-model="newPath.color"
+              :placeholder="DEFAULT_COLOR"
+              pattern="^#[0-9A-Fa-f]{6}$"
+              :maxlength="7"
+            />
           </ion-item>
           <ion-button
             size="small"
