@@ -90,6 +90,7 @@ onMounted(() => {
 
 async function loginWithGoogle() {
   loggingIn.value = true;
+  loginError.value = '';
   try {
     const callbackUri = `${window.location.origin}/auth/callback`;
     const result = await oauthLoginV1AuthLoginGet({
@@ -97,6 +98,9 @@ async function loginWithGoogle() {
     });
     if (result.data?.authorization_url) {
       window.location.href = result.data.authorization_url;
+    } else {
+      loginError.value = 'Could not start login. Please try again.';
+      loggingIn.value = false;
     }
   } catch {
     loginError.value = 'Could not start login. Please try again.';

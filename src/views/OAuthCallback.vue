@@ -6,7 +6,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-      <p v-if="error" color="danger">{{ error }}</p>
+      <ion-text v-if="error" color="danger">{{ error }}</ion-text>
       <p v-else>Completing login, please wait...</p>
     </ion-content>
   </ion-page>
@@ -19,19 +19,24 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonText,
 } from '@ionic/vue';
 import { onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
 import { oauthCallbackV1AuthCallbackPost } from '../generated/apiClient';
+import type { OAuthCallbackResponse } from '../generated/types';
 
 const router = useRouter();
 const route = useRoute();
 const error = ref('');
 
 onMounted(async () => {
-  const code = route.query.code as string;
-  const state = route.query.state as string;
+  const rawCode = route.query.code;
+  const rawState = route.query.state;
+
+  const code = Array.isArray(rawCode) ? rawCode[0] : rawCode;
+  const state = Array.isArray(rawState) ? rawState[0] : rawState;
 
   if (!code || !state) {
     error.value = 'Missing code or state parameter.';
@@ -47,7 +52,8 @@ onMounted(async () => {
       callback_uri: callbackUri,
     });
     if (result.data) {
-      localStorage.setItem('user', JSON.stringify(result.data));
+      const { token: _token, ...safeData } = result.data as OAuthCallbackResponse;
+      localStorage.setItem('user', JSON.stringify(safeData));
     }
   } catch {
     error.value = 'Login failed. Please try again.';

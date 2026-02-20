@@ -26,8 +26,13 @@ persistQueryClient({
   persister: dexiePersister,
 });
 
-createApp(App)
+const app = createApp(App);
+
+app
   .use(IonicVue)
   .use(VueQueryPlugin, { queryClient })
-  .use(router)
-  .mount('#app');
+  .use(router);
+
+router.isReady().then(() => {
+  app.mount('#app');
+});
