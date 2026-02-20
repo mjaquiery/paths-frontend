@@ -6,6 +6,7 @@ export const customFetch = async <T>(
     import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
   ).replace(/\/$/, '');
   const response = await fetch(`${baseUrl}${url}`, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(options?.headers ?? {}),

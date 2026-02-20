@@ -1,0 +1,14 @@
+import { createRouter, createWebHistory } from 'vue-router';
+
+import HomeView from './views/HomeView.vue';
+import OAuthCallback from './views/OAuthCallback.vue';
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    { path: '/', component: HomeView },
+    { path: '/auth/callback', component: OAuthCallback },
+  ],
+});
+
+export default router;
