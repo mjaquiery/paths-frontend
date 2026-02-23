@@ -28,10 +28,7 @@ persistQueryClient({
 
 const app = createApp(App);
 
-app
-  .use(IonicVue)
-  .use(VueQueryPlugin, { queryClient })
-  .use(router);
+app.use(IonicVue).use(VueQueryPlugin, { queryClient }).use(router);
 
 router.isReady().then(() => {
   app.mount('#app');

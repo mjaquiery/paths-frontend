@@ -52,7 +52,8 @@ onMounted(async () => {
       callback_uri: callbackUri,
     });
     if (result.data) {
-      const { token: _token, ...safeData } = result.data as OAuthCallbackResponse;
+      const { token: _token, ...safeData } =
+        result.data as OAuthCallbackResponse;
       localStorage.setItem('user', JSON.stringify(safeData));
     }
   } catch {
