@@ -49,9 +49,10 @@ onMounted(async () => {
     if (result.data) {
       localStorage.setItem('user', JSON.stringify(result.data));
     }
-    router.push('/');
   } catch {
     error.value = 'Login failed. Please try again.';
+  } finally {
+    router.push('/');
   }
 });
 </script>
