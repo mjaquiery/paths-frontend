@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@ionic/vue": "^8.4.3",
+    "@ionic/vue-router": "^8.7.17",
     "@tanstack/query-persist-client-core": "^5.91.19",
     "@tanstack/vue-query": "^5.92.9",
     "dexie": "^4.0.10",
