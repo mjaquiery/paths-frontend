@@ -7,6 +7,7 @@
 
 export interface PathResponse {
   path_id: string;
+  uuid: string;
   owner_user_id: string;
   title: string;
   description: string | null;

@@ -8,9 +8,11 @@
   "paths": {
     "/health": {
       "get": {
-        "tags": ["health"],
+        "tags": [
+          "health"
+        ],
         "summary": "Health",
-        "operationId": "health_health_get",
+        "operationId": "health",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -27,9 +29,11 @@
     },
     "/v1/paths": {
       "get": {
-        "tags": ["paths"],
+        "tags": [
+          "paths"
+        ],
         "summary": "List Paths",
-        "operationId": "list_paths_v1_paths_get",
+        "operationId": "list_paths",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -40,7 +44,7 @@
                     "$ref": "#/components/schemas/PathResponse"
                   },
                   "type": "array",
-                  "title": "Response List Paths V1 Paths Get"
+                  "title": "Response List Paths"
                 }
               }
             }
@@ -48,14 +52,16 @@
         },
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ]
       },
       "post": {
-        "tags": ["paths"],
+        "tags": [
+          "paths"
+        ],
         "summary": "Create Path",
-        "operationId": "create_path_v1_paths_post",
+        "operationId": "create_path",
         "requestBody": {
           "content": {
             "application/json": {
@@ -90,30 +96,31 @@
         },
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ]
       }
     },
-    "/v1/paths/{path_id}/visibility": {
+    "/v1/paths/{path_code}/visibility": {
       "patch": {
-        "tags": ["paths"],
+        "tags": [
+          "paths"
+        ],
         "summary": "Update Path Visibility",
-        "operationId": "update_path_visibility_v1_paths__path_id__visibility_patch",
+        "operationId": "update_path_visibility",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
           {
-            "name": "path_id",
+            "name": "path_code",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Path Id"
+              "title": "Path Code"
             }
           }
         ],
@@ -151,25 +158,26 @@
         }
       }
     },
-    "/v1/paths/{path_id}/subscriptions": {
+    "/v1/paths/{path_code}/subscriptions": {
       "post": {
-        "tags": ["paths"],
+        "tags": [
+          "paths"
+        ],
         "summary": "Create Subscription",
-        "operationId": "create_subscription_v1_paths__path_id__subscriptions_post",
+        "operationId": "create_subscription",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
           {
-            "name": "path_id",
+            "name": "path_code",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Path Id"
+              "title": "Path Code"
             }
           }
         ],
@@ -200,25 +208,26 @@
         }
       }
     },
-    "/v1/paths/{path_id}/subscriptions/{target_user_id}": {
+    "/v1/paths/{path_code}/subscriptions/{target_user_id}": {
       "delete": {
-        "tags": ["paths"],
+        "tags": [
+          "paths"
+        ],
         "summary": "Delete Subscription",
-        "operationId": "delete_subscription_v1_paths__path_id__subscriptions__target_user_id__delete",
+        "operationId": "delete_subscription",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
           {
-            "name": "path_id",
+            "name": "path_code",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Path Id"
+              "title": "Path Code"
             }
           },
           {
@@ -249,25 +258,26 @@
         }
       }
     },
-    "/v1/{path_id}/entries": {
+    "/v1/paths/{path_code}/entries": {
       "get": {
-        "tags": ["entries"],
+        "tags": [
+          "entries"
+        ],
         "summary": "List Entries",
-        "operationId": "list_entries_v1__path_id__entries_get",
+        "operationId": "list_entries",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
           {
-            "name": "path_id",
+            "name": "path_code",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Path Id"
+              "title": "Path Code"
             }
           }
         ],
@@ -281,7 +291,7 @@
                   "items": {
                     "$ref": "#/components/schemas/EntryResponse"
                   },
-                  "title": "Response List Entries V1  Path Id  Entries Get"
+                  "title": "Response List Entries"
                 }
               }
             }
@@ -299,23 +309,24 @@
         }
       },
       "post": {
-        "tags": ["entries"],
+        "tags": [
+          "entries"
+        ],
         "summary": "Create Entry",
-        "operationId": "create_entry_v1__path_id__entries_post",
+        "operationId": "create_entry",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
           {
-            "name": "path_id",
+            "name": "path_code",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Path Id"
+              "title": "Path Code"
             }
           }
         ],
@@ -353,35 +364,35 @@
         }
       }
     },
-    "/v1/{path_id}/entries/{entry_id}": {
+    "/v1/paths/{path_code}/entries/{entry_slug}": {
       "get": {
-        "tags": ["entries"],
+        "tags": [
+          "entries"
+        ],
         "summary": "Get Entry",
-        "operationId": "get_entry_v1__path_id__entries__entry_id__get",
+        "operationId": "get_entry",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
           {
-            "name": "path_id",
+            "name": "path_code",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Path Id"
+              "title": "Path Code"
             }
           },
           {
-            "name": "entry_id",
+            "name": "entry_slug",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Entry Id"
+              "title": "Entry Slug"
             }
           }
         ],
@@ -409,33 +420,33 @@
         }
       },
       "put": {
-        "tags": ["entries"],
+        "tags": [
+          "entries"
+        ],
         "summary": "Update Entry",
-        "operationId": "update_entry_v1__path_id__entries__entry_id__put",
+        "operationId": "update_entry",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
           {
-            "name": "path_id",
+            "name": "path_code",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Path Id"
+              "title": "Path Code"
             }
           },
           {
-            "name": "entry_id",
+            "name": "entry_slug",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Entry Id"
+              "title": "Entry Slug"
             }
           }
         ],
@@ -483,33 +494,33 @@
         }
       },
       "delete": {
-        "tags": ["entries"],
+        "tags": [
+          "entries"
+        ],
         "summary": "Delete Entry",
-        "operationId": "delete_entry_v1__path_id__entries__entry_id__delete",
+        "operationId": "delete_entry",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
           {
-            "name": "path_id",
+            "name": "path_code",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Path Id"
+              "title": "Path Code"
             }
           },
           {
-            "name": "entry_id",
+            "name": "entry_slug",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "title": "Entry Id"
+              "title": "Entry Slug"
             }
           }
         ],
@@ -530,11 +541,79 @@
         }
       }
     },
+    "/v1/paths/{path_code}/entries/{entry_slug}/images/upload-url": {
+      "post": {
+        "tags": [
+          "entries"
+        ],
+        "summary": "Create Image Upload Url",
+        "operationId": "create_image_upload_url",
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path Code"
+            }
+          },
+          {
+            "name": "entry_slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entry Slug"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/admin/login": {
       "post": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Admin Login",
-        "operationId": "admin_login_v1_admin_login_post",
+        "operationId": "admin_login",
         "requestBody": {
           "content": {
             "application/json": {
@@ -571,12 +650,14 @@
     },
     "/v1/admin/users/{user_id}/path-creation-approval": {
       "put": {
-        "tags": ["admin"],
+        "tags": [
+          "admin"
+        ],
         "summary": "Set Path Creation Approval",
-        "operationId": "set_path_creation_approval_v1_admin_users__user_id__path_creation_approval_put",
+        "operationId": "set_path_creation_approval",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -627,9 +708,11 @@
     },
     "/v1/account/profile": {
       "get": {
-        "tags": ["account"],
+        "tags": [
+          "account"
+        ],
         "summary": "Get Profile",
-        "operationId": "get_profile_v1_account_profile_get",
+        "operationId": "get_profile",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -644,16 +727,18 @@
         },
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ]
       }
     },
     "/v1/account/display-name": {
       "patch": {
-        "tags": ["account"],
+        "tags": [
+          "account"
+        ],
         "summary": "Update Display Name",
-        "operationId": "update_display_name_v1_account_display_name_patch",
+        "operationId": "update_display_name",
         "requestBody": {
           "content": {
             "application/json": {
@@ -688,16 +773,18 @@
         },
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ]
       }
     },
     "/v1/account/deletion-requests": {
       "post": {
-        "tags": ["account"],
+        "tags": [
+          "account"
+        ],
         "summary": "Create Deletion Request",
-        "operationId": "create_deletion_request_v1_account_deletion_requests_post",
+        "operationId": "create_deletion_request",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -712,16 +799,18 @@
         },
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ]
       }
     },
     "/v1/account/deletion-requests/latest": {
       "get": {
-        "tags": ["account"],
+        "tags": [
+          "account"
+        ],
         "summary": "Latest Deletion Request",
-        "operationId": "latest_deletion_request_v1_account_deletion_requests_latest_get",
+        "operationId": "get_latest_deletion_request",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -736,75 +825,21 @@
         },
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ]
       }
     },
-    "/v1/images/entries/{entry_id}/upload-url": {
-      "post": {
-        "tags": ["images"],
-        "summary": "Create Image Upload Url",
-        "operationId": "create_image_upload_url_v1_images_entries__entry_id__upload_url_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "entry_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Entry Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ImageUploadRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ImageUploadResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/images/{image_id}/complete": {
       "post": {
-        "tags": ["images"],
+        "tags": [
+          "images"
+        ],
         "summary": "Complete Image Upload",
-        "operationId": "complete_image_upload_v1_images__image_id__complete_post",
+        "operationId": "complete_image_upload",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -855,9 +890,11 @@
     },
     "/v1/images/process-pending": {
       "post": {
-        "tags": ["images"],
+        "tags": [
+          "images"
+        ],
         "summary": "Process Pending Images",
-        "operationId": "process_pending_images_v1_images_process_pending_post",
+        "operationId": "process_pending_images",
         "responses": {
           "204": {
             "description": "Successful Response"
@@ -865,16 +902,18 @@
         },
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ]
       }
     },
     "/v1/exports": {
       "post": {
-        "tags": ["exports"],
+        "tags": [
+          "exports"
+        ],
         "summary": "Create Export",
-        "operationId": "create_export_v1_exports_post",
+        "operationId": "create_export",
         "requestBody": {
           "content": {
             "application/json": {
@@ -909,19 +948,21 @@
         },
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ]
       }
     },
     "/v1/exports/{export_id}": {
       "get": {
-        "tags": ["exports"],
+        "tags": [
+          "exports"
+        ],
         "summary": "Get Export",
-        "operationId": "get_export_v1_exports__export_id__get",
+        "operationId": "get_export",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -962,12 +1003,14 @@
     },
     "/v1/exports/{export_id}/download/json": {
       "get": {
-        "tags": ["exports"],
+        "tags": [
+          "exports"
+        ],
         "summary": "Download Json",
-        "operationId": "download_json_v1_exports__export_id__download_json_get",
+        "operationId": "download_export_json",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1008,12 +1051,14 @@
     },
     "/v1/exports/{export_id}/download/images": {
       "get": {
-        "tags": ["exports"],
+        "tags": [
+          "exports"
+        ],
         "summary": "Download Images",
-        "operationId": "download_images_v1_exports__export_id__download_images_get",
+        "operationId": "download_export_images",
         "security": [
           {
-            "HTTPBearer": []
+            "APIKeyCookie": []
           }
         ],
         "parameters": [
@@ -1054,10 +1099,12 @@
     },
     "/v1/auth/login": {
       "get": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Oauth Login",
         "description": "Return the Google OAuth authorization URL for the given callback URI.",
-        "operationId": "oauth_login_v1_auth_login_get",
+        "operationId": "auth_login",
         "parameters": [
           {
             "name": "callback_uri",
@@ -1097,20 +1144,72 @@
     },
     "/v1/auth/callback": {
       "post": {
-        "tags": ["auth"],
+        "tags": [
+          "auth"
+        ],
         "summary": "Oauth Callback",
         "description": "Exchange the OAuth code for a user session token.",
-        "operationId": "oauth_callback_v1_auth_callback_post",
+        "operationId": "auth_callback",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/OAuthCallbackRequest"
               }
             }
-          },
-          "required": true
+          }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Oauth Callback Get",
+        "description": "Return a response for GET requests to the OAuth callback endpoint.",
+        "operationId": "auth_callback_redirect",
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "State"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1138,13 +1237,15 @@
     "/": {
       "get": {
         "summary": "Root",
-        "operationId": "root__get",
+        "operationId": "root",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+
+                }
               }
             }
           }
@@ -1166,8 +1267,15 @@
           }
         },
         "type": "object",
-        "required": ["username", "password"],
-        "title": "AdminLoginRequest"
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "AdminLoginRequest",
+        "example": {
+          "password": "s3cr3t",
+          "username": "admin"
+        }
       },
       "AdminLoginResponse": {
         "properties": {
@@ -1177,8 +1285,13 @@
           }
         },
         "type": "object",
-        "required": ["token"],
-        "title": "AdminLoginResponse"
+        "required": [
+          "token"
+        ],
+        "title": "AdminLoginResponse",
+        "example": {
+          "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiJ9.example"
+        }
       },
       "DeletionRequestResponse": {
         "properties": {
@@ -1189,7 +1302,12 @@
           },
           "state": {
             "type": "string",
-            "enum": ["requested", "running", "complete", "failed"],
+            "enum": [
+              "requested",
+              "running",
+              "complete",
+              "failed"
+            ],
             "title": "State"
           },
           "error_message": {
@@ -1239,7 +1357,14 @@
           "created_at",
           "updated_at"
         ],
-        "title": "DeletionRequestResponse"
+        "title": "DeletionRequestResponse",
+        "example": {
+          "attempt_count": 0,
+          "created_at": "2024-03-15T09:00:00Z",
+          "id": "f6a7b8c9-d0e1-2345-f012-456789012345",
+          "state": "requested",
+          "updated_at": "2024-03-15T09:00:00Z"
+        }
       },
       "DownloadURLResponse": {
         "properties": {
@@ -1253,19 +1378,24 @@
           }
         },
         "type": "object",
-        "required": ["url", "expires_in_seconds"],
-        "title": "DownloadURLResponse"
+        "required": [
+          "url",
+          "expires_in_seconds"
+        ],
+        "title": "DownloadURLResponse",
+        "example": {
+          "expires_in_seconds": 300,
+          "url": "https://storage.example.com/exports/e5f6a7b8-c9d0-1234-ef01-345678901234/export.json?X-Amz-Expires=300"
+        }
       },
       "EntryContentResponse": {
         "properties": {
           "id": {
             "type": "string",
-            "format": "uuid",
             "title": "Id"
           },
           "path_id": {
             "type": "string",
-            "format": "uuid",
             "title": "Path Id"
           },
           "day": {
@@ -1283,8 +1413,21 @@
           }
         },
         "type": "object",
-        "required": ["id", "path_id", "day", "edit_id", "content"],
-        "title": "EntryContentResponse"
+        "required": [
+          "id",
+          "path_id",
+          "day",
+          "edit_id",
+          "content"
+        ],
+        "title": "EntryContentResponse",
+        "example": {
+          "content": "Feeling stronger today. Managed a 20-minute walk.",
+          "day": "2024-03-15",
+          "edit_id": "a3f7b2c1d4e5f6789012345678901234abcdef1234567890123456789012abcd",
+          "id": "2026_02_20_0",
+          "path_id": "AB3X7K"
+        }
       },
       "EntryCreateRequest": {
         "properties": {
@@ -1307,19 +1450,27 @@
           }
         },
         "type": "object",
-        "required": ["day", "content"],
-        "title": "EntryCreateRequest"
+        "required": [
+          "day",
+          "content"
+        ],
+        "title": "EntryCreateRequest",
+        "example": {
+          "content": "Feeling stronger today. Managed a 20-minute walk.",
+          "day": "2024-03-15",
+          "image_filenames": [
+            "morning-walk.jpg"
+          ]
+        }
       },
       "EntryResponse": {
         "properties": {
           "id": {
             "type": "string",
-            "format": "uuid",
             "title": "Id"
           },
           "path_id": {
             "type": "string",
-            "format": "uuid",
             "title": "Path Id"
           },
           "day": {
@@ -1333,8 +1484,19 @@
           }
         },
         "type": "object",
-        "required": ["id", "path_id", "day", "edit_id"],
-        "title": "EntryResponse"
+        "required": [
+          "id",
+          "path_id",
+          "day",
+          "edit_id"
+        ],
+        "title": "EntryResponse",
+        "example": {
+          "day": "2024-03-15",
+          "edit_id": "a3f7b2c1d4e5f6789012345678901234abcdef1234567890123456789012abcd",
+          "id": "2026_02_20_0",
+          "path_id": "AB3X7K"
+        }
       },
       "EntryUpdateRequest": {
         "properties": {
@@ -1359,8 +1521,18 @@
           }
         },
         "type": "object",
-        "required": ["expected_edit_id", "content"],
-        "title": "EntryUpdateRequest"
+        "required": [
+          "expected_edit_id",
+          "content"
+        ],
+        "title": "EntryUpdateRequest",
+        "example": {
+          "content": "Feeling stronger today. Managed a 20-minute walk and felt great.",
+          "expected_edit_id": "a3f7b2c1d4e5f6789012345678901234abcdef1234567890123456789012abcd",
+          "image_filenames": [
+            "morning-walk.jpg"
+          ]
+        }
       },
       "ErrorDetail": {
         "properties": {
@@ -1374,15 +1546,17 @@
           }
         },
         "type": "object",
-        "required": ["code", "message"],
+        "required": [
+          "code",
+          "message"
+        ],
         "title": "ErrorDetail"
       },
       "ExportCreateRequest": {
         "properties": {
           "path_ids": {
             "items": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             },
             "type": "array",
             "minItems": 1,
@@ -1390,8 +1564,15 @@
           }
         },
         "type": "object",
-        "required": ["path_ids"],
-        "title": "ExportCreateRequest"
+        "required": [
+          "path_ids"
+        ],
+        "title": "ExportCreateRequest",
+        "example": {
+          "path_ids": [
+            "AB3X7K"
+          ]
+        }
       },
       "ExportJobResponse": {
         "properties": {
@@ -1414,8 +1595,7 @@
           },
           "requested_path_ids": {
             "items": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
             },
             "type": "array",
             "title": "Requested Path Ids"
@@ -1469,7 +1649,18 @@
           "failure_code",
           "attempt_count"
         ],
-        "title": "ExportJobResponse"
+        "title": "ExportJobResponse",
+        "example": {
+          "attempt_count": 1,
+          "created_at": "2024-03-15T09:00:00Z",
+          "expires_at": "2024-03-22T09:05:00Z",
+          "id": "e5f6a7b8-c9d0-1234-ef01-345678901234",
+          "requested_path_ids": [
+            "AB3X7K"
+          ],
+          "state": "ready",
+          "updated_at": "2024-03-15T09:05:00Z"
+        }
       },
       "HTTPValidationError": {
         "properties": {
@@ -1490,17 +1681,24 @@
             "type": "string",
             "title": "Status",
             "description": "Service health state.",
-            "examples": ["ok"]
+            "examples": [
+              "ok"
+            ]
           },
           "service": {
             "type": "string",
             "title": "Service",
             "description": "Service identifier.",
-            "examples": ["paths-backend"]
+            "examples": [
+              "paths-backend"
+            ]
           }
         },
         "type": "object",
-        "required": ["status", "service"],
+        "required": [
+          "status",
+          "service"
+        ],
         "title": "HealthResponse",
         "example": {
           "service": "paths-backend",
@@ -1523,7 +1721,10 @@
           }
         },
         "type": "object",
-        "title": "ImageCompleteRequest"
+        "title": "ImageCompleteRequest",
+        "example": {
+          "byte_size": 204800
+        }
       },
       "ImageResponse": {
         "properties": {
@@ -1582,7 +1783,16 @@
           "content_type",
           "byte_size"
         ],
-        "title": "ImageResponse"
+        "title": "ImageResponse",
+        "example": {
+          "byte_size": 204800,
+          "content_type": "image/jpeg",
+          "entry_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+          "filename": "morning-walk.jpg",
+          "id": "d4e5f6a7-b8c9-0123-def0-234567890123",
+          "status": "complete",
+          "strip_metadata": true
+        }
       },
       "ImageUploadRequest": {
         "properties": {
@@ -1606,8 +1816,15 @@
           }
         },
         "type": "object",
-        "required": ["filename"],
-        "title": "ImageUploadRequest"
+        "required": [
+          "filename"
+        ],
+        "title": "ImageUploadRequest",
+        "example": {
+          "content_type": "image/jpeg",
+          "filename": "morning-walk.jpg",
+          "strip_metadata": true
+        }
       },
       "ImageUploadResponse": {
         "properties": {
@@ -1626,8 +1843,17 @@
           }
         },
         "type": "object",
-        "required": ["image_id", "upload_url", "expires_in_seconds"],
-        "title": "ImageUploadResponse"
+        "required": [
+          "image_id",
+          "upload_url",
+          "expires_in_seconds"
+        ],
+        "title": "ImageUploadResponse",
+        "example": {
+          "expires_in_seconds": 900,
+          "image_id": "d4e5f6a7-b8c9-0123-def0-234567890123",
+          "upload_url": "https://storage.example.com/uploads/d4e5f6a7-b8c9-0123-def0-234567890123?X-Amz-Expires=900"
+        }
       },
       "OAuthCallbackRequest": {
         "properties": {
@@ -1645,7 +1871,11 @@
           }
         },
         "type": "object",
-        "required": ["code", "state", "callback_uri"],
+        "required": [
+          "code",
+          "state",
+          "callback_uri"
+        ],
         "title": "OAuthCallbackRequest"
       },
       "OAuthCallbackResponse": {
@@ -1671,8 +1901,17 @@
           }
         },
         "type": "object",
-        "required": ["token", "user_id", "display_name"],
-        "title": "OAuthCallbackResponse"
+        "required": [
+          "token",
+          "user_id",
+          "display_name"
+        ],
+        "title": "OAuthCallbackResponse",
+        "example": {
+          "display_name": "Alex Smith",
+          "token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        }
       },
       "OAuthLoginResponse": {
         "properties": {
@@ -1682,8 +1921,13 @@
           }
         },
         "type": "object",
-        "required": ["authorization_url"],
-        "title": "OAuthLoginResponse"
+        "required": [
+          "authorization_url"
+        ],
+        "title": "OAuthLoginResponse",
+        "example": {
+          "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=example.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback&response_type=code&scope=openid+profile&state=..."
+        }
       },
       "OptimisticLockErrorResponse": {
         "properties": {
@@ -1700,8 +1944,20 @@
           }
         },
         "type": "object",
-        "required": ["error", "expected_edit_id", "current_edit_id"],
-        "title": "OptimisticLockErrorResponse"
+        "required": [
+          "error",
+          "expected_edit_id",
+          "current_edit_id"
+        ],
+        "title": "OptimisticLockErrorResponse",
+        "example": {
+          "current_edit_id": "d4e5f6a7b8c90123def023456789012334bcdef01234567890123456789012ab",
+          "error": {
+            "code": "optimistic_lock_conflict",
+            "message": "Entry was modified by another request."
+          },
+          "expected_edit_id": "a3f7b2c1d4e5f6789012345678901234abcdef1234567890123456789012abcd"
+        }
       },
       "OptimisticLockHTTPErrorResponse": {
         "properties": {
@@ -1710,8 +1966,20 @@
           }
         },
         "type": "object",
-        "required": ["detail"],
-        "title": "OptimisticLockHTTPErrorResponse"
+        "required": [
+          "detail"
+        ],
+        "title": "OptimisticLockHTTPErrorResponse",
+        "example": {
+          "detail": {
+            "current_edit_id": "d4e5f6a7b8c90123def023456789012334bcdef01234567890123456789012ab",
+            "error": {
+              "code": "optimistic_lock_conflict",
+              "message": "Entry was modified by another request."
+            },
+            "expected_edit_id": "a3f7b2c1d4e5f6789012345678901234abcdef1234567890123456789012abcd"
+          }
+        }
       },
       "PathCreateRequest": {
         "properties": {
@@ -1740,7 +2008,10 @@
           }
         },
         "type": "object",
-        "required": ["title", "color"],
+        "required": [
+          "title",
+          "color"
+        ],
         "title": "PathCreateRequest",
         "example": {
           "color": "#4F46E5",
@@ -1756,8 +2027,13 @@
           }
         },
         "type": "object",
-        "required": ["allowed"],
-        "title": "PathCreationApprovalRequest"
+        "required": [
+          "allowed"
+        ],
+        "title": "PathCreationApprovalRequest",
+        "example": {
+          "allowed": true
+        }
       },
       "PathCreationApprovalResponse": {
         "properties": {
@@ -1772,15 +2048,26 @@
           }
         },
         "type": "object",
-        "required": ["user_id", "allowed"],
-        "title": "PathCreationApprovalResponse"
+        "required": [
+          "user_id",
+          "allowed"
+        ],
+        "title": "PathCreationApprovalResponse",
+        "example": {
+          "allowed": true,
+          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        }
       },
       "PathResponse": {
         "properties": {
           "path_id": {
             "type": "string",
-            "format": "uuid",
             "title": "Path Id"
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uuid"
           },
           "owner_user_id": {
             "type": "string",
@@ -1824,6 +2111,7 @@
         "type": "object",
         "required": [
           "path_id",
+          "uuid",
           "owner_user_id",
           "title",
           "description",
@@ -1832,7 +2120,18 @@
           "created_at",
           "updated_at"
         ],
-        "title": "PathResponse"
+        "title": "PathResponse",
+        "example": {
+          "color": "#4F46E5",
+          "created_at": "2024-03-15T09:00:00Z",
+          "description": "Tracking sleep, movement, and gratitude.",
+          "is_public": false,
+          "owner_user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "path_id": "AB3X7K",
+          "title": "Recovery Journal",
+          "updated_at": "2024-03-15T09:00:00Z",
+          "uuid": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        }
       },
       "PathSubscriptionCreateRequest": {
         "properties": {
@@ -1843,8 +2142,13 @@
           }
         },
         "type": "object",
-        "required": ["user_id"],
-        "title": "PathSubscriptionCreateRequest"
+        "required": [
+          "user_id"
+        ],
+        "title": "PathSubscriptionCreateRequest",
+        "example": {
+          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        }
       },
       "PathVisibilityUpdateRequest": {
         "properties": {
@@ -1854,8 +2158,13 @@
           }
         },
         "type": "object",
-        "required": ["is_public"],
-        "title": "PathVisibilityUpdateRequest"
+        "required": [
+          "is_public"
+        ],
+        "title": "PathVisibilityUpdateRequest",
+        "example": {
+          "is_public": true
+        }
       },
       "UserDisplayNameUpdateRequest": {
         "properties": {
@@ -1873,7 +2182,10 @@
           }
         },
         "type": "object",
-        "title": "UserDisplayNameUpdateRequest"
+        "title": "UserDisplayNameUpdateRequest",
+        "example": {
+          "display_name": "Alex Smith"
+        }
       },
       "UserProfileResponse": {
         "properties": {
@@ -1895,8 +2207,15 @@
           }
         },
         "type": "object",
-        "required": ["user_id", "display_name"],
-        "title": "UserProfileResponse"
+        "required": [
+          "user_id",
+          "display_name"
+        ],
+        "title": "UserProfileResponse",
+        "example": {
+          "display_name": "Alex Smith",
+          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        }
       },
       "ValidationError": {
         "properties": {
@@ -1931,14 +2250,20 @@
           }
         },
         "type": "object",
-        "required": ["loc", "msg", "type"],
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "title": "ValidationError"
       }
     },
     "securitySchemes": {
-      "HTTPBearer": {
-        "type": "http",
-        "scheme": "bearer"
+      "APIKeyCookie": {
+        "type": "apiKey",
+        "description": "Session token cookie obtained via Oauth callback",
+        "in": "cookie",
+        "name": "session_token"
       }
     }
   }

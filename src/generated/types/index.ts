@@ -7,6 +7,8 @@
 
 export * from './adminLoginRequest';
 export * from './adminLoginResponse';
+export * from './authCallbackRedirectParams';
+export * from './authLoginParams';
 export * from './deletionRequestResponse';
 export * from './deletionRequestResponseState';
 export * from './downloadURLResponse';
@@ -24,6 +26,7 @@ export * from './imageCompleteRequest';
 export * from './imageResponse';
 export * from './imageUploadRequest';
 export * from './imageUploadResponse';
+export * from './oauthCallbackGetV1AuthCallbackGetParams';
 export * from './oAuthCallbackRequest';
 export * from './oAuthCallbackResponse';
 export * from './oAuthLoginResponse';

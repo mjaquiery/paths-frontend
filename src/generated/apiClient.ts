@@ -6,6 +6,8 @@
  */
 import type {
   AdminLoginRequest,
+  AuthCallbackRedirectParams,
+  AuthLoginParams,
   EntryCreateRequest,
   EntryUpdateRequest,
   ExportCreateRequest,
@@ -13,19 +15,25 @@ import type {
   ImageCompleteRequest,
   ImageUploadRequest,
   OAuthCallbackRequest,
-  OauthLoginV1AuthLoginGetParams,
   OptimisticLockHTTPErrorResponse,
   PathCreateRequest,
   PathCreationApprovalRequest,
   PathSubscriptionCreateRequest,
   PathVisibilityUpdateRequest,
-  UserDisplayNameUpdateRequest,
+  UserDisplayNameUpdateRequest
 } from './types';
 
-import { faker } from '@faker-js/faker';
+import {
+  faker
+} from '@faker-js/faker';
 
-import { HttpResponse, http } from 'msw';
-import type { RequestHandlerOptions } from 'msw';
+import {
+  HttpResponse,
+  http
+} from 'msw';
+import type {
+  RequestHandlerOptions
+} from 'msw';
 
 import type {
   AdminLoginResponse,
@@ -41,2150 +49,1614 @@ import type {
   OAuthLoginResponse,
   PathCreationApprovalResponse,
   PathResponse,
-  UserProfileResponse,
+  UserProfileResponse
 } from './types';
 
 import { customFetch } from '../lib/customFetch';
 /**
  * @summary Health
  */
-export type healthHealthGetResponse200 = {
-  data: HealthResponse;
-  status: 200;
-};
+export type healthResponse200 = {
+  data: HealthResponse
+  status: 200
+}
 
-export type healthHealthGetResponseSuccess = healthHealthGetResponse200 & {
+export type healthResponseSuccess = (healthResponse200) & {
   headers: Headers;
 };
-export type healthHealthGetResponse = healthHealthGetResponseSuccess;
+;
 
-export const getHealthHealthGetUrl = () => {
-  return `/health`;
-};
+export type healthResponse = (healthResponseSuccess)
 
-export const healthHealthGet = async (
-  options?: RequestInit,
-): Promise<healthHealthGetResponse> => {
-  return customFetch<healthHealthGetResponse>(getHealthHealthGetUrl(), {
+export const getHealthUrl = () => {
+
+
+  
+
+  return `/health`
+}
+
+export const health = async ( options?: RequestInit): Promise<healthResponse> => {
+  
+  return customFetch<healthResponse>(getHealthUrl(),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
 
 /**
  * @summary List Paths
  */
-export type listPathsV1PathsGetResponse200 = {
-  data: PathResponse[];
-  status: 200;
+export type listPathsResponse200 = {
+  data: PathResponse[]
+  status: 200
+}
+
+export type listPathsResponseSuccess = (listPathsResponse200) & {
+  headers: Headers;
 };
+;
 
-export type listPathsV1PathsGetResponseSuccess =
-  listPathsV1PathsGetResponse200 & {
-    headers: Headers;
-  };
-export type listPathsV1PathsGetResponse = listPathsV1PathsGetResponseSuccess;
+export type listPathsResponse = (listPathsResponseSuccess)
 
-export const getListPathsV1PathsGetUrl = () => {
-  return `/v1/paths`;
-};
+export const getListPathsUrl = () => {
 
-export const listPathsV1PathsGet = async (
-  options?: RequestInit,
-): Promise<listPathsV1PathsGetResponse> => {
-  return customFetch<listPathsV1PathsGetResponse>(getListPathsV1PathsGetUrl(), {
+
+  
+
+  return `/v1/paths`
+}
+
+export const listPaths = async ( options?: RequestInit): Promise<listPathsResponse> => {
+  
+  return customFetch<listPathsResponse>(getListPathsUrl(),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
 
 /**
  * @summary Create Path
  */
-export type createPathV1PathsPostResponse201 = {
-  data: PathResponse;
-  status: 201;
+export type createPathResponse201 = {
+  data: PathResponse
+  status: 201
+}
+
+export type createPathResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type createPathResponseSuccess = (createPathResponse201) & {
+  headers: Headers;
+};
+export type createPathResponseError = (createPathResponse422) & {
+  headers: Headers;
 };
 
-export type createPathV1PathsPostResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type createPathResponse = (createPathResponseSuccess | createPathResponseError)
 
-export type createPathV1PathsPostResponseSuccess =
-  createPathV1PathsPostResponse201 & {
-    headers: Headers;
-  };
-export type createPathV1PathsPostResponseError =
-  createPathV1PathsPostResponse422 & {
-    headers: Headers;
-  };
+export const getCreatePathUrl = () => {
 
-export type createPathV1PathsPostResponse =
-  | createPathV1PathsPostResponseSuccess
-  | createPathV1PathsPostResponseError;
 
-export const getCreatePathV1PathsPostUrl = () => {
-  return `/v1/paths`;
-};
+  
 
-export const createPathV1PathsPost = async (
-  pathCreateRequest: PathCreateRequest,
-  options?: RequestInit,
-): Promise<createPathV1PathsPostResponse> => {
-  return customFetch<createPathV1PathsPostResponse>(
-    getCreatePathV1PathsPostUrl(),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(pathCreateRequest),
-    },
-  );
-};
+  return `/v1/paths`
+}
+
+export const createPath = async (pathCreateRequest: PathCreateRequest, options?: RequestInit): Promise<createPathResponse> => {
+  
+  return customFetch<createPathResponse>(getCreatePathUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pathCreateRequest,)
+  }
+);}
+  
+
 
 /**
  * @summary Update Path Visibility
  */
-export type updatePathVisibilityV1PathsPathIdVisibilityPatchResponse200 = {
-  data: PathResponse;
-  status: 200;
+export type updatePathVisibilityResponse200 = {
+  data: PathResponse
+  status: 200
+}
+
+export type updatePathVisibilityResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type updatePathVisibilityResponseSuccess = (updatePathVisibilityResponse200) & {
+  headers: Headers;
+};
+export type updatePathVisibilityResponseError = (updatePathVisibilityResponse422) & {
+  headers: Headers;
 };
 
-export type updatePathVisibilityV1PathsPathIdVisibilityPatchResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type updatePathVisibilityResponse = (updatePathVisibilityResponseSuccess | updatePathVisibilityResponseError)
 
-export type updatePathVisibilityV1PathsPathIdVisibilityPatchResponseSuccess =
-  updatePathVisibilityV1PathsPathIdVisibilityPatchResponse200 & {
-    headers: Headers;
-  };
-export type updatePathVisibilityV1PathsPathIdVisibilityPatchResponseError =
-  updatePathVisibilityV1PathsPathIdVisibilityPatchResponse422 & {
-    headers: Headers;
-  };
+export const getUpdatePathVisibilityUrl = (pathCode: string,) => {
 
-export type updatePathVisibilityV1PathsPathIdVisibilityPatchResponse =
-  | updatePathVisibilityV1PathsPathIdVisibilityPatchResponseSuccess
-  | updatePathVisibilityV1PathsPathIdVisibilityPatchResponseError;
 
-export const getUpdatePathVisibilityV1PathsPathIdVisibilityPatchUrl = (
-  pathId: string,
-) => {
-  return `/v1/paths/${pathId}/visibility`;
-};
+  
 
-export const updatePathVisibilityV1PathsPathIdVisibilityPatch = async (
-  pathId: string,
-  pathVisibilityUpdateRequest: PathVisibilityUpdateRequest,
-  options?: RequestInit,
-): Promise<updatePathVisibilityV1PathsPathIdVisibilityPatchResponse> => {
-  return customFetch<updatePathVisibilityV1PathsPathIdVisibilityPatchResponse>(
-    getUpdatePathVisibilityV1PathsPathIdVisibilityPatchUrl(pathId),
-    {
-      ...options,
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(pathVisibilityUpdateRequest),
-    },
-  );
-};
+  return `/v1/paths/${pathCode}/visibility`
+}
+
+export const updatePathVisibility = async (pathCode: string,
+    pathVisibilityUpdateRequest: PathVisibilityUpdateRequest, options?: RequestInit): Promise<updatePathVisibilityResponse> => {
+  
+  return customFetch<updatePathVisibilityResponse>(getUpdatePathVisibilityUrl(pathCode),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pathVisibilityUpdateRequest,)
+  }
+);}
+  
+
 
 /**
  * @summary Create Subscription
  */
-export type createSubscriptionV1PathsPathIdSubscriptionsPostResponse204 = {
-  data: void;
-  status: 204;
+export type createSubscriptionResponse204 = {
+  data: void
+  status: 204
+}
+
+export type createSubscriptionResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type createSubscriptionResponseSuccess = (createSubscriptionResponse204) & {
+  headers: Headers;
+};
+export type createSubscriptionResponseError = (createSubscriptionResponse422) & {
+  headers: Headers;
 };
 
-export type createSubscriptionV1PathsPathIdSubscriptionsPostResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type createSubscriptionResponse = (createSubscriptionResponseSuccess | createSubscriptionResponseError)
 
-export type createSubscriptionV1PathsPathIdSubscriptionsPostResponseSuccess =
-  createSubscriptionV1PathsPathIdSubscriptionsPostResponse204 & {
-    headers: Headers;
-  };
-export type createSubscriptionV1PathsPathIdSubscriptionsPostResponseError =
-  createSubscriptionV1PathsPathIdSubscriptionsPostResponse422 & {
-    headers: Headers;
-  };
+export const getCreateSubscriptionUrl = (pathCode: string,) => {
 
-export type createSubscriptionV1PathsPathIdSubscriptionsPostResponse =
-  | createSubscriptionV1PathsPathIdSubscriptionsPostResponseSuccess
-  | createSubscriptionV1PathsPathIdSubscriptionsPostResponseError;
 
-export const getCreateSubscriptionV1PathsPathIdSubscriptionsPostUrl = (
-  pathId: string,
-) => {
-  return `/v1/paths/${pathId}/subscriptions`;
-};
+  
 
-export const createSubscriptionV1PathsPathIdSubscriptionsPost = async (
-  pathId: string,
-  pathSubscriptionCreateRequest: PathSubscriptionCreateRequest,
-  options?: RequestInit,
-): Promise<createSubscriptionV1PathsPathIdSubscriptionsPostResponse> => {
-  return customFetch<createSubscriptionV1PathsPathIdSubscriptionsPostResponse>(
-    getCreateSubscriptionV1PathsPathIdSubscriptionsPostUrl(pathId),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(pathSubscriptionCreateRequest),
-    },
-  );
-};
+  return `/v1/paths/${pathCode}/subscriptions`
+}
+
+export const createSubscription = async (pathCode: string,
+    pathSubscriptionCreateRequest: PathSubscriptionCreateRequest, options?: RequestInit): Promise<createSubscriptionResponse> => {
+  
+  return customFetch<createSubscriptionResponse>(getCreateSubscriptionUrl(pathCode),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pathSubscriptionCreateRequest,)
+  }
+);}
+  
+
 
 /**
  * @summary Delete Subscription
  */
-export type deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponse204 =
-  {
-    data: void;
-    status: 204;
-  };
+export type deleteSubscriptionResponse204 = {
+  data: void
+  status: 204
+}
 
-export type deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponse422 =
-  {
-    data: HTTPValidationError;
-    status: 422;
-  };
+export type deleteSubscriptionResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
 
-export type deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponseSuccess =
-  deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponse204 & {
-    headers: Headers;
-  };
-export type deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponseError =
-  deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponse422 & {
-    headers: Headers;
-  };
+export type deleteSubscriptionResponseSuccess = (deleteSubscriptionResponse204) & {
+  headers: Headers;
+};
+export type deleteSubscriptionResponseError = (deleteSubscriptionResponse422) & {
+  headers: Headers;
+};
 
-export type deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponse =
+export type deleteSubscriptionResponse = (deleteSubscriptionResponseSuccess | deleteSubscriptionResponseError)
 
-    | deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponseSuccess
-    | deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponseError;
+export const getDeleteSubscriptionUrl = (pathCode: string,
+    targetUserId: string,) => {
 
-export const getDeleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteUrl =
-  (pathId: string, targetUserId: string) => {
-    return `/v1/paths/${pathId}/subscriptions/${targetUserId}`;
-  };
 
-export const deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDelete =
-  async (
-    pathId: string,
-    targetUserId: string,
-    options?: RequestInit,
-  ): Promise<deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponse> => {
-    return customFetch<deleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteResponse>(
-      getDeleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteUrl(
-        pathId,
-        targetUserId,
-      ),
-      {
-        ...options,
-        method: 'DELETE',
-      },
-    );
-  };
+  
+
+  return `/v1/paths/${pathCode}/subscriptions/${targetUserId}`
+}
+
+export const deleteSubscription = async (pathCode: string,
+    targetUserId: string, options?: RequestInit): Promise<deleteSubscriptionResponse> => {
+  
+  return customFetch<deleteSubscriptionResponse>(getDeleteSubscriptionUrl(pathCode,targetUserId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+  
+
 
 /**
  * @summary List Entries
  */
-export type listEntriesV1PathIdEntriesGetResponse200 = {
-  data: EntryResponse[];
-  status: 200;
+export type listEntriesResponse200 = {
+  data: EntryResponse[]
+  status: 200
+}
+
+export type listEntriesResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type listEntriesResponseSuccess = (listEntriesResponse200) & {
+  headers: Headers;
+};
+export type listEntriesResponseError = (listEntriesResponse422) & {
+  headers: Headers;
 };
 
-export type listEntriesV1PathIdEntriesGetResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type listEntriesResponse = (listEntriesResponseSuccess | listEntriesResponseError)
 
-export type listEntriesV1PathIdEntriesGetResponseSuccess =
-  listEntriesV1PathIdEntriesGetResponse200 & {
-    headers: Headers;
-  };
-export type listEntriesV1PathIdEntriesGetResponseError =
-  listEntriesV1PathIdEntriesGetResponse422 & {
-    headers: Headers;
-  };
+export const getListEntriesUrl = (pathCode: string,) => {
 
-export type listEntriesV1PathIdEntriesGetResponse =
-  | listEntriesV1PathIdEntriesGetResponseSuccess
-  | listEntriesV1PathIdEntriesGetResponseError;
 
-export const getListEntriesV1PathIdEntriesGetUrl = (pathId: string) => {
-  return `/v1/${pathId}/entries`;
-};
+  
 
-export const listEntriesV1PathIdEntriesGet = async (
-  pathId: string,
-  options?: RequestInit,
-): Promise<listEntriesV1PathIdEntriesGetResponse> => {
-  return customFetch<listEntriesV1PathIdEntriesGetResponse>(
-    getListEntriesV1PathIdEntriesGetUrl(pathId),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
+  return `/v1/paths/${pathCode}/entries`
+}
+
+export const listEntries = async (pathCode: string, options?: RequestInit): Promise<listEntriesResponse> => {
+  
+  return customFetch<listEntriesResponse>(getListEntriesUrl(pathCode),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
 
 /**
  * @summary Create Entry
  */
-export type createEntryV1PathIdEntriesPostResponse201 = {
-  data: EntryResponse;
-  status: 201;
+export type createEntryResponse201 = {
+  data: EntryResponse
+  status: 201
+}
+
+export type createEntryResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type createEntryResponseSuccess = (createEntryResponse201) & {
+  headers: Headers;
+};
+export type createEntryResponseError = (createEntryResponse422) & {
+  headers: Headers;
 };
 
-export type createEntryV1PathIdEntriesPostResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type createEntryResponse = (createEntryResponseSuccess | createEntryResponseError)
 
-export type createEntryV1PathIdEntriesPostResponseSuccess =
-  createEntryV1PathIdEntriesPostResponse201 & {
-    headers: Headers;
-  };
-export type createEntryV1PathIdEntriesPostResponseError =
-  createEntryV1PathIdEntriesPostResponse422 & {
-    headers: Headers;
-  };
+export const getCreateEntryUrl = (pathCode: string,) => {
 
-export type createEntryV1PathIdEntriesPostResponse =
-  | createEntryV1PathIdEntriesPostResponseSuccess
-  | createEntryV1PathIdEntriesPostResponseError;
 
-export const getCreateEntryV1PathIdEntriesPostUrl = (pathId: string) => {
-  return `/v1/${pathId}/entries`;
-};
+  
 
-export const createEntryV1PathIdEntriesPost = async (
-  pathId: string,
-  entryCreateRequest: EntryCreateRequest,
-  options?: RequestInit,
-): Promise<createEntryV1PathIdEntriesPostResponse> => {
-  return customFetch<createEntryV1PathIdEntriesPostResponse>(
-    getCreateEntryV1PathIdEntriesPostUrl(pathId),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(entryCreateRequest),
-    },
-  );
-};
+  return `/v1/paths/${pathCode}/entries`
+}
+
+export const createEntry = async (pathCode: string,
+    entryCreateRequest: EntryCreateRequest, options?: RequestInit): Promise<createEntryResponse> => {
+  
+  return customFetch<createEntryResponse>(getCreateEntryUrl(pathCode),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      entryCreateRequest,)
+  }
+);}
+  
+
 
 /**
  * @summary Get Entry
  */
-export type getEntryV1PathIdEntriesEntryIdGetResponse200 = {
-  data: EntryContentResponse;
-  status: 200;
+export type getEntryResponse200 = {
+  data: EntryContentResponse
+  status: 200
+}
+
+export type getEntryResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type getEntryResponseSuccess = (getEntryResponse200) & {
+  headers: Headers;
+};
+export type getEntryResponseError = (getEntryResponse422) & {
+  headers: Headers;
 };
 
-export type getEntryV1PathIdEntriesEntryIdGetResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type getEntryResponse = (getEntryResponseSuccess | getEntryResponseError)
 
-export type getEntryV1PathIdEntriesEntryIdGetResponseSuccess =
-  getEntryV1PathIdEntriesEntryIdGetResponse200 & {
-    headers: Headers;
-  };
-export type getEntryV1PathIdEntriesEntryIdGetResponseError =
-  getEntryV1PathIdEntriesEntryIdGetResponse422 & {
-    headers: Headers;
-  };
+export const getGetEntryUrl = (pathCode: string,
+    entrySlug: string,) => {
 
-export type getEntryV1PathIdEntriesEntryIdGetResponse =
-  | getEntryV1PathIdEntriesEntryIdGetResponseSuccess
-  | getEntryV1PathIdEntriesEntryIdGetResponseError;
 
-export const getGetEntryV1PathIdEntriesEntryIdGetUrl = (
-  pathId: string,
-  entryId: string,
-) => {
-  return `/v1/${pathId}/entries/${entryId}`;
-};
+  
 
-export const getEntryV1PathIdEntriesEntryIdGet = async (
-  pathId: string,
-  entryId: string,
-  options?: RequestInit,
-): Promise<getEntryV1PathIdEntriesEntryIdGetResponse> => {
-  return customFetch<getEntryV1PathIdEntriesEntryIdGetResponse>(
-    getGetEntryV1PathIdEntriesEntryIdGetUrl(pathId, entryId),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
+  return `/v1/paths/${pathCode}/entries/${entrySlug}`
+}
+
+export const getEntry = async (pathCode: string,
+    entrySlug: string, options?: RequestInit): Promise<getEntryResponse> => {
+  
+  return customFetch<getEntryResponse>(getGetEntryUrl(pathCode,entrySlug),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
 
 /**
  * @summary Update Entry
  */
-export type updateEntryV1PathIdEntriesEntryIdPutResponse200 = {
-  data: EntryResponse;
-  status: 200;
-};
+export type updateEntryResponse200 = {
+  data: EntryResponse
+  status: 200
+}
 
-export type updateEntryV1PathIdEntriesEntryIdPutResponse409 = {
-  data: OptimisticLockHTTPErrorResponse;
-  status: 409;
-};
+export type updateEntryResponse409 = {
+  data: OptimisticLockHTTPErrorResponse
+  status: 409
+}
 
-export type updateEntryV1PathIdEntriesEntryIdPutResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type updateEntryResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
 
-export type updateEntryV1PathIdEntriesEntryIdPutResponseSuccess =
-  updateEntryV1PathIdEntriesEntryIdPutResponse200 & {
-    headers: Headers;
-  };
-export type updateEntryV1PathIdEntriesEntryIdPutResponseError = (
-  | updateEntryV1PathIdEntriesEntryIdPutResponse409
-  | updateEntryV1PathIdEntriesEntryIdPutResponse422
-) & {
+export type updateEntryResponseSuccess = (updateEntryResponse200) & {
+  headers: Headers;
+};
+export type updateEntryResponseError = (updateEntryResponse409 | updateEntryResponse422) & {
   headers: Headers;
 };
 
-export type updateEntryV1PathIdEntriesEntryIdPutResponse =
-  | updateEntryV1PathIdEntriesEntryIdPutResponseSuccess
-  | updateEntryV1PathIdEntriesEntryIdPutResponseError;
+export type updateEntryResponse = (updateEntryResponseSuccess | updateEntryResponseError)
 
-export const getUpdateEntryV1PathIdEntriesEntryIdPutUrl = (
-  pathId: string,
-  entryId: string,
-) => {
-  return `/v1/${pathId}/entries/${entryId}`;
-};
+export const getUpdateEntryUrl = (pathCode: string,
+    entrySlug: string,) => {
 
-export const updateEntryV1PathIdEntriesEntryIdPut = async (
-  pathId: string,
-  entryId: string,
-  entryUpdateRequest: EntryUpdateRequest,
-  options?: RequestInit,
-): Promise<updateEntryV1PathIdEntriesEntryIdPutResponse> => {
-  return customFetch<updateEntryV1PathIdEntriesEntryIdPutResponse>(
-    getUpdateEntryV1PathIdEntriesEntryIdPutUrl(pathId, entryId),
-    {
-      ...options,
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(entryUpdateRequest),
-    },
-  );
-};
+
+  
+
+  return `/v1/paths/${pathCode}/entries/${entrySlug}`
+}
+
+export const updateEntry = async (pathCode: string,
+    entrySlug: string,
+    entryUpdateRequest: EntryUpdateRequest, options?: RequestInit): Promise<updateEntryResponse> => {
+  
+  return customFetch<updateEntryResponse>(getUpdateEntryUrl(pathCode,entrySlug),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      entryUpdateRequest,)
+  }
+);}
+  
+
 
 /**
  * @summary Delete Entry
  */
-export type deleteEntryV1PathIdEntriesEntryIdDeleteResponse204 = {
-  data: void;
-  status: 204;
+export type deleteEntryResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteEntryResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type deleteEntryResponseSuccess = (deleteEntryResponse204) & {
+  headers: Headers;
+};
+export type deleteEntryResponseError = (deleteEntryResponse422) & {
+  headers: Headers;
 };
 
-export type deleteEntryV1PathIdEntriesEntryIdDeleteResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type deleteEntryResponse = (deleteEntryResponseSuccess | deleteEntryResponseError)
 
-export type deleteEntryV1PathIdEntriesEntryIdDeleteResponseSuccess =
-  deleteEntryV1PathIdEntriesEntryIdDeleteResponse204 & {
-    headers: Headers;
-  };
-export type deleteEntryV1PathIdEntriesEntryIdDeleteResponseError =
-  deleteEntryV1PathIdEntriesEntryIdDeleteResponse422 & {
-    headers: Headers;
-  };
+export const getDeleteEntryUrl = (pathCode: string,
+    entrySlug: string,) => {
 
-export type deleteEntryV1PathIdEntriesEntryIdDeleteResponse =
-  | deleteEntryV1PathIdEntriesEntryIdDeleteResponseSuccess
-  | deleteEntryV1PathIdEntriesEntryIdDeleteResponseError;
 
-export const getDeleteEntryV1PathIdEntriesEntryIdDeleteUrl = (
-  pathId: string,
-  entryId: string,
-) => {
-  return `/v1/${pathId}/entries/${entryId}`;
-};
+  
 
-export const deleteEntryV1PathIdEntriesEntryIdDelete = async (
-  pathId: string,
-  entryId: string,
-  options?: RequestInit,
-): Promise<deleteEntryV1PathIdEntriesEntryIdDeleteResponse> => {
-  return customFetch<deleteEntryV1PathIdEntriesEntryIdDeleteResponse>(
-    getDeleteEntryV1PathIdEntriesEntryIdDeleteUrl(pathId, entryId),
-    {
-      ...options,
-      method: 'DELETE',
-    },
-  );
-};
+  return `/v1/paths/${pathCode}/entries/${entrySlug}`
+}
 
-/**
- * @summary Admin Login
- */
-export type adminLoginV1AdminLoginPostResponse200 = {
-  data: AdminLoginResponse;
-  status: 200;
-};
+export const deleteEntry = async (pathCode: string,
+    entrySlug: string, options?: RequestInit): Promise<deleteEntryResponse> => {
+  
+  return customFetch<deleteEntryResponse>(getDeleteEntryUrl(pathCode,entrySlug),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+  
 
-export type adminLoginV1AdminLoginPostResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
-
-export type adminLoginV1AdminLoginPostResponseSuccess =
-  adminLoginV1AdminLoginPostResponse200 & {
-    headers: Headers;
-  };
-export type adminLoginV1AdminLoginPostResponseError =
-  adminLoginV1AdminLoginPostResponse422 & {
-    headers: Headers;
-  };
-
-export type adminLoginV1AdminLoginPostResponse =
-  | adminLoginV1AdminLoginPostResponseSuccess
-  | adminLoginV1AdminLoginPostResponseError;
-
-export const getAdminLoginV1AdminLoginPostUrl = () => {
-  return `/v1/admin/login`;
-};
-
-export const adminLoginV1AdminLoginPost = async (
-  adminLoginRequest: AdminLoginRequest,
-  options?: RequestInit,
-): Promise<adminLoginV1AdminLoginPostResponse> => {
-  return customFetch<adminLoginV1AdminLoginPostResponse>(
-    getAdminLoginV1AdminLoginPostUrl(),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(adminLoginRequest),
-    },
-  );
-};
-
-/**
- * @summary Set Path Creation Approval
- */
-export type setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponse200 =
-  {
-    data: PathCreationApprovalResponse;
-    status: 200;
-  };
-
-export type setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponse422 =
-  {
-    data: HTTPValidationError;
-    status: 422;
-  };
-
-export type setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponseSuccess =
-  setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponse200 & {
-    headers: Headers;
-  };
-export type setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponseError =
-  setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponse422 & {
-    headers: Headers;
-  };
-
-export type setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponse =
-
-    | setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponseSuccess
-    | setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponseError;
-
-export const getSetPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutUrl =
-  (userId: string) => {
-    return `/v1/admin/users/${userId}/path-creation-approval`;
-  };
-
-export const setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPut =
-  async (
-    userId: string,
-    pathCreationApprovalRequest: PathCreationApprovalRequest,
-    options?: RequestInit,
-  ): Promise<setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponse> => {
-    return customFetch<setPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponse>(
-      getSetPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutUrl(
-        userId,
-      ),
-      {
-        ...options,
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...options?.headers },
-        body: JSON.stringify(pathCreationApprovalRequest),
-      },
-    );
-  };
-
-/**
- * @summary Get Profile
- */
-export type getProfileV1AccountProfileGetResponse200 = {
-  data: UserProfileResponse;
-  status: 200;
-};
-
-export type getProfileV1AccountProfileGetResponseSuccess =
-  getProfileV1AccountProfileGetResponse200 & {
-    headers: Headers;
-  };
-export type getProfileV1AccountProfileGetResponse =
-  getProfileV1AccountProfileGetResponseSuccess;
-
-export const getGetProfileV1AccountProfileGetUrl = () => {
-  return `/v1/account/profile`;
-};
-
-export const getProfileV1AccountProfileGet = async (
-  options?: RequestInit,
-): Promise<getProfileV1AccountProfileGetResponse> => {
-  return customFetch<getProfileV1AccountProfileGetResponse>(
-    getGetProfileV1AccountProfileGetUrl(),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
-
-/**
- * @summary Update Display Name
- */
-export type updateDisplayNameV1AccountDisplayNamePatchResponse200 = {
-  data: UserProfileResponse;
-  status: 200;
-};
-
-export type updateDisplayNameV1AccountDisplayNamePatchResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
-
-export type updateDisplayNameV1AccountDisplayNamePatchResponseSuccess =
-  updateDisplayNameV1AccountDisplayNamePatchResponse200 & {
-    headers: Headers;
-  };
-export type updateDisplayNameV1AccountDisplayNamePatchResponseError =
-  updateDisplayNameV1AccountDisplayNamePatchResponse422 & {
-    headers: Headers;
-  };
-
-export type updateDisplayNameV1AccountDisplayNamePatchResponse =
-  | updateDisplayNameV1AccountDisplayNamePatchResponseSuccess
-  | updateDisplayNameV1AccountDisplayNamePatchResponseError;
-
-export const getUpdateDisplayNameV1AccountDisplayNamePatchUrl = () => {
-  return `/v1/account/display-name`;
-};
-
-export const updateDisplayNameV1AccountDisplayNamePatch = async (
-  userDisplayNameUpdateRequest: UserDisplayNameUpdateRequest,
-  options?: RequestInit,
-): Promise<updateDisplayNameV1AccountDisplayNamePatchResponse> => {
-  return customFetch<updateDisplayNameV1AccountDisplayNamePatchResponse>(
-    getUpdateDisplayNameV1AccountDisplayNamePatchUrl(),
-    {
-      ...options,
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(userDisplayNameUpdateRequest),
-    },
-  );
-};
-
-/**
- * @summary Create Deletion Request
- */
-export type createDeletionRequestV1AccountDeletionRequestsPostResponse200 = {
-  data: DeletionRequestResponse;
-  status: 200;
-};
-
-export type createDeletionRequestV1AccountDeletionRequestsPostResponseSuccess =
-  createDeletionRequestV1AccountDeletionRequestsPostResponse200 & {
-    headers: Headers;
-  };
-export type createDeletionRequestV1AccountDeletionRequestsPostResponse =
-  createDeletionRequestV1AccountDeletionRequestsPostResponseSuccess;
-
-export const getCreateDeletionRequestV1AccountDeletionRequestsPostUrl = () => {
-  return `/v1/account/deletion-requests`;
-};
-
-export const createDeletionRequestV1AccountDeletionRequestsPost = async (
-  options?: RequestInit,
-): Promise<createDeletionRequestV1AccountDeletionRequestsPostResponse> => {
-  return customFetch<createDeletionRequestV1AccountDeletionRequestsPostResponse>(
-    getCreateDeletionRequestV1AccountDeletionRequestsPostUrl(),
-    {
-      ...options,
-      method: 'POST',
-    },
-  );
-};
-
-/**
- * @summary Latest Deletion Request
- */
-export type latestDeletionRequestV1AccountDeletionRequestsLatestGetResponse200 =
-  {
-    data: DeletionRequestResponse;
-    status: 200;
-  };
-
-export type latestDeletionRequestV1AccountDeletionRequestsLatestGetResponseSuccess =
-  latestDeletionRequestV1AccountDeletionRequestsLatestGetResponse200 & {
-    headers: Headers;
-  };
-export type latestDeletionRequestV1AccountDeletionRequestsLatestGetResponse =
-  latestDeletionRequestV1AccountDeletionRequestsLatestGetResponseSuccess;
-
-export const getLatestDeletionRequestV1AccountDeletionRequestsLatestGetUrl =
-  () => {
-    return `/v1/account/deletion-requests/latest`;
-  };
-
-export const latestDeletionRequestV1AccountDeletionRequestsLatestGet = async (
-  options?: RequestInit,
-): Promise<latestDeletionRequestV1AccountDeletionRequestsLatestGetResponse> => {
-  return customFetch<latestDeletionRequestV1AccountDeletionRequestsLatestGetResponse>(
-    getLatestDeletionRequestV1AccountDeletionRequestsLatestGetUrl(),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
 
 /**
  * @summary Create Image Upload Url
  */
-export type createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponse200 =
-  {
-    data: ImageUploadResponse;
-    status: 200;
-  };
+export type createImageUploadUrlResponse200 = {
+  data: ImageUploadResponse
+  status: 200
+}
 
-export type createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponse422 =
-  {
-    data: HTTPValidationError;
-    status: 422;
-  };
+export type createImageUploadUrlResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
 
-export type createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponseSuccess =
-  createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponse200 & {
-    headers: Headers;
-  };
-export type createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponseError =
-  createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponse422 & {
-    headers: Headers;
-  };
-
-export type createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponse =
-  | createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponseSuccess
-  | createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponseError;
-
-export const getCreateImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostUrl = (
-  entryId: string,
-) => {
-  return `/v1/images/entries/${entryId}/upload-url`;
+export type createImageUploadUrlResponseSuccess = (createImageUploadUrlResponse200) & {
+  headers: Headers;
+};
+export type createImageUploadUrlResponseError = (createImageUploadUrlResponse422) & {
+  headers: Headers;
 };
 
-export const createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPost = async (
-  entryId: string,
-  imageUploadRequest: ImageUploadRequest,
-  options?: RequestInit,
-): Promise<createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponse> => {
-  return customFetch<createImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponse>(
-    getCreateImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostUrl(entryId),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(imageUploadRequest),
-    },
-  );
+export type createImageUploadUrlResponse = (createImageUploadUrlResponseSuccess | createImageUploadUrlResponseError)
+
+export const getCreateImageUploadUrlUrl = (pathCode: string,
+    entrySlug: string,) => {
+
+
+  
+
+  return `/v1/paths/${pathCode}/entries/${entrySlug}/images/upload-url`
+}
+
+export const createImageUploadUrl = async (pathCode: string,
+    entrySlug: string,
+    imageUploadRequest: ImageUploadRequest, options?: RequestInit): Promise<createImageUploadUrlResponse> => {
+  
+  return customFetch<createImageUploadUrlResponse>(getCreateImageUploadUrlUrl(pathCode,entrySlug),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      imageUploadRequest,)
+  }
+);}
+  
+
+
+/**
+ * @summary Admin Login
+ */
+export type adminLoginResponse200 = {
+  data: AdminLoginResponse
+  status: 200
+}
+
+export type adminLoginResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type adminLoginResponseSuccess = (adminLoginResponse200) & {
+  headers: Headers;
 };
+export type adminLoginResponseError = (adminLoginResponse422) & {
+  headers: Headers;
+};
+
+export type adminLoginResponse = (adminLoginResponseSuccess | adminLoginResponseError)
+
+export const getAdminLoginUrl = () => {
+
+
+  
+
+  return `/v1/admin/login`
+}
+
+export const adminLogin = async (adminLoginRequest: AdminLoginRequest, options?: RequestInit): Promise<adminLoginResponse> => {
+  
+  return customFetch<adminLoginResponse>(getAdminLoginUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      adminLoginRequest,)
+  }
+);}
+  
+
+
+/**
+ * @summary Set Path Creation Approval
+ */
+export type setPathCreationApprovalResponse200 = {
+  data: PathCreationApprovalResponse
+  status: 200
+}
+
+export type setPathCreationApprovalResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type setPathCreationApprovalResponseSuccess = (setPathCreationApprovalResponse200) & {
+  headers: Headers;
+};
+export type setPathCreationApprovalResponseError = (setPathCreationApprovalResponse422) & {
+  headers: Headers;
+};
+
+export type setPathCreationApprovalResponse = (setPathCreationApprovalResponseSuccess | setPathCreationApprovalResponseError)
+
+export const getSetPathCreationApprovalUrl = (userId: string,) => {
+
+
+  
+
+  return `/v1/admin/users/${userId}/path-creation-approval`
+}
+
+export const setPathCreationApproval = async (userId: string,
+    pathCreationApprovalRequest: PathCreationApprovalRequest, options?: RequestInit): Promise<setPathCreationApprovalResponse> => {
+  
+  return customFetch<setPathCreationApprovalResponse>(getSetPathCreationApprovalUrl(userId),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pathCreationApprovalRequest,)
+  }
+);}
+  
+
+
+/**
+ * @summary Get Profile
+ */
+export type getProfileResponse200 = {
+  data: UserProfileResponse
+  status: 200
+}
+
+export type getProfileResponseSuccess = (getProfileResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getProfileResponse = (getProfileResponseSuccess)
+
+export const getGetProfileUrl = () => {
+
+
+  
+
+  return `/v1/account/profile`
+}
+
+export const getProfile = async ( options?: RequestInit): Promise<getProfileResponse> => {
+  
+  return customFetch<getProfileResponse>(getGetProfileUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+/**
+ * @summary Update Display Name
+ */
+export type updateDisplayNameResponse200 = {
+  data: UserProfileResponse
+  status: 200
+}
+
+export type updateDisplayNameResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type updateDisplayNameResponseSuccess = (updateDisplayNameResponse200) & {
+  headers: Headers;
+};
+export type updateDisplayNameResponseError = (updateDisplayNameResponse422) & {
+  headers: Headers;
+};
+
+export type updateDisplayNameResponse = (updateDisplayNameResponseSuccess | updateDisplayNameResponseError)
+
+export const getUpdateDisplayNameUrl = () => {
+
+
+  
+
+  return `/v1/account/display-name`
+}
+
+export const updateDisplayName = async (userDisplayNameUpdateRequest: UserDisplayNameUpdateRequest, options?: RequestInit): Promise<updateDisplayNameResponse> => {
+  
+  return customFetch<updateDisplayNameResponse>(getUpdateDisplayNameUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      userDisplayNameUpdateRequest,)
+  }
+);}
+  
+
+
+/**
+ * @summary Create Deletion Request
+ */
+export type createDeletionRequestResponse200 = {
+  data: DeletionRequestResponse
+  status: 200
+}
+
+export type createDeletionRequestResponseSuccess = (createDeletionRequestResponse200) & {
+  headers: Headers;
+};
+;
+
+export type createDeletionRequestResponse = (createDeletionRequestResponseSuccess)
+
+export const getCreateDeletionRequestUrl = () => {
+
+
+  
+
+  return `/v1/account/deletion-requests`
+}
+
+export const createDeletionRequest = async ( options?: RequestInit): Promise<createDeletionRequestResponse> => {
+  
+  return customFetch<createDeletionRequestResponse>(getCreateDeletionRequestUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+  
+
+
+/**
+ * @summary Latest Deletion Request
+ */
+export type getLatestDeletionRequestResponse200 = {
+  data: DeletionRequestResponse
+  status: 200
+}
+
+export type getLatestDeletionRequestResponseSuccess = (getLatestDeletionRequestResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getLatestDeletionRequestResponse = (getLatestDeletionRequestResponseSuccess)
+
+export const getGetLatestDeletionRequestUrl = () => {
+
+
+  
+
+  return `/v1/account/deletion-requests/latest`
+}
+
+export const getLatestDeletionRequest = async ( options?: RequestInit): Promise<getLatestDeletionRequestResponse> => {
+  
+  return customFetch<getLatestDeletionRequestResponse>(getGetLatestDeletionRequestUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
 
 /**
  * @summary Complete Image Upload
  */
-export type completeImageUploadV1ImagesImageIdCompletePostResponse200 = {
-  data: ImageResponse;
-  status: 200;
+export type completeImageUploadResponse200 = {
+  data: ImageResponse
+  status: 200
+}
+
+export type completeImageUploadResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type completeImageUploadResponseSuccess = (completeImageUploadResponse200) & {
+  headers: Headers;
+};
+export type completeImageUploadResponseError = (completeImageUploadResponse422) & {
+  headers: Headers;
 };
 
-export type completeImageUploadV1ImagesImageIdCompletePostResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type completeImageUploadResponse = (completeImageUploadResponseSuccess | completeImageUploadResponseError)
 
-export type completeImageUploadV1ImagesImageIdCompletePostResponseSuccess =
-  completeImageUploadV1ImagesImageIdCompletePostResponse200 & {
-    headers: Headers;
-  };
-export type completeImageUploadV1ImagesImageIdCompletePostResponseError =
-  completeImageUploadV1ImagesImageIdCompletePostResponse422 & {
-    headers: Headers;
-  };
+export const getCompleteImageUploadUrl = (imageId: string,) => {
 
-export type completeImageUploadV1ImagesImageIdCompletePostResponse =
-  | completeImageUploadV1ImagesImageIdCompletePostResponseSuccess
-  | completeImageUploadV1ImagesImageIdCompletePostResponseError;
 
-export const getCompleteImageUploadV1ImagesImageIdCompletePostUrl = (
-  imageId: string,
-) => {
-  return `/v1/images/${imageId}/complete`;
-};
+  
 
-export const completeImageUploadV1ImagesImageIdCompletePost = async (
-  imageId: string,
-  imageCompleteRequest: ImageCompleteRequest,
-  options?: RequestInit,
-): Promise<completeImageUploadV1ImagesImageIdCompletePostResponse> => {
-  return customFetch<completeImageUploadV1ImagesImageIdCompletePostResponse>(
-    getCompleteImageUploadV1ImagesImageIdCompletePostUrl(imageId),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(imageCompleteRequest),
-    },
-  );
-};
+  return `/v1/images/${imageId}/complete`
+}
+
+export const completeImageUpload = async (imageId: string,
+    imageCompleteRequest: ImageCompleteRequest, options?: RequestInit): Promise<completeImageUploadResponse> => {
+  
+  return customFetch<completeImageUploadResponse>(getCompleteImageUploadUrl(imageId),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      imageCompleteRequest,)
+  }
+);}
+  
+
 
 /**
  * @summary Process Pending Images
  */
-export type processPendingImagesV1ImagesProcessPendingPostResponse204 = {
-  data: void;
-  status: 204;
-};
+export type processPendingImagesResponse204 = {
+  data: void
+  status: 204
+}
 
-export type processPendingImagesV1ImagesProcessPendingPostResponseSuccess =
-  processPendingImagesV1ImagesProcessPendingPostResponse204 & {
-    headers: Headers;
-  };
-export type processPendingImagesV1ImagesProcessPendingPostResponse =
-  processPendingImagesV1ImagesProcessPendingPostResponseSuccess;
-
-export const getProcessPendingImagesV1ImagesProcessPendingPostUrl = () => {
-  return `/v1/images/process-pending`;
+export type processPendingImagesResponseSuccess = (processPendingImagesResponse204) & {
+  headers: Headers;
 };
+;
 
-export const processPendingImagesV1ImagesProcessPendingPost = async (
-  options?: RequestInit,
-): Promise<processPendingImagesV1ImagesProcessPendingPostResponse> => {
-  return customFetch<processPendingImagesV1ImagesProcessPendingPostResponse>(
-    getProcessPendingImagesV1ImagesProcessPendingPostUrl(),
-    {
-      ...options,
-      method: 'POST',
-    },
-  );
-};
+export type processPendingImagesResponse = (processPendingImagesResponseSuccess)
+
+export const getProcessPendingImagesUrl = () => {
+
+
+  
+
+  return `/v1/images/process-pending`
+}
+
+export const processPendingImages = async ( options?: RequestInit): Promise<processPendingImagesResponse> => {
+  
+  return customFetch<processPendingImagesResponse>(getProcessPendingImagesUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+  
+
 
 /**
  * @summary Create Export
  */
-export type createExportV1ExportsPostResponse202 = {
-  data: ExportJobResponse;
-  status: 202;
+export type createExportResponse202 = {
+  data: ExportJobResponse
+  status: 202
+}
+
+export type createExportResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type createExportResponseSuccess = (createExportResponse202) & {
+  headers: Headers;
+};
+export type createExportResponseError = (createExportResponse422) & {
+  headers: Headers;
 };
 
-export type createExportV1ExportsPostResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type createExportResponse = (createExportResponseSuccess | createExportResponseError)
 
-export type createExportV1ExportsPostResponseSuccess =
-  createExportV1ExportsPostResponse202 & {
-    headers: Headers;
-  };
-export type createExportV1ExportsPostResponseError =
-  createExportV1ExportsPostResponse422 & {
-    headers: Headers;
-  };
+export const getCreateExportUrl = () => {
 
-export type createExportV1ExportsPostResponse =
-  | createExportV1ExportsPostResponseSuccess
-  | createExportV1ExportsPostResponseError;
 
-export const getCreateExportV1ExportsPostUrl = () => {
-  return `/v1/exports`;
-};
+  
 
-export const createExportV1ExportsPost = async (
-  exportCreateRequest: ExportCreateRequest,
-  options?: RequestInit,
-): Promise<createExportV1ExportsPostResponse> => {
-  return customFetch<createExportV1ExportsPostResponse>(
-    getCreateExportV1ExportsPostUrl(),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(exportCreateRequest),
-    },
-  );
-};
+  return `/v1/exports`
+}
+
+export const createExport = async (exportCreateRequest: ExportCreateRequest, options?: RequestInit): Promise<createExportResponse> => {
+  
+  return customFetch<createExportResponse>(getCreateExportUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      exportCreateRequest,)
+  }
+);}
+  
+
 
 /**
  * @summary Get Export
  */
-export type getExportV1ExportsExportIdGetResponse200 = {
-  data: ExportJobResponse;
-  status: 200;
+export type getExportResponse200 = {
+  data: ExportJobResponse
+  status: 200
+}
+
+export type getExportResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type getExportResponseSuccess = (getExportResponse200) & {
+  headers: Headers;
+};
+export type getExportResponseError = (getExportResponse422) & {
+  headers: Headers;
 };
 
-export type getExportV1ExportsExportIdGetResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type getExportResponse = (getExportResponseSuccess | getExportResponseError)
 
-export type getExportV1ExportsExportIdGetResponseSuccess =
-  getExportV1ExportsExportIdGetResponse200 & {
-    headers: Headers;
-  };
-export type getExportV1ExportsExportIdGetResponseError =
-  getExportV1ExportsExportIdGetResponse422 & {
-    headers: Headers;
-  };
+export const getGetExportUrl = (exportId: string,) => {
 
-export type getExportV1ExportsExportIdGetResponse =
-  | getExportV1ExportsExportIdGetResponseSuccess
-  | getExportV1ExportsExportIdGetResponseError;
 
-export const getGetExportV1ExportsExportIdGetUrl = (exportId: string) => {
-  return `/v1/exports/${exportId}`;
-};
+  
 
-export const getExportV1ExportsExportIdGet = async (
-  exportId: string,
-  options?: RequestInit,
-): Promise<getExportV1ExportsExportIdGetResponse> => {
-  return customFetch<getExportV1ExportsExportIdGetResponse>(
-    getGetExportV1ExportsExportIdGetUrl(exportId),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
+  return `/v1/exports/${exportId}`
+}
+
+export const getExport = async (exportId: string, options?: RequestInit): Promise<getExportResponse> => {
+  
+  return customFetch<getExportResponse>(getGetExportUrl(exportId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
 
 /**
  * @summary Download Json
  */
-export type downloadJsonV1ExportsExportIdDownloadJsonGetResponse200 = {
-  data: DownloadURLResponse;
-  status: 200;
+export type downloadExportJsonResponse200 = {
+  data: DownloadURLResponse
+  status: 200
+}
+
+export type downloadExportJsonResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type downloadExportJsonResponseSuccess = (downloadExportJsonResponse200) & {
+  headers: Headers;
+};
+export type downloadExportJsonResponseError = (downloadExportJsonResponse422) & {
+  headers: Headers;
 };
 
-export type downloadJsonV1ExportsExportIdDownloadJsonGetResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type downloadExportJsonResponse = (downloadExportJsonResponseSuccess | downloadExportJsonResponseError)
 
-export type downloadJsonV1ExportsExportIdDownloadJsonGetResponseSuccess =
-  downloadJsonV1ExportsExportIdDownloadJsonGetResponse200 & {
-    headers: Headers;
-  };
-export type downloadJsonV1ExportsExportIdDownloadJsonGetResponseError =
-  downloadJsonV1ExportsExportIdDownloadJsonGetResponse422 & {
-    headers: Headers;
-  };
+export const getDownloadExportJsonUrl = (exportId: string,) => {
 
-export type downloadJsonV1ExportsExportIdDownloadJsonGetResponse =
-  | downloadJsonV1ExportsExportIdDownloadJsonGetResponseSuccess
-  | downloadJsonV1ExportsExportIdDownloadJsonGetResponseError;
 
-export const getDownloadJsonV1ExportsExportIdDownloadJsonGetUrl = (
-  exportId: string,
-) => {
-  return `/v1/exports/${exportId}/download/json`;
-};
+  
 
-export const downloadJsonV1ExportsExportIdDownloadJsonGet = async (
-  exportId: string,
-  options?: RequestInit,
-): Promise<downloadJsonV1ExportsExportIdDownloadJsonGetResponse> => {
-  return customFetch<downloadJsonV1ExportsExportIdDownloadJsonGetResponse>(
-    getDownloadJsonV1ExportsExportIdDownloadJsonGetUrl(exportId),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
+  return `/v1/exports/${exportId}/download/json`
+}
+
+export const downloadExportJson = async (exportId: string, options?: RequestInit): Promise<downloadExportJsonResponse> => {
+  
+  return customFetch<downloadExportJsonResponse>(getDownloadExportJsonUrl(exportId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
 
 /**
  * @summary Download Images
  */
-export type downloadImagesV1ExportsExportIdDownloadImagesGetResponse200 = {
-  data: DownloadURLResponse;
-  status: 200;
+export type downloadExportImagesResponse200 = {
+  data: DownloadURLResponse
+  status: 200
+}
+
+export type downloadExportImagesResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type downloadExportImagesResponseSuccess = (downloadExportImagesResponse200) & {
+  headers: Headers;
+};
+export type downloadExportImagesResponseError = (downloadExportImagesResponse422) & {
+  headers: Headers;
 };
 
-export type downloadImagesV1ExportsExportIdDownloadImagesGetResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type downloadExportImagesResponse = (downloadExportImagesResponseSuccess | downloadExportImagesResponseError)
 
-export type downloadImagesV1ExportsExportIdDownloadImagesGetResponseSuccess =
-  downloadImagesV1ExportsExportIdDownloadImagesGetResponse200 & {
-    headers: Headers;
-  };
-export type downloadImagesV1ExportsExportIdDownloadImagesGetResponseError =
-  downloadImagesV1ExportsExportIdDownloadImagesGetResponse422 & {
-    headers: Headers;
-  };
+export const getDownloadExportImagesUrl = (exportId: string,) => {
 
-export type downloadImagesV1ExportsExportIdDownloadImagesGetResponse =
-  | downloadImagesV1ExportsExportIdDownloadImagesGetResponseSuccess
-  | downloadImagesV1ExportsExportIdDownloadImagesGetResponseError;
 
-export const getDownloadImagesV1ExportsExportIdDownloadImagesGetUrl = (
-  exportId: string,
-) => {
-  return `/v1/exports/${exportId}/download/images`;
-};
+  
 
-export const downloadImagesV1ExportsExportIdDownloadImagesGet = async (
-  exportId: string,
-  options?: RequestInit,
-): Promise<downloadImagesV1ExportsExportIdDownloadImagesGetResponse> => {
-  return customFetch<downloadImagesV1ExportsExportIdDownloadImagesGetResponse>(
-    getDownloadImagesV1ExportsExportIdDownloadImagesGetUrl(exportId),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
+  return `/v1/exports/${exportId}/download/images`
+}
+
+export const downloadExportImages = async (exportId: string, options?: RequestInit): Promise<downloadExportImagesResponse> => {
+  
+  return customFetch<downloadExportImagesResponse>(getDownloadExportImagesUrl(exportId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
 
 /**
  * Return the Google OAuth authorization URL for the given callback URI.
  * @summary Oauth Login
  */
-export type oauthLoginV1AuthLoginGetResponse200 = {
-  data: OAuthLoginResponse;
-  status: 200;
+export type authLoginResponse200 = {
+  data: OAuthLoginResponse
+  status: 200
+}
+
+export type authLoginResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type authLoginResponseSuccess = (authLoginResponse200) & {
+  headers: Headers;
+};
+export type authLoginResponseError = (authLoginResponse422) & {
+  headers: Headers;
 };
 
-export type oauthLoginV1AuthLoginGetResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+export type authLoginResponse = (authLoginResponseSuccess | authLoginResponseError)
 
-export type oauthLoginV1AuthLoginGetResponseSuccess =
-  oauthLoginV1AuthLoginGetResponse200 & {
-    headers: Headers;
-  };
-export type oauthLoginV1AuthLoginGetResponseError =
-  oauthLoginV1AuthLoginGetResponse422 & {
-    headers: Headers;
-  };
-
-export type oauthLoginV1AuthLoginGetResponse =
-  | oauthLoginV1AuthLoginGetResponseSuccess
-  | oauthLoginV1AuthLoginGetResponseError;
-
-export const getOauthLoginV1AuthLoginGetUrl = (
-  params: OauthLoginV1AuthLoginGetParams,
-) => {
+export const getAuthLoginUrl = (params: AuthLoginParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString());
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0
-    ? `/v1/auth/login?${stringifiedParams}`
-    : `/v1/auth/login`;
-};
+  return stringifiedParams.length > 0 ? `/v1/auth/login?${stringifiedParams}` : `/v1/auth/login`
+}
 
-export const oauthLoginV1AuthLoginGet = async (
-  params: OauthLoginV1AuthLoginGetParams,
-  options?: RequestInit,
-): Promise<oauthLoginV1AuthLoginGetResponse> => {
-  return customFetch<oauthLoginV1AuthLoginGetResponse>(
-    getOauthLoginV1AuthLoginGetUrl(params),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
+export const authLogin = async (params: AuthLoginParams, options?: RequestInit): Promise<authLoginResponse> => {
+  
+  return customFetch<authLoginResponse>(getAuthLoginUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
 
 /**
  * Exchange the OAuth code for a user session token.
  * @summary Oauth Callback
  */
-export type oauthCallbackV1AuthCallbackPostResponse200 = {
-  data: OAuthCallbackResponse;
-  status: 200;
+export type authCallbackResponse200 = {
+  data: OAuthCallbackResponse
+  status: 200
+}
+
+export type authCallbackResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type authCallbackResponseSuccess = (authCallbackResponse200) & {
+  headers: Headers;
+};
+export type authCallbackResponseError = (authCallbackResponse422) & {
+  headers: Headers;
 };
 
-export type oauthCallbackV1AuthCallbackPostResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
+export type authCallbackResponse = (authCallbackResponseSuccess | authCallbackResponseError)
+
+export const getAuthCallbackUrl = () => {
+
+
+  
+
+  return `/v1/auth/callback`
+}
+
+export const authCallback = async (oAuthCallbackRequest: OAuthCallbackRequest, options?: RequestInit): Promise<authCallbackResponse> => {
+  
+  return customFetch<authCallbackResponse>(getAuthCallbackUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      oAuthCallbackRequest,)
+  }
+);}
+  
+
+
+/**
+ * Return a response for GET requests to the OAuth callback endpoint.
+ * @summary Oauth Callback Get
+ */
+export type authCallbackRedirectResponse200 = {
+  data: OAuthCallbackResponse
+  status: 200
+}
+
+export type authCallbackRedirectResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type authCallbackRedirectResponseSuccess = (authCallbackRedirectResponse200) & {
+  headers: Headers;
+};
+export type authCallbackRedirectResponseError = (authCallbackRedirectResponse422) & {
+  headers: Headers;
 };
 
-export type oauthCallbackV1AuthCallbackPostResponseSuccess =
-  oauthCallbackV1AuthCallbackPostResponse200 & {
-    headers: Headers;
-  };
-export type oauthCallbackV1AuthCallbackPostResponseError =
-  oauthCallbackV1AuthCallbackPostResponse422 & {
-    headers: Headers;
-  };
+export type authCallbackRedirectResponse = (authCallbackRedirectResponseSuccess | authCallbackRedirectResponseError)
 
-export type oauthCallbackV1AuthCallbackPostResponse =
-  | oauthCallbackV1AuthCallbackPostResponseSuccess
-  | oauthCallbackV1AuthCallbackPostResponseError;
+export const getAuthCallbackRedirectUrl = (params: AuthCallbackRedirectParams,) => {
+  const normalizedParams = new URLSearchParams();
 
-export const getOauthCallbackV1AuthCallbackPostUrl = () => {
-  return `/v1/auth/callback`;
-};
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-export const oauthCallbackV1AuthCallbackPost = async (
-  oAuthCallbackRequest: OAuthCallbackRequest,
-  options?: RequestInit,
-): Promise<oauthCallbackV1AuthCallbackPostResponse> => {
-  return customFetch<oauthCallbackV1AuthCallbackPostResponse>(
-    getOauthCallbackV1AuthCallbackPostUrl(),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(oAuthCallbackRequest),
-    },
-  );
-};
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/v1/auth/callback?${stringifiedParams}` : `/v1/auth/callback`
+}
+
+export const authCallbackRedirect = async (params: AuthCallbackRedirectParams, options?: RequestInit): Promise<authCallbackRedirectResponse> => {
+  
+  return customFetch<authCallbackRedirectResponse>(getAuthCallbackRedirectUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
 
 /**
  * @summary Root
  */
-export type rootGetResponse200 = {
-  data: unknown;
-  status: 200;
-};
+export type rootResponse200 = {
+  data: unknown
+  status: 200
+}
 
-export type rootGetResponseSuccess = rootGetResponse200 & {
+export type rootResponseSuccess = (rootResponse200) & {
   headers: Headers;
 };
-export type rootGetResponse = rootGetResponseSuccess;
+;
 
-export const getRootGetUrl = () => {
-  return `/`;
-};
+export type rootResponse = (rootResponseSuccess)
 
-export const rootGet = async (
-  options?: RequestInit,
-): Promise<rootGetResponse> => {
-  return customFetch<rootGetResponse>(getRootGetUrl(), {
+export const getRootUrl = () => {
+
+
+  
+
+  return `/`
+}
+
+export const root = async ( options?: RequestInit): Promise<rootResponse> => {
+  
+  return customFetch<rootResponse>(getRootUrl(),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
 
-export const getHealthHealthGetResponseMock = (
-  overrideResponse: Partial<Extract<HealthResponse, object>> = {},
-): HealthResponse => ({
-  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  service: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
 
-export const getListPathsV1PathsGetResponseMock = (): PathResponse[] =>
-  Array.from(
-    { length: faker.number.int({ min: 1, max: 10 }) },
-    (_, i) => i + 1,
-  ).map(() => ({
-    path_id: faker.string.uuid(),
-    owner_user_id: faker.string.uuid(),
-    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    description: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    color: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    is_public: faker.datatype.boolean(),
-    created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  }));
+export const getHealthResponseMock = (overrideResponse: Partial<Extract<HealthResponse, object>> = {}): HealthResponse => ({status: faker.string.alpha({length: {min: 10, max: 20}}), service: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getCreatePathV1PathsPostResponseMock = (
-  overrideResponse: Partial<Extract<PathResponse, object>> = {},
-): PathResponse => ({
-  path_id: faker.string.uuid(),
-  owner_user_id: faker.string.uuid(),
-  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  description: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  color: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  is_public: faker.datatype.boolean(),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  ...overrideResponse,
-});
+export const getListPathsResponseMock = (): PathResponse[] => (Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({path_id: faker.string.alpha({length: {min: 10, max: 20}}), uuid: faker.string.uuid(), owner_user_id: faker.string.uuid(), title: faker.string.alpha({length: {min: 10, max: 20}}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), color: faker.string.alpha({length: {min: 10, max: 20}}), is_public: faker.datatype.boolean(), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z'})))
 
-export const getUpdatePathVisibilityV1PathsPathIdVisibilityPatchResponseMock = (
-  overrideResponse: Partial<Extract<PathResponse, object>> = {},
-): PathResponse => ({
-  path_id: faker.string.uuid(),
-  owner_user_id: faker.string.uuid(),
-  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  description: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  color: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  is_public: faker.datatype.boolean(),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  ...overrideResponse,
-});
+export const getCreatePathResponseMock = (overrideResponse: Partial<Extract<PathResponse, object>> = {}): PathResponse => ({path_id: faker.string.alpha({length: {min: 10, max: 20}}), uuid: faker.string.uuid(), owner_user_id: faker.string.uuid(), title: faker.string.alpha({length: {min: 10, max: 20}}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), color: faker.string.alpha({length: {min: 10, max: 20}}), is_public: faker.datatype.boolean(), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', ...overrideResponse})
 
-export const getListEntriesV1PathIdEntriesGetResponseMock =
-  (): EntryResponse[] =>
-    Array.from(
-      { length: faker.number.int({ min: 1, max: 10 }) },
-      (_, i) => i + 1,
-    ).map(() => ({
-      id: faker.string.uuid(),
-      path_id: faker.string.uuid(),
-      day: faker.date.past().toISOString().slice(0, 10),
-      edit_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    }));
+export const getUpdatePathVisibilityResponseMock = (overrideResponse: Partial<Extract<PathResponse, object>> = {}): PathResponse => ({path_id: faker.string.alpha({length: {min: 10, max: 20}}), uuid: faker.string.uuid(), owner_user_id: faker.string.uuid(), title: faker.string.alpha({length: {min: 10, max: 20}}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), color: faker.string.alpha({length: {min: 10, max: 20}}), is_public: faker.datatype.boolean(), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', ...overrideResponse})
 
-export const getCreateEntryV1PathIdEntriesPostResponseMock = (
-  overrideResponse: Partial<Extract<EntryResponse, object>> = {},
-): EntryResponse => ({
-  id: faker.string.uuid(),
-  path_id: faker.string.uuid(),
-  day: faker.date.past().toISOString().slice(0, 10),
-  edit_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
+export const getListEntriesResponseMock = (): EntryResponse[] => (Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), path_id: faker.string.alpha({length: {min: 10, max: 20}}), day: faker.date.past().toISOString().slice(0, 10), edit_id: faker.string.alpha({length: {min: 10, max: 20}})})))
 
-export const getGetEntryV1PathIdEntriesEntryIdGetResponseMock = (
-  overrideResponse: Partial<Extract<EntryContentResponse, object>> = {},
-): EntryContentResponse => ({
-  id: faker.string.uuid(),
-  path_id: faker.string.uuid(),
-  day: faker.date.past().toISOString().slice(0, 10),
-  edit_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  content: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
+export const getCreateEntryResponseMock = (overrideResponse: Partial<Extract<EntryResponse, object>> = {}): EntryResponse => ({id: faker.string.alpha({length: {min: 10, max: 20}}), path_id: faker.string.alpha({length: {min: 10, max: 20}}), day: faker.date.past().toISOString().slice(0, 10), edit_id: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getUpdateEntryV1PathIdEntriesEntryIdPutResponseMock = (
-  overrideResponse: Partial<Extract<EntryResponse, object>> = {},
-): EntryResponse => ({
-  id: faker.string.uuid(),
-  path_id: faker.string.uuid(),
-  day: faker.date.past().toISOString().slice(0, 10),
-  edit_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
+export const getGetEntryResponseMock = (overrideResponse: Partial<Extract<EntryContentResponse, object>> = {}): EntryContentResponse => ({id: faker.string.alpha({length: {min: 10, max: 20}}), path_id: faker.string.alpha({length: {min: 10, max: 20}}), day: faker.date.past().toISOString().slice(0, 10), edit_id: faker.string.alpha({length: {min: 10, max: 20}}), content: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getAdminLoginV1AdminLoginPostResponseMock = (
-  overrideResponse: Partial<Extract<AdminLoginResponse, object>> = {},
-): AdminLoginResponse => ({
-  token: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
+export const getUpdateEntryResponseMock = (overrideResponse: Partial<Extract<EntryResponse, object>> = {}): EntryResponse => ({id: faker.string.alpha({length: {min: 10, max: 20}}), path_id: faker.string.alpha({length: {min: 10, max: 20}}), day: faker.date.past().toISOString().slice(0, 10), edit_id: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getSetPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponseMock =
-  (
-    overrideResponse: Partial<
-      Extract<PathCreationApprovalResponse, object>
-    > = {},
-  ): PathCreationApprovalResponse => ({
-    user_id: faker.string.uuid(),
-    allowed: faker.datatype.boolean(),
-    ...overrideResponse,
-  });
+export const getCreateImageUploadUrlResponseMock = (overrideResponse: Partial<Extract<ImageUploadResponse, object>> = {}): ImageUploadResponse => ({image_id: faker.string.uuid(), upload_url: faker.string.alpha({length: {min: 10, max: 20}}), expires_in_seconds: faker.number.int(), ...overrideResponse})
 
-export const getGetProfileV1AccountProfileGetResponseMock = (
-  overrideResponse: Partial<Extract<UserProfileResponse, object>> = {},
-): UserProfileResponse => ({
-  user_id: faker.string.uuid(),
-  display_name: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  ...overrideResponse,
-});
+export const getAdminLoginResponseMock = (overrideResponse: Partial<Extract<AdminLoginResponse, object>> = {}): AdminLoginResponse => ({token: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getUpdateDisplayNameV1AccountDisplayNamePatchResponseMock = (
-  overrideResponse: Partial<Extract<UserProfileResponse, object>> = {},
-): UserProfileResponse => ({
-  user_id: faker.string.uuid(),
-  display_name: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  ...overrideResponse,
-});
+export const getSetPathCreationApprovalResponseMock = (overrideResponse: Partial<Extract<PathCreationApprovalResponse, object>> = {}): PathCreationApprovalResponse => ({user_id: faker.string.uuid(), allowed: faker.datatype.boolean(), ...overrideResponse})
 
-export const getCreateDeletionRequestV1AccountDeletionRequestsPostResponseMock =
-  (
-    overrideResponse: Partial<Extract<DeletionRequestResponse, object>> = {},
-  ): DeletionRequestResponse => ({
-    id: faker.string.uuid(),
-    state: faker.helpers.arrayElement([
-      'requested',
-      'running',
-      'complete',
-      'failed',
-    ] as const),
-    error_message: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    failure_code: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    attempt_count: faker.number.int(),
-    created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    ...overrideResponse,
-  });
+export const getGetProfileResponseMock = (overrideResponse: Partial<Extract<UserProfileResponse, object>> = {}): UserProfileResponse => ({user_id: faker.string.uuid(), display_name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), ...overrideResponse})
 
-export const getLatestDeletionRequestV1AccountDeletionRequestsLatestGetResponseMock =
-  (
-    overrideResponse: Partial<Extract<DeletionRequestResponse, object>> = {},
-  ): DeletionRequestResponse => ({
-    id: faker.string.uuid(),
-    state: faker.helpers.arrayElement([
-      'requested',
-      'running',
-      'complete',
-      'failed',
-    ] as const),
-    error_message: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    failure_code: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    attempt_count: faker.number.int(),
-    created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    ...overrideResponse,
-  });
+export const getUpdateDisplayNameResponseMock = (overrideResponse: Partial<Extract<UserProfileResponse, object>> = {}): UserProfileResponse => ({user_id: faker.string.uuid(), display_name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), ...overrideResponse})
 
-export const getCreateImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponseMock =
-  (
-    overrideResponse: Partial<Extract<ImageUploadResponse, object>> = {},
-  ): ImageUploadResponse => ({
-    image_id: faker.string.uuid(),
-    upload_url: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    expires_in_seconds: faker.number.int(),
-    ...overrideResponse,
-  });
+export const getCreateDeletionRequestResponseMock = (overrideResponse: Partial<Extract<DeletionRequestResponse, object>> = {}): DeletionRequestResponse => ({id: faker.string.uuid(), state: faker.helpers.arrayElement(['requested','running','complete','failed'] as const), error_message: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), failure_code: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), attempt_count: faker.number.int(), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', ...overrideResponse})
 
-export const getCompleteImageUploadV1ImagesImageIdCompletePostResponseMock = (
-  overrideResponse: Partial<Extract<ImageResponse, object>> = {},
-): ImageResponse => ({
-  id: faker.string.uuid(),
-  entry_id: faker.string.uuid(),
-  filename: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  strip_metadata: faker.datatype.boolean(),
-  content_type: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  byte_size: faker.helpers.arrayElement([faker.number.int(), null]),
-  ...overrideResponse,
-});
+export const getGetLatestDeletionRequestResponseMock = (overrideResponse: Partial<Extract<DeletionRequestResponse, object>> = {}): DeletionRequestResponse => ({id: faker.string.uuid(), state: faker.helpers.arrayElement(['requested','running','complete','failed'] as const), error_message: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), failure_code: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), attempt_count: faker.number.int(), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', ...overrideResponse})
 
-export const getCreateExportV1ExportsPostResponseMock = (
-  overrideResponse: Partial<Extract<ExportJobResponse, object>> = {},
-): ExportJobResponse => ({
-  id: faker.string.uuid(),
-  state: faker.helpers.arrayElement([
-    'queued',
-    'running',
-    'ready',
-    'failed',
-    'expired',
-    'cleaned',
-  ] as const),
-  requested_path_ids: Array.from(
-    { length: faker.number.int({ min: 1, max: 10 }) },
-    (_, i) => i + 1,
-  ).map(() => faker.string.uuid()),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  expires_at: faker.helpers.arrayElement([
-    faker.date.past().toISOString().slice(0, 19) + 'Z',
-    null,
-  ]),
-  failure_code: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  attempt_count: faker.number.int(),
-  ...overrideResponse,
-});
+export const getCompleteImageUploadResponseMock = (overrideResponse: Partial<Extract<ImageResponse, object>> = {}): ImageResponse => ({id: faker.string.uuid(), entry_id: faker.string.uuid(), filename: faker.string.alpha({length: {min: 10, max: 20}}), status: faker.string.alpha({length: {min: 10, max: 20}}), strip_metadata: faker.datatype.boolean(), content_type: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), byte_size: faker.helpers.arrayElement([faker.number.int(),null,]), ...overrideResponse})
 
-export const getGetExportV1ExportsExportIdGetResponseMock = (
-  overrideResponse: Partial<Extract<ExportJobResponse, object>> = {},
-): ExportJobResponse => ({
-  id: faker.string.uuid(),
-  state: faker.helpers.arrayElement([
-    'queued',
-    'running',
-    'ready',
-    'failed',
-    'expired',
-    'cleaned',
-  ] as const),
-  requested_path_ids: Array.from(
-    { length: faker.number.int({ min: 1, max: 10 }) },
-    (_, i) => i + 1,
-  ).map(() => faker.string.uuid()),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  expires_at: faker.helpers.arrayElement([
-    faker.date.past().toISOString().slice(0, 19) + 'Z',
-    null,
-  ]),
-  failure_code: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  attempt_count: faker.number.int(),
-  ...overrideResponse,
-});
+export const getCreateExportResponseMock = (overrideResponse: Partial<Extract<ExportJobResponse, object>> = {}): ExportJobResponse => ({id: faker.string.uuid(), state: faker.helpers.arrayElement(['queued','running','ready','failed','expired','cleaned'] as const), requested_path_ids: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', expires_at: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z',null,]), failure_code: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), attempt_count: faker.number.int(), ...overrideResponse})
 
-export const getDownloadJsonV1ExportsExportIdDownloadJsonGetResponseMock = (
-  overrideResponse: Partial<Extract<DownloadURLResponse, object>> = {},
-): DownloadURLResponse => ({
-  url: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  expires_in_seconds: faker.number.int(),
-  ...overrideResponse,
-});
+export const getGetExportResponseMock = (overrideResponse: Partial<Extract<ExportJobResponse, object>> = {}): ExportJobResponse => ({id: faker.string.uuid(), state: faker.helpers.arrayElement(['queued','running','ready','failed','expired','cleaned'] as const), requested_path_ids: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', expires_at: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z',null,]), failure_code: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), attempt_count: faker.number.int(), ...overrideResponse})
 
-export const getDownloadImagesV1ExportsExportIdDownloadImagesGetResponseMock = (
-  overrideResponse: Partial<Extract<DownloadURLResponse, object>> = {},
-): DownloadURLResponse => ({
-  url: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  expires_in_seconds: faker.number.int(),
-  ...overrideResponse,
-});
+export const getDownloadExportJsonResponseMock = (overrideResponse: Partial<Extract<DownloadURLResponse, object>> = {}): DownloadURLResponse => ({url: faker.string.alpha({length: {min: 10, max: 20}}), expires_in_seconds: faker.number.int(), ...overrideResponse})
 
-export const getOauthLoginV1AuthLoginGetResponseMock = (
-  overrideResponse: Partial<Extract<OAuthLoginResponse, object>> = {},
-): OAuthLoginResponse => ({
-  authorization_url: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
+export const getDownloadExportImagesResponseMock = (overrideResponse: Partial<Extract<DownloadURLResponse, object>> = {}): DownloadURLResponse => ({url: faker.string.alpha({length: {min: 10, max: 20}}), expires_in_seconds: faker.number.int(), ...overrideResponse})
 
-export const getOauthCallbackV1AuthCallbackPostResponseMock = (
-  overrideResponse: Partial<Extract<OAuthCallbackResponse, object>> = {},
-): OAuthCallbackResponse => ({
-  token: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  user_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  display_name: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  ...overrideResponse,
-});
+export const getAuthLoginResponseMock = (overrideResponse: Partial<Extract<OAuthLoginResponse, object>> = {}): OAuthLoginResponse => ({authorization_url: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getHealthHealthGetMockHandler = (
-  overrideResponse?:
-    | HealthResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<HealthResponse> | HealthResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/health',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getHealthHealthGetResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getAuthCallbackResponseMock = (overrideResponse: Partial<Extract<OAuthCallbackResponse, object>> = {}): OAuthCallbackResponse => ({token: faker.string.alpha({length: {min: 10, max: 20}}), user_id: faker.string.alpha({length: {min: 10, max: 20}}), display_name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), ...overrideResponse})
 
-export const getListPathsV1PathsGetMockHandler = (
-  overrideResponse?:
-    | PathResponse[]
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<PathResponse[]> | PathResponse[]),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/paths',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getListPathsV1PathsGetResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getAuthCallbackRedirectResponseMock = (overrideResponse: Partial<Extract<OAuthCallbackResponse, object>> = {}): OAuthCallbackResponse => ({token: faker.string.alpha({length: {min: 10, max: 20}}), user_id: faker.string.alpha({length: {min: 10, max: 20}}), display_name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), ...overrideResponse})
 
-export const getCreatePathV1PathsPostMockHandler = (
-  overrideResponse?:
-    | PathResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<PathResponse> | PathResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/paths',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getCreatePathV1PathsPostResponseMock(),
-        { status: 201 },
-      );
-    },
-    options,
-  );
-};
 
-export const getUpdatePathVisibilityV1PathsPathIdVisibilityPatchMockHandler = (
-  overrideResponse?:
-    | PathResponse
-    | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0],
-      ) => Promise<PathResponse> | PathResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.patch(
-    '*/v1/paths/:pathId/visibility',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getUpdatePathVisibilityV1PathsPathIdVisibilityPatchResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getHealthMockHandler = (overrideResponse?: HealthResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<HealthResponse> | HealthResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/health', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getHealthResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getCreateSubscriptionV1PathsPathIdSubscriptionsPostMockHandler = (
-  overrideResponse?:
-    | void
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<void> | void),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/paths/:pathId/subscriptions',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      if (typeof overrideResponse === 'function') {
-        await overrideResponse(info);
-      }
+export const getListPathsMockHandler = (overrideResponse?: PathResponse[] | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PathResponse[]> | PathResponse[]), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/paths', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getListPathsResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-      return new HttpResponse(null, { status: 204 });
-    },
-    options,
-  );
-};
+export const getCreatePathMockHandler = (overrideResponse?: PathResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<PathResponse> | PathResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/paths', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreatePathResponseMock(),
+      { status: 201
+      })
+  }, options)
+}
 
-export const getDeleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteMockHandler =
-  (
-    overrideResponse?:
-      | void
-      | ((
-          info: Parameters<Parameters<typeof http.delete>[1]>[0],
-        ) => Promise<void> | void),
-    options?: RequestHandlerOptions,
-  ) => {
-    return http.delete(
-      '*/v1/paths/:pathId/subscriptions/:targetUserId',
-      async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-        if (typeof overrideResponse === 'function') {
-          await overrideResponse(info);
-        }
+export const getUpdatePathVisibilityMockHandler = (overrideResponse?: PathResponse | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<PathResponse> | PathResponse), options?: RequestHandlerOptions) => {
+  return http.patch('*/v1/paths/:pathCode/visibility', async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUpdatePathVisibilityResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-        return new HttpResponse(null, { status: 204 });
-      },
-      options,
-    );
-  };
+export const getCreateSubscriptionMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/paths/:pathCode/subscriptions', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+  
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
 
-export const getListEntriesV1PathIdEntriesGetMockHandler = (
-  overrideResponse?:
-    | EntryResponse[]
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<EntryResponse[]> | EntryResponse[]),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/:pathId/entries',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getListEntriesV1PathIdEntriesGetResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getDeleteSubscriptionMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.delete('*/v1/paths/:pathCode/subscriptions/:targetUserId', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+  
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
 
-export const getCreateEntryV1PathIdEntriesPostMockHandler = (
-  overrideResponse?:
-    | EntryResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<EntryResponse> | EntryResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/:pathId/entries',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getCreateEntryV1PathIdEntriesPostResponseMock(),
-        { status: 201 },
-      );
-    },
-    options,
-  );
-};
+export const getListEntriesMockHandler = (overrideResponse?: EntryResponse[] | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<EntryResponse[]> | EntryResponse[]), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/paths/:pathCode/entries', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getListEntriesResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getGetEntryV1PathIdEntriesEntryIdGetMockHandler = (
-  overrideResponse?:
-    | EntryContentResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<EntryContentResponse> | EntryContentResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/:pathId/entries/:entryId',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getGetEntryV1PathIdEntriesEntryIdGetResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getCreateEntryMockHandler = (overrideResponse?: EntryResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<EntryResponse> | EntryResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/paths/:pathCode/entries', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreateEntryResponseMock(),
+      { status: 201
+      })
+  }, options)
+}
 
-export const getUpdateEntryV1PathIdEntriesEntryIdPutMockHandler = (
-  overrideResponse?:
-    | EntryResponse
-    | ((
-        info: Parameters<Parameters<typeof http.put>[1]>[0],
-      ) => Promise<EntryResponse> | EntryResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.put(
-    '*/v1/:pathId/entries/:entryId',
-    async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getUpdateEntryV1PathIdEntriesEntryIdPutResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getGetEntryMockHandler = (overrideResponse?: EntryContentResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<EntryContentResponse> | EntryContentResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/paths/:pathCode/entries/:entrySlug', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetEntryResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getDeleteEntryV1PathIdEntriesEntryIdDeleteMockHandler = (
-  overrideResponse?:
-    | void
-    | ((
-        info: Parameters<Parameters<typeof http.delete>[1]>[0],
-      ) => Promise<void> | void),
-  options?: RequestHandlerOptions,
-) => {
-  return http.delete(
-    '*/v1/:pathId/entries/:entryId',
-    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-      if (typeof overrideResponse === 'function') {
-        await overrideResponse(info);
-      }
+export const getUpdateEntryMockHandler = (overrideResponse?: EntryResponse | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<EntryResponse> | EntryResponse), options?: RequestHandlerOptions) => {
+  return http.put('*/v1/paths/:pathCode/entries/:entrySlug', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUpdateEntryResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-      return new HttpResponse(null, { status: 204 });
-    },
-    options,
-  );
-};
+export const getDeleteEntryMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.delete('*/v1/paths/:pathCode/entries/:entrySlug', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+  
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
 
-export const getAdminLoginV1AdminLoginPostMockHandler = (
-  overrideResponse?:
-    | AdminLoginResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<AdminLoginResponse> | AdminLoginResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/admin/login',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getAdminLoginV1AdminLoginPostResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getCreateImageUploadUrlMockHandler = (overrideResponse?: ImageUploadResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ImageUploadResponse> | ImageUploadResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/paths/:pathCode/entries/:entrySlug/images/upload-url', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreateImageUploadUrlResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getSetPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutMockHandler =
-  (
-    overrideResponse?:
-      | PathCreationApprovalResponse
-      | ((
-          info: Parameters<Parameters<typeof http.put>[1]>[0],
-        ) =>
-          | Promise<PathCreationApprovalResponse>
-          | PathCreationApprovalResponse),
-    options?: RequestHandlerOptions,
-  ) => {
-    return http.put(
-      '*/v1/admin/users/:userId/path-creation-approval',
-      async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-        return HttpResponse.json(
-          overrideResponse !== undefined
-            ? typeof overrideResponse === 'function'
-              ? await overrideResponse(info)
-              : overrideResponse
-            : getSetPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutResponseMock(),
-          { status: 200 },
-        );
-      },
-      options,
-    );
-  };
+export const getAdminLoginMockHandler = (overrideResponse?: AdminLoginResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<AdminLoginResponse> | AdminLoginResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/admin/login', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAdminLoginResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getGetProfileV1AccountProfileGetMockHandler = (
-  overrideResponse?:
-    | UserProfileResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<UserProfileResponse> | UserProfileResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/account/profile',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getGetProfileV1AccountProfileGetResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getSetPathCreationApprovalMockHandler = (overrideResponse?: PathCreationApprovalResponse | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<PathCreationApprovalResponse> | PathCreationApprovalResponse), options?: RequestHandlerOptions) => {
+  return http.put('*/v1/admin/users/:userId/path-creation-approval', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getSetPathCreationApprovalResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getUpdateDisplayNameV1AccountDisplayNamePatchMockHandler = (
-  overrideResponse?:
-    | UserProfileResponse
-    | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0],
-      ) => Promise<UserProfileResponse> | UserProfileResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.patch(
-    '*/v1/account/display-name',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getUpdateDisplayNameV1AccountDisplayNamePatchResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getGetProfileMockHandler = (overrideResponse?: UserProfileResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<UserProfileResponse> | UserProfileResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/account/profile', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetProfileResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getCreateDeletionRequestV1AccountDeletionRequestsPostMockHandler =
-  (
-    overrideResponse?:
-      | DeletionRequestResponse
-      | ((
-          info: Parameters<Parameters<typeof http.post>[1]>[0],
-        ) => Promise<DeletionRequestResponse> | DeletionRequestResponse),
-    options?: RequestHandlerOptions,
-  ) => {
-    return http.post(
-      '*/v1/account/deletion-requests',
-      async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-        return HttpResponse.json(
-          overrideResponse !== undefined
-            ? typeof overrideResponse === 'function'
-              ? await overrideResponse(info)
-              : overrideResponse
-            : getCreateDeletionRequestV1AccountDeletionRequestsPostResponseMock(),
-          { status: 200 },
-        );
-      },
-      options,
-    );
-  };
+export const getUpdateDisplayNameMockHandler = (overrideResponse?: UserProfileResponse | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<UserProfileResponse> | UserProfileResponse), options?: RequestHandlerOptions) => {
+  return http.patch('*/v1/account/display-name', async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUpdateDisplayNameResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getLatestDeletionRequestV1AccountDeletionRequestsLatestGetMockHandler =
-  (
-    overrideResponse?:
-      | DeletionRequestResponse
-      | ((
-          info: Parameters<Parameters<typeof http.get>[1]>[0],
-        ) => Promise<DeletionRequestResponse> | DeletionRequestResponse),
-    options?: RequestHandlerOptions,
-  ) => {
-    return http.get(
-      '*/v1/account/deletion-requests/latest',
-      async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-        return HttpResponse.json(
-          overrideResponse !== undefined
-            ? typeof overrideResponse === 'function'
-              ? await overrideResponse(info)
-              : overrideResponse
-            : getLatestDeletionRequestV1AccountDeletionRequestsLatestGetResponseMock(),
-          { status: 200 },
-        );
-      },
-      options,
-    );
-  };
+export const getCreateDeletionRequestMockHandler = (overrideResponse?: DeletionRequestResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<DeletionRequestResponse> | DeletionRequestResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/account/deletion-requests', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreateDeletionRequestResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getCreateImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostMockHandler =
-  (
-    overrideResponse?:
-      | ImageUploadResponse
-      | ((
-          info: Parameters<Parameters<typeof http.post>[1]>[0],
-        ) => Promise<ImageUploadResponse> | ImageUploadResponse),
-    options?: RequestHandlerOptions,
-  ) => {
-    return http.post(
-      '*/v1/images/entries/:entryId/upload-url',
-      async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-        return HttpResponse.json(
-          overrideResponse !== undefined
-            ? typeof overrideResponse === 'function'
-              ? await overrideResponse(info)
-              : overrideResponse
-            : getCreateImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostResponseMock(),
-          { status: 200 },
-        );
-      },
-      options,
-    );
-  };
+export const getGetLatestDeletionRequestMockHandler = (overrideResponse?: DeletionRequestResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<DeletionRequestResponse> | DeletionRequestResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/account/deletion-requests/latest', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetLatestDeletionRequestResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getCompleteImageUploadV1ImagesImageIdCompletePostMockHandler = (
-  overrideResponse?:
-    | ImageResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<ImageResponse> | ImageResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/images/:imageId/complete',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getCompleteImageUploadV1ImagesImageIdCompletePostResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getCompleteImageUploadMockHandler = (overrideResponse?: ImageResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ImageResponse> | ImageResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/images/:imageId/complete', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCompleteImageUploadResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getProcessPendingImagesV1ImagesProcessPendingPostMockHandler = (
-  overrideResponse?:
-    | void
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<void> | void),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/images/process-pending',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      if (typeof overrideResponse === 'function') {
-        await overrideResponse(info);
-      }
+export const getProcessPendingImagesMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/images/process-pending', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+  
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
 
-      return new HttpResponse(null, { status: 204 });
-    },
-    options,
-  );
-};
+export const getCreateExportMockHandler = (overrideResponse?: ExportJobResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ExportJobResponse> | ExportJobResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/exports', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreateExportResponseMock(),
+      { status: 202
+      })
+  }, options)
+}
 
-export const getCreateExportV1ExportsPostMockHandler = (
-  overrideResponse?:
-    | ExportJobResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<ExportJobResponse> | ExportJobResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/exports',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getCreateExportV1ExportsPostResponseMock(),
-        { status: 202 },
-      );
-    },
-    options,
-  );
-};
+export const getGetExportMockHandler = (overrideResponse?: ExportJobResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ExportJobResponse> | ExportJobResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/exports/:exportId', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetExportResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getGetExportV1ExportsExportIdGetMockHandler = (
-  overrideResponse?:
-    | ExportJobResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<ExportJobResponse> | ExportJobResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/exports/:exportId',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getGetExportV1ExportsExportIdGetResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getDownloadExportJsonMockHandler = (overrideResponse?: DownloadURLResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<DownloadURLResponse> | DownloadURLResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/exports/:exportId/download/json', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getDownloadExportJsonResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getDownloadJsonV1ExportsExportIdDownloadJsonGetMockHandler = (
-  overrideResponse?:
-    | DownloadURLResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<DownloadURLResponse> | DownloadURLResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/exports/:exportId/download/json',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getDownloadJsonV1ExportsExportIdDownloadJsonGetResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getDownloadExportImagesMockHandler = (overrideResponse?: DownloadURLResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<DownloadURLResponse> | DownloadURLResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/exports/:exportId/download/images', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getDownloadExportImagesResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getDownloadImagesV1ExportsExportIdDownloadImagesGetMockHandler = (
-  overrideResponse?:
-    | DownloadURLResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<DownloadURLResponse> | DownloadURLResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/exports/:exportId/download/images',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getDownloadImagesV1ExportsExportIdDownloadImagesGetResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getAuthLoginMockHandler = (overrideResponse?: OAuthLoginResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<OAuthLoginResponse> | OAuthLoginResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/auth/login', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAuthLoginResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getOauthLoginV1AuthLoginGetMockHandler = (
-  overrideResponse?:
-    | OAuthLoginResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<OAuthLoginResponse> | OAuthLoginResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/auth/login',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getOauthLoginV1AuthLoginGetResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getAuthCallbackMockHandler = (overrideResponse?: OAuthCallbackResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<OAuthCallbackResponse> | OAuthCallbackResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/auth/callback', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAuthCallbackResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getOauthCallbackV1AuthCallbackPostMockHandler = (
-  overrideResponse?:
-    | OAuthCallbackResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<OAuthCallbackResponse> | OAuthCallbackResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/auth/callback',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getOauthCallbackV1AuthCallbackPostResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getAuthCallbackRedirectMockHandler = (overrideResponse?: OAuthCallbackResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<OAuthCallbackResponse> | OAuthCallbackResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/auth/callback', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAuthCallbackRedirectResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getRootGetMockHandler = (
-  overrideResponse?:
-    | unknown
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<unknown> | unknown),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      if (typeof overrideResponse === 'function') {
-        await overrideResponse(info);
-      }
-
-      return new HttpResponse(null, { status: 200 });
-    },
-    options,
-  );
-};
+export const getRootMockHandler = (overrideResponse?: unknown | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<unknown> | unknown), options?: RequestHandlerOptions) => {
+  return http.get('*/', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+  
+    return new HttpResponse(null,
+      { status: 200
+      })
+  }, options)
+}
 export const getPathsBackendAPIMock = () => [
-  getHealthHealthGetMockHandler(),
-  getListPathsV1PathsGetMockHandler(),
-  getCreatePathV1PathsPostMockHandler(),
-  getUpdatePathVisibilityV1PathsPathIdVisibilityPatchMockHandler(),
-  getCreateSubscriptionV1PathsPathIdSubscriptionsPostMockHandler(),
-  getDeleteSubscriptionV1PathsPathIdSubscriptionsTargetUserIdDeleteMockHandler(),
-  getListEntriesV1PathIdEntriesGetMockHandler(),
-  getCreateEntryV1PathIdEntriesPostMockHandler(),
-  getGetEntryV1PathIdEntriesEntryIdGetMockHandler(),
-  getUpdateEntryV1PathIdEntriesEntryIdPutMockHandler(),
-  getDeleteEntryV1PathIdEntriesEntryIdDeleteMockHandler(),
-  getAdminLoginV1AdminLoginPostMockHandler(),
-  getSetPathCreationApprovalV1AdminUsersUserIdPathCreationApprovalPutMockHandler(),
-  getGetProfileV1AccountProfileGetMockHandler(),
-  getUpdateDisplayNameV1AccountDisplayNamePatchMockHandler(),
-  getCreateDeletionRequestV1AccountDeletionRequestsPostMockHandler(),
-  getLatestDeletionRequestV1AccountDeletionRequestsLatestGetMockHandler(),
-  getCreateImageUploadUrlV1ImagesEntriesEntryIdUploadUrlPostMockHandler(),
-  getCompleteImageUploadV1ImagesImageIdCompletePostMockHandler(),
-  getProcessPendingImagesV1ImagesProcessPendingPostMockHandler(),
-  getCreateExportV1ExportsPostMockHandler(),
-  getGetExportV1ExportsExportIdGetMockHandler(),
-  getDownloadJsonV1ExportsExportIdDownloadJsonGetMockHandler(),
-  getDownloadImagesV1ExportsExportIdDownloadImagesGetMockHandler(),
-  getOauthLoginV1AuthLoginGetMockHandler(),
-  getOauthCallbackV1AuthCallbackPostMockHandler(),
-  getRootGetMockHandler(),
-];
+  getHealthMockHandler(),
+  getListPathsMockHandler(),
+  getCreatePathMockHandler(),
+  getUpdatePathVisibilityMockHandler(),
+  getCreateSubscriptionMockHandler(),
+  getDeleteSubscriptionMockHandler(),
+  getListEntriesMockHandler(),
+  getCreateEntryMockHandler(),
+  getGetEntryMockHandler(),
+  getUpdateEntryMockHandler(),
+  getDeleteEntryMockHandler(),
+  getCreateImageUploadUrlMockHandler(),
+  getAdminLoginMockHandler(),
+  getSetPathCreationApprovalMockHandler(),
+  getGetProfileMockHandler(),
+  getUpdateDisplayNameMockHandler(),
+  getCreateDeletionRequestMockHandler(),
+  getGetLatestDeletionRequestMockHandler(),
+  getCompleteImageUploadMockHandler(),
+  getProcessPendingImagesMockHandler(),
+  getCreateExportMockHandler(),
+  getGetExportMockHandler(),
+  getDownloadExportJsonMockHandler(),
+  getDownloadExportImagesMockHandler(),
+  getAuthLoginMockHandler(),
+  getAuthCallbackMockHandler(),
+  getAuthCallbackRedirectMockHandler(),
+  getRootMockHandler()
+]
