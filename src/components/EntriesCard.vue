@@ -66,7 +66,7 @@ import {
 } from '@ionic/vue';
 import { computed, ref } from 'vue';
 
-import { createEntryV1PathIdEntriesPost } from '../generated/apiClient';
+import { createEntry as apiCreateEntry } from '../generated/apiClient';
 import { useEntries } from '../composables/useEntries';
 
 const props = withDefaults(
@@ -89,7 +89,7 @@ async function createEntry() {
   creating.value = true;
   createError.value = '';
   try {
-    await createEntryV1PathIdEntriesPost(props.pathId, {
+    await apiCreateEntry(props.pathId, {
       day: newEntry.value.day,
       content: newEntry.value.content,
     });

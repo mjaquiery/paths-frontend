@@ -24,7 +24,7 @@ import {
 import { onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-import { oauthCallbackV1AuthCallbackPost } from '../generated/apiClient';
+import { authCallback } from '../generated/apiClient';
 import type { OAuthCallbackResponse } from '../generated/types';
 
 const router = useRouter();
@@ -46,7 +46,7 @@ onMounted(async () => {
   const callbackUri = `${window.location.origin}/auth/callback`;
 
   try {
-    const result = await oauthCallbackV1AuthCallbackPost({
+    const result = await authCallback({
       code,
       state,
       callback_uri: callbackUri,

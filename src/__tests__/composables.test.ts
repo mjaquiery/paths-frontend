@@ -9,15 +9,15 @@ import { useEntries, useEntryContent } from '../composables/useEntries';
 import type { PathResponse } from '../generated/types';
 
 vi.mock('../generated/apiClient', () => ({
-  listPathsV1PathsGet: vi.fn(),
-  listEntriesV1PathIdEntriesGet: vi.fn(),
-  getEntryV1PathIdEntriesEntryIdGet: vi.fn(),
+  listPaths: vi.fn(),
+  listEntries: vi.fn(),
+  getEntry: vi.fn(),
 }));
 
 import {
-  listPathsV1PathsGet,
-  listEntriesV1PathIdEntriesGet,
-  getEntryV1PathIdEntriesEntryIdGet,
+  listPaths,
+  listEntries,
+  getEntry,
 } from '../generated/apiClient';
 
 function createQueryClient() {
@@ -31,25 +31,27 @@ describe('usePaths', () => {
     const mockPaths: PathResponse[] = [
       {
         path_id: 'p1',
+        uuid: 'uuid-p1',
         title: 'Path 1',
+        description: null,
+        color: '#3880ff',
         is_public: true,
-        owner_id: 'u1',
-        is_owner: true,
+        owner_user_id: 'u1',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
       },
     ];
-    vi.mocked(listPathsV1PathsGet).mockResolvedValue({
+    vi.mocked(listPaths).mockResolvedValue({
       data: mockPaths,
       status: 200,
       headers: new Headers(),
     });
 
     const queryClient = createQueryClient();
-    let queryData: PathResponse[] | undefined;
 
     const TestComponent = defineComponent({
       setup() {
-        const { data } = usePaths();
-        queryData = data.value;
+        usePaths();
         return {};
       },
       template: '<div></div>',
@@ -58,9 +60,9 @@ describe('usePaths', () => {
     mount(TestComponent, {
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     });
-    await queryClient.refetchQueries({ queryKey: ['paths'] });
+    await queryClient.refetchQueries({ queryKey: ['v1', 'paths'] });
 
-    expect(vi.mocked(listPathsV1PathsGet)).toHaveBeenCalled();
+    expect(vi.mocked(listPaths)).toHaveBeenCalled();
   });
 });
 
@@ -68,7 +70,7 @@ describe('useEntries', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('does not call API when pathId is empty', () => {
-    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+    vi.mocked(listEntries).mockResolvedValue({
       data: [],
       status: 200,
       headers: new Headers(),
@@ -89,11 +91,11 @@ describe('useEntries', () => {
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     });
 
-    expect(vi.mocked(listEntriesV1PathIdEntriesGet)).not.toHaveBeenCalled();
+    expect(vi.mocked(listEntries)).not.toHaveBeenCalled();
   });
 
   it('fetches entries when pathId is set', async () => {
-    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+    vi.mocked(listEntries).mockResolvedValue({
       data: [{ id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 'edit-1' }],
       status: 200,
       headers: new Headers(),
@@ -116,7 +118,7 @@ describe('useEntries', () => {
     await nextTick();
     await new Promise((r) => setTimeout(r, 50));
 
-    expect(vi.mocked(listEntriesV1PathIdEntriesGet)).toHaveBeenCalledWith('p1');
+    expect(vi.mocked(listEntries)).toHaveBeenCalledWith('p1');
   });
 });
 
@@ -141,11 +143,11 @@ describe('useEntryContent', () => {
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     });
 
-    expect(vi.mocked(getEntryV1PathIdEntriesEntryIdGet)).not.toHaveBeenCalled();
+    expect(vi.mocked(getEntry)).not.toHaveBeenCalled();
   });
 
   it('fetches content when all ids are set', async () => {
-    vi.mocked(getEntryV1PathIdEntriesEntryIdGet).mockResolvedValue({
+    vi.mocked(getEntry).mockResolvedValue({
       data: {
         id: 'e1',
         path_id: 'p1',
@@ -176,14 +178,14 @@ describe('useEntryContent', () => {
     await nextTick();
     await new Promise((r) => setTimeout(r, 50));
 
-    expect(vi.mocked(getEntryV1PathIdEntriesEntryIdGet)).toHaveBeenCalledWith(
+    expect(vi.mocked(getEntry)).toHaveBeenCalledWith(
       'p1',
       'e1',
     );
   });
 
   it('re-fetches when editId changes (smart refetch)', async () => {
-    vi.mocked(getEntryV1PathIdEntriesEntryIdGet).mockResolvedValue({
+    vi.mocked(getEntry).mockResolvedValue({
       data: {
         id: 'e1',
         path_id: 'p1',
@@ -214,8 +216,7 @@ describe('useEntryContent', () => {
     await nextTick();
     await new Promise((r) => setTimeout(r, 50));
 
-    const callCount = vi.mocked(getEntryV1PathIdEntriesEntryIdGet).mock.calls
-      .length;
+    const callCount = vi.mocked(getEntry).mock.calls.length;
 
     // Changing the editId should trigger a new fetch since it's part of the query key
     editId.value = 'edit-2';
@@ -223,7 +224,7 @@ describe('useEntryContent', () => {
     await new Promise((r) => setTimeout(r, 50));
 
     expect(
-      vi.mocked(getEntryV1PathIdEntriesEntryIdGet).mock.calls.length,
+      vi.mocked(getEntry).mock.calls.length,
     ).toBeGreaterThan(callCount);
   });
 });

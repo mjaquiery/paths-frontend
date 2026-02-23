@@ -92,7 +92,7 @@ import { computed, ref, watch } from 'vue';
 import type { PathResponse } from '../generated/types';
 import { isPathHidden, setPathHidden } from '../lib/db';
 import { usePaths } from '../composables/usePaths';
-import { createPathV1PathsPost } from '../generated/apiClient';
+import { createPath as apiCreatePath } from '../generated/apiClient';
 
 const props = withDefaults(
   defineProps<{
@@ -154,7 +154,7 @@ async function createPath() {
   creating.value = true;
   createError.value = '';
   try {
-    await createPathV1PathsPost({
+    await apiCreatePath({
       title: newPath.value.title,
       description: newPath.value.description || null,
       color: newPath.value.color || DEFAULT_COLOR,

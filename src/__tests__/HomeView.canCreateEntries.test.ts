@@ -25,6 +25,7 @@ function makeCanCreateEntries(
 
 const basePath: PathResponse = {
   path_id: 'p1',
+  uuid: 'uuid-p1',
   owner_user_id: 'u1',
   title: 'My Path',
   description: null,

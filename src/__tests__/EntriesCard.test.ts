@@ -4,13 +4,13 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount } from '@vue/test-utils';
 
 vi.mock('../generated/apiClient', () => ({
-  listEntriesV1PathIdEntriesGet: vi.fn(),
-  createEntryV1PathIdEntriesPost: vi.fn(),
+  listEntries: vi.fn(),
+  createEntry: vi.fn(),
 }));
 
 import {
-  listEntriesV1PathIdEntriesGet,
-  createEntryV1PathIdEntriesPost,
+  listEntries,
+  createEntry,
 } from '../generated/apiClient';
 import EntriesCard from '../components/EntriesCard.vue';
 
@@ -51,7 +51,7 @@ describe('EntriesCard', () => {
 
   it('shows prompt when no pathId is provided', () => {
     const queryClient = createQueryClient();
-    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+    vi.mocked(listEntries).mockResolvedValue({
       data: [],
       status: 200,
       headers: new Headers(),
@@ -70,7 +70,7 @@ describe('EntriesCard', () => {
 
   it('does not show New Entry button when canCreateEntries is false', async () => {
     const queryClient = createQueryClient();
-    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+    vi.mocked(listEntries).mockResolvedValue({
       data: [],
       status: 200,
       headers: new Headers(),
@@ -90,7 +90,7 @@ describe('EntriesCard', () => {
 
   it('shows New Entry button when canCreateEntries is true and pathId is set', async () => {
     const queryClient = createQueryClient();
-    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+    vi.mocked(listEntries).mockResolvedValue({
       data: [],
       status: 200,
       headers: new Headers(),
@@ -110,7 +110,7 @@ describe('EntriesCard', () => {
 
   it('shows create form when New Entry button is clicked', async () => {
     const queryClient = createQueryClient();
-    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+    vi.mocked(listEntries).mockResolvedValue({
       data: [],
       status: 200,
       headers: new Headers(),
@@ -136,14 +136,14 @@ describe('EntriesCard', () => {
     expect(wrapper.text()).toContain('Cancel');
   });
 
-  it('calls createEntryV1PathIdEntriesPost when form is submitted', async () => {
+  it('calls createEntry when form is submitted', async () => {
     const queryClient = createQueryClient();
-    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+    vi.mocked(listEntries).mockResolvedValue({
       data: [],
       status: 200,
       headers: new Headers(),
     });
-    vi.mocked(createEntryV1PathIdEntriesPost).mockResolvedValue({
+    vi.mocked(createEntry).mockResolvedValue({
       data: { id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 'ed1' },
       status: 201,
       headers: new Headers(),
@@ -180,7 +180,7 @@ describe('EntriesCard', () => {
     await createButton!.trigger('click');
     await nextTick();
 
-    expect(vi.mocked(createEntryV1PathIdEntriesPost)).toHaveBeenCalledWith(
+    expect(vi.mocked(createEntry)).toHaveBeenCalledWith(
       'p1',
       { day: '2024-01-01', content: 'My entry content' },
     );
@@ -188,12 +188,12 @@ describe('EntriesCard', () => {
 
   it('shows an error and keeps the form open when entry creation fails', async () => {
     const queryClient = createQueryClient();
-    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+    vi.mocked(listEntries).mockResolvedValue({
       data: [],
       status: 200,
       headers: new Headers(),
     });
-    vi.mocked(createEntryV1PathIdEntriesPost).mockRejectedValue(
+    vi.mocked(createEntry).mockRejectedValue(
       new Error('server error'),
     );
 
@@ -231,7 +231,7 @@ describe('EntriesCard', () => {
 
   it('closes the form and clears fields when Cancel is clicked', async () => {
     const queryClient = createQueryClient();
-    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+    vi.mocked(listEntries).mockResolvedValue({
       data: [],
       status: 200,
       headers: new Headers(),
