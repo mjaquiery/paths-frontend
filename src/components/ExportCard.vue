@@ -61,12 +61,12 @@ import {
 } from '@ionic/vue';
 import { ref } from 'vue';
 
-import type { ExportJobResponse, PathResponse } from '../generated/types';
+import type { ExportJobResponse, PathResponse, DownloadURLResponse } from '../generated/types';
 import {
-  createExportV1ExportsPost,
-  getExportV1ExportsExportIdGet,
-  downloadJsonV1ExportsExportIdDownloadJsonGet,
-  downloadImagesV1ExportsExportIdDownloadImagesGet,
+  useCreateExport,
+  getExport,
+  downloadExportJson,
+  downloadExportImages,
 } from '../generated/apiClient';
 import { isExportReady, isExportTerminal } from '../utils/export';
 
@@ -76,6 +76,7 @@ const selectedForExport = ref(new Set<string>());
 const exportJob = ref<ExportJobResponse | null>(null);
 const jsonDownloadUrl = ref('');
 const imagesDownloadUrl = ref('');
+const { mutateAsync: createExportMutation } = useCreateExport();
 
 function setExportPath(pathId: string, event: CheckboxCustomEvent) {
   if (event.detail.checked) selectedForExport.value.add(pathId);
@@ -86,22 +87,22 @@ async function triggerExport() {
   jsonDownloadUrl.value = '';
   imagesDownloadUrl.value = '';
   exportJob.value = (
-    await createExportV1ExportsPost({ path_ids: [...selectedForExport.value] })
-  ).data;
+    await createExportMutation({ data: { path_ids: [...selectedForExport.value] } })
+  ).data as ExportJobResponse;
   await pollExport();
 }
 
 async function pollExport() {
   if (!exportJob.value) return;
-  const latest = (await getExportV1ExportsExportIdGet(exportJob.value.id)).data;
+  const latest = (await getExport(exportJob.value.id)).data as ExportJobResponse;
   exportJob.value = latest;
   if (isExportReady(latest)) {
     const [jsonUrl, imagesUrl] = await Promise.all([
-      downloadJsonV1ExportsExportIdDownloadJsonGet(latest.id),
-      downloadImagesV1ExportsExportIdDownloadImagesGet(latest.id),
+      downloadExportJson(latest.id),
+      downloadExportImages(latest.id),
     ]);
-    jsonDownloadUrl.value = jsonUrl.data.url;
-    imagesDownloadUrl.value = imagesUrl.data.url;
+    jsonDownloadUrl.value = (jsonUrl.data as DownloadURLResponse).url;
+    imagesDownloadUrl.value = (imagesUrl.data as DownloadURLResponse).url;
   } else if (!isExportTerminal(latest)) {
     window.setTimeout(pollExport, 2000);
   }

@@ -1,16 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  listPathsV1PathsGet,
-  createEntryV1PathIdEntriesPost,
-} from '../generated/apiClient';
+import { listPaths, createEntry } from '../generated/apiClient';
 
 describe('generated api client', () => {
   it('contains OpenAPI operation for listing paths', () => {
-    expect(typeof listPathsV1PathsGet).toBe('function');
+    expect(typeof listPaths).toBe('function');
   });
 
   it('contains OpenAPI operation for creating entries', () => {
-    expect(typeof createEntryV1PathIdEntriesPost).toBe('function');
+    expect(typeof createEntry).toBe('function');
   });
 });

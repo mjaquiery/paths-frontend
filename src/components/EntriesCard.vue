@@ -66,7 +66,7 @@ import {
 } from '@ionic/vue';
 import { computed, ref } from 'vue';
 
-import { createEntryV1PathIdEntriesPost } from '../generated/apiClient';
+import { useCreateEntry } from '../generated/apiClient';
 import { useEntries } from '../composables/useEntries';
 
 const props = withDefaults(
@@ -78,27 +78,27 @@ const props = withDefaults(
 );
 
 const { data: entries, refetch } = useEntries(computed(() => props.pathId));
+const { mutateAsync: createEntryMutation, isPending: creating } = useCreateEntry();
 
 const showCreateForm = ref(false);
-const creating = ref(false);
 const createError = ref('');
 const newEntry = ref({ day: '', content: '' });
 
 async function createEntry() {
   if (!newEntry.value.day || !newEntry.value.content) return;
-  creating.value = true;
   createError.value = '';
   try {
-    await createEntryV1PathIdEntriesPost(props.pathId, {
-      day: newEntry.value.day,
-      content: newEntry.value.content,
+    await createEntryMutation({
+      pathCode: props.pathId,
+      data: {
+        day: newEntry.value.day,
+        content: newEntry.value.content,
+      },
     });
     cancelCreate();
     await refetch();
   } catch {
     createError.value = 'Failed to create entry. Please try again.';
-  } finally {
-    creating.value = false;
   }
 }
 

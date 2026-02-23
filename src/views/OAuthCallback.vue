@@ -24,12 +24,13 @@ import {
 import { onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-import { oauthCallbackV1AuthCallbackPost } from '../generated/apiClient';
+import { useAuthCallback } from '../generated/apiClient';
 import type { OAuthCallbackResponse } from '../generated/types';
 
 const router = useRouter();
 const route = useRoute();
 const error = ref('');
+const { mutateAsync: doAuthCallback } = useAuthCallback();
 
 onMounted(async () => {
   const rawCode = route.query.code;
@@ -46,10 +47,8 @@ onMounted(async () => {
   const callbackUri = `${window.location.origin}/auth/callback`;
 
   try {
-    const result = await oauthCallbackV1AuthCallbackPost({
-      code,
-      state,
-      callback_uri: callbackUri,
+    const result = await doAuthCallback({
+      data: { code, state, callback_uri: callbackUri },
     });
     if (result.data) {
       const { token: _token, ...safeData } =

@@ -3,7 +3,7 @@ export default {
   pathsApi: {
     input: './schema/openapi.json',
     output: {
-      client: 'fetch',
+      client: 'vue-query',
       target: './src/generated/apiClient.ts',
       schemas: './src/generated/types',
       mode: 'single',

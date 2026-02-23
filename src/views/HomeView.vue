@@ -71,8 +71,8 @@ import { ref, computed, onMounted } from 'vue';
 import PathBrowserCard from '../components/PathBrowserCard.vue';
 import EntriesCard from '../components/EntriesCard.vue';
 import ExportCard from '../components/ExportCard.vue';
-import type { PathResponse, OAuthCallbackResponse } from '../generated/types';
-import { oauthLoginV1AuthLoginGet } from '../generated/apiClient';
+import type { PathResponse, OAuthCallbackResponse, OAuthLoginResponse } from '../generated/types';
+import { authLogin } from '../generated/apiClient';
 
 const selectedPathId = ref('');
 const paths = ref<PathResponse[]>([]);
@@ -107,11 +107,12 @@ async function loginWithGoogle() {
   loginError.value = '';
   try {
     const callbackUri = `${window.location.origin}/auth/callback`;
-    const result = await oauthLoginV1AuthLoginGet({
+    const result = await authLogin({
       callback_uri: callbackUri,
     });
-    if (result.data?.authorization_url) {
-      window.location.href = result.data.authorization_url;
+    const loginData = result.data as OAuthLoginResponse;
+    if (loginData?.authorization_url) {
+      window.location.href = loginData.authorization_url;
     } else {
       loginError.value = 'Could not start login. Please try again.';
       loggingIn.value = false;
