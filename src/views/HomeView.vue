@@ -36,7 +36,10 @@
 
       <Suspense>
         <template #default>
-          <EntriesCard :path-id="selectedPathId" />
+          <EntriesCard
+            :path-id="selectedPathId"
+            :can-create-entries="!!currentUser"
+          />
         </template>
         <template #fallback><p>Loading entries...</p></template>
       </Suspense>
