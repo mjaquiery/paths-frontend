@@ -185,4 +185,97 @@ describe('EntriesCard', () => {
       { day: '2024-01-01', content: 'My entry content' },
     );
   });
+
+  it('shows an error and keeps the form open when entry creation fails', async () => {
+    const queryClient = createQueryClient();
+    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+      data: [],
+      status: 200,
+      headers: new Headers(),
+    });
+    vi.mocked(createEntryV1PathIdEntriesPost).mockRejectedValue(
+      new Error('server error'),
+    );
+
+    const wrapper = mount(EntriesCard, {
+      props: { pathId: 'p1', canCreateEntries: true },
+      global: {
+        plugins: [[VueQueryPlugin, { queryClient }]],
+        stubs: ionicStubs,
+      },
+    });
+
+    await nextTick();
+
+    const newEntryButton = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('New Entry'));
+    await newEntryButton!.trigger('click');
+    await nextTick();
+
+    const inputs = wrapper.findAll('input');
+    await inputs[0].setValue('2024-01-01');
+    const textarea = wrapper.find('textarea');
+    await textarea.setValue('My entry content');
+    await nextTick();
+
+    const createButton = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Create');
+    await createButton!.trigger('click');
+    await nextTick();
+
+    expect(wrapper.text()).toContain('Failed to create entry');
+    expect(wrapper.find('textarea').exists()).toBe(true);
+  });
+
+  it('closes the form and clears fields when Cancel is clicked', async () => {
+    const queryClient = createQueryClient();
+    vi.mocked(listEntriesV1PathIdEntriesGet).mockResolvedValue({
+      data: [],
+      status: 200,
+      headers: new Headers(),
+    });
+
+    const wrapper = mount(EntriesCard, {
+      props: { pathId: 'p1', canCreateEntries: true },
+      global: {
+        plugins: [[VueQueryPlugin, { queryClient }]],
+        stubs: ionicStubs,
+      },
+    });
+
+    await nextTick();
+
+    const newEntryButton = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('New Entry'));
+    await newEntryButton!.trigger('click');
+    await nextTick();
+
+    await wrapper.findAll('input')[0].setValue('2024-01-01');
+    await wrapper.find('textarea').setValue('Some content');
+    await nextTick();
+
+    const cancelButton = wrapper
+      .findAll('button')
+      .find((b) => b.text() === 'Cancel');
+    await cancelButton!.trigger('click');
+    await nextTick();
+
+    // Form should be closed
+    expect(wrapper.find('input').exists()).toBe(false);
+    expect(wrapper.find('textarea').exists()).toBe(false);
+
+    // Re-open and verify fields are cleared
+    await newEntryButton!.trigger('click');
+    await nextTick();
+
+    expect(
+      (wrapper.findAll('input')[0].element as HTMLInputElement).value,
+    ).toBe('');
+    expect(
+      (wrapper.find('textarea').element as HTMLTextAreaElement).value,
+    ).toBe('');
+  });
 });
