@@ -63,7 +63,7 @@ import { ref } from 'vue';
 
 import type { ExportJobResponse, PathResponse, DownloadURLResponse } from '../generated/types';
 import {
-  createExport,
+  useCreateExport,
   getExport,
   downloadExportJson,
   downloadExportImages,
@@ -76,6 +76,7 @@ const selectedForExport = ref(new Set<string>());
 const exportJob = ref<ExportJobResponse | null>(null);
 const jsonDownloadUrl = ref('');
 const imagesDownloadUrl = ref('');
+const { mutateAsync: createExportMutation } = useCreateExport();
 
 function setExportPath(pathId: string, event: CheckboxCustomEvent) {
   if (event.detail.checked) selectedForExport.value.add(pathId);
@@ -86,7 +87,7 @@ async function triggerExport() {
   jsonDownloadUrl.value = '';
   imagesDownloadUrl.value = '';
   exportJob.value = (
-    await createExport({ path_ids: [...selectedForExport.value] })
+    await createExportMutation({ data: { path_ids: [...selectedForExport.value] } })
   ).data as ExportJobResponse;
   await pollExport();
 }

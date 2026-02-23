@@ -92,7 +92,7 @@ import { computed, ref, watch } from 'vue';
 import type { PathResponse } from '../generated/types';
 import { isPathHidden, setPathHidden } from '../lib/db';
 import { usePaths } from '../composables/usePaths';
-import { createPath as apiCreatePath } from '../generated/apiClient';
+import { useCreatePath } from '../generated/apiClient';
 
 const props = withDefaults(
   defineProps<{
@@ -107,13 +107,13 @@ const emit = defineEmits<{
 }>();
 
 const { data: paths, refetch } = usePaths();
+const { mutateAsync: createPathMutation, isPending: creating } = useCreatePath();
 const hiddenByPath = ref<Record<string, boolean>>({});
 const showHidden = ref(false);
 
 const DEFAULT_COLOR = '#3880ff';
 
 const showCreateForm = ref(false);
-const creating = ref(false);
 const createError = ref('');
 const newPath = ref({ title: '', description: '', color: DEFAULT_COLOR });
 
@@ -151,20 +151,19 @@ async function togglePath(pathId: string, event: ToggleCustomEvent) {
 
 async function createPath() {
   if (!newPath.value.title) return;
-  creating.value = true;
   createError.value = '';
   try {
-    await apiCreatePath({
-      title: newPath.value.title,
-      description: newPath.value.description || null,
-      color: newPath.value.color || DEFAULT_COLOR,
+    await createPathMutation({
+      data: {
+        title: newPath.value.title,
+        description: newPath.value.description || null,
+        color: newPath.value.color || DEFAULT_COLOR,
+      },
     });
     cancelCreate();
     await refetch();
   } catch (e) {
     createError.value = 'Failed to create path. Please try again.';
-  } finally {
-    creating.value = false;
   }
 }
 
