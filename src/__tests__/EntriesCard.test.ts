@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { nextTick } from 'vue';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 
 vi.mock('../lib/customFetch', () => ({
   customFetch: vi.fn(),
@@ -162,8 +162,7 @@ describe('EntriesCard', () => {
       .findAll('button')
       .find((b) => b.text() === 'Create');
     await createButton!.trigger('click');
-    await nextTick();
-    await new Promise((r) => setTimeout(r, 50));
+    await flushPromises();
 
     expect(vi.mocked(customFetch)).toHaveBeenCalledWith(
       '/v1/paths/p1/entries',
@@ -209,9 +208,7 @@ describe('EntriesCard', () => {
       .findAll('button')
       .find((b) => b.text() === 'Create');
     await createButton!.trigger('click');
-    await nextTick();
-    await new Promise((r) => setTimeout(r, 50));
-    await nextTick();
+    await flushPromises();
 
     expect(wrapper.text()).toContain('Failed to create entry');
     expect(wrapper.find('textarea').exists()).toBe(true);

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ref, nextTick } from 'vue';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import { defineComponent } from 'vue';
 
 import { usePaths } from '../composables/usePaths';
@@ -41,8 +41,7 @@ describe('usePaths', () => {
     mount(TestComponent, {
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     });
-    await nextTick();
-    await new Promise((r) => setTimeout(r, 50));
+    await flushPromises();
 
     expect(vi.mocked(customFetch)).toHaveBeenCalledWith(
       '/v1/paths',
@@ -101,8 +100,7 @@ describe('useEntries', () => {
     mount(TestComponent, {
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     });
-    await nextTick();
-    await new Promise((r) => setTimeout(r, 50));
+    await flushPromises();
 
     expect(vi.mocked(customFetch)).toHaveBeenCalledWith(
       '/v1/paths/p1/entries',
@@ -165,8 +163,7 @@ describe('useEntryContent', () => {
     mount(TestComponent, {
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     });
-    await nextTick();
-    await new Promise((r) => setTimeout(r, 50));
+    await flushPromises();
 
     expect(vi.mocked(customFetch)).toHaveBeenCalledWith(
       '/v1/paths/p1/entries/e1',
@@ -191,15 +188,14 @@ describe('useEntryContent', () => {
     mount(TestComponent, {
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     });
-    await nextTick();
-    await new Promise((r) => setTimeout(r, 50));
+    await flushPromises();
 
     const callCount = vi.mocked(customFetch).mock.calls.length;
 
     // Changing the editId should trigger a new fetch since it's part of the query key
     editId.value = 'edit-2';
     await nextTick();
-    await new Promise((r) => setTimeout(r, 50));
+    await flushPromises();
 
     expect(vi.mocked(customFetch).mock.calls.length).toBeGreaterThan(callCount);
   });
