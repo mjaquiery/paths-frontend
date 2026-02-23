@@ -36,7 +36,10 @@
 
       <Suspense>
         <template #default>
-          <EntriesCard :path-id="selectedPathId" />
+          <EntriesCard
+            :path-id="selectedPathId"
+            :can-create-entries="canCreateEntries"
+          />
         </template>
         <template #fallback><p>Loading entries...</p></template>
       </Suspense>
@@ -63,7 +66,7 @@ import {
   IonLabel,
   IonText,
 } from '@ionic/vue';
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 import PathBrowserCard from '../components/PathBrowserCard.vue';
 import EntriesCard from '../components/EntriesCard.vue';
@@ -76,6 +79,17 @@ const paths = ref<PathResponse[]>([]);
 const loggingIn = ref(false);
 const loginError = ref('');
 const currentUser = ref<OAuthCallbackResponse | null>(null);
+
+const selectedPath = computed(() =>
+  paths.value.find((p) => p.path_id === selectedPathId.value),
+);
+
+const canCreateEntries = computed(
+  () =>
+    !!currentUser.value &&
+    !!selectedPath.value &&
+    selectedPath.value.owner_user_id === currentUser.value.user_id,
+);
 
 onMounted(() => {
   const stored = localStorage.getItem('user');
