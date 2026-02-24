@@ -107,6 +107,8 @@ import {
 import { extractErrorMessage } from '../lib/errors';
 import { db } from '../lib/db';
 
+const DEFAULT_IMAGE_CONTENT_TYPE = 'image/jpeg';
+
 const props = defineProps<{
   isOpen: boolean;
   /** All visible paths the user owns */
@@ -160,16 +162,17 @@ function onFilesSelected(event: Event) {
 async function uploadImages(pathCode: string, entrySlug: string): Promise<string[]> {
   const filenames: string[] = [];
   for (const file of pendingImages.value) {
+    const contentType = file.type || DEFAULT_IMAGE_CONTENT_TYPE;
     const uploadResp = await getUploadUrl({
       pathCode,
       entrySlug,
-      data: { filename: file.name, content_type: file.type || 'image/jpeg' },
+      data: { filename: file.name, content_type: contentType },
     });
     const { image_id, upload_url } = uploadResp.data as ImageUploadResponse;
     await fetch(upload_url, {
       method: 'PUT',
       body: file,
-      headers: { 'Content-Type': file.type || 'image/jpeg' },
+      headers: { 'Content-Type': contentType },
     });
     await completeUpload({
       imageId: image_id,

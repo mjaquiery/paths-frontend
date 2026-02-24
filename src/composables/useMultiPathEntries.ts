@@ -65,8 +65,13 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
             const resp = await getEntry(pathId, entry.id);
             const content =
               (resp.data as EntryContentResponse | undefined)?.content ?? '';
+            // image_filenames are stored locally (not returned by API).
+            // Prefer stale Dexie row first (survives page reload), then
+            // in-memory cache, then default to empty.
             const image_filenames =
-              contentCache.value[entry.id]?.image_filenames ?? [];
+              cached?.image_filenames ??
+              contentCache.value[entry.id]?.image_filenames ??
+              [];
             await db.entryContent.put({
               id: entry.id,
               path_id: entry.path_id,
