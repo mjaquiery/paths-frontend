@@ -16,6 +16,7 @@ export interface EntryContentCache {
   day: string;
   edit_id: string;
   content: string;
+  image_filenames?: string[];
 }
 
 const db = new Dexie('pathsFrontend') as Dexie & {

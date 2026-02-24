@@ -6,6 +6,7 @@ import { db } from '../lib/db';
 
 export interface EntryWithContent extends EntryResponse {
   content?: string;
+  image_filenames?: string[];
 }
 
 export interface PathEntries {
@@ -17,6 +18,7 @@ export interface PathEntries {
 interface ContentState {
   editId: string;
   content?: string;
+  image_filenames?: string[];
 }
 
 export function useMultiPathEntries(pathIds: Ref<string[]>) {
@@ -53,6 +55,7 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
             contentCache.value[entry.id] = {
               editId: entry.edit_id,
               content: cached.content,
+              image_filenames: cached.image_filenames,
             };
             continue;
           }
@@ -62,19 +65,32 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
             const resp = await getEntry(pathId, entry.id);
             const content =
               (resp.data as EntryContentResponse | undefined)?.content ?? '';
+            // image_filenames are stored locally (not returned by API).
+            // Prefer stale Dexie row first (survives page reload), then
+            // in-memory cache, then default to empty.
+            const image_filenames =
+              cached?.image_filenames ??
+              contentCache.value[entry.id]?.image_filenames ??
+              [];
             await db.entryContent.put({
               id: entry.id,
               path_id: entry.path_id,
               day: entry.day,
               edit_id: entry.edit_id,
               content,
+              image_filenames,
             });
-            contentCache.value[entry.id] = { editId: entry.edit_id, content };
+            contentCache.value[entry.id] = {
+              editId: entry.edit_id,
+              content,
+              image_filenames,
+            };
           } catch {
             // Keep stale content if present, or mark as attempted.
             contentCache.value[entry.id] = {
               editId: entry.edit_id,
               content: contentCache.value[entry.id]?.content,
+              image_filenames: contentCache.value[entry.id]?.image_filenames,
             };
           }
         }
@@ -92,6 +108,7 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
         )?.data?.map((entry) => ({
           ...entry,
           content: contentCache.value[entry.id]?.content,
+          image_filenames: contentCache.value[entry.id]?.image_filenames,
         })) ?? [],
     })),
   );

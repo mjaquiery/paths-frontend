@@ -55,6 +55,12 @@
             <span class="day-entry-preview">{{
               pe.preview || '(no text)'
             }}</span>
+            <span
+              v-if="pe.hasImages"
+              class="day-entry-image-indicator"
+              title="Has images"
+              aria-label="Has images"
+            >📷</span>
           </div>
         </div>
         <div v-else class="day-empty"></div>
@@ -131,6 +137,7 @@ interface DayPathEntry {
   pathTitle: string;
   color: string;
   preview: string;
+  hasImages: boolean;
 }
 
 interface DayInfo {
@@ -163,6 +170,7 @@ const weekDays = computed<DayInfo[]>(() => {
           pathTitle: path.title,
           color: path.color,
           preview: entry.content ?? '',
+          hasImages: (entry.image_filenames?.length ?? 0) > 0,
         });
       }
     }
@@ -293,6 +301,12 @@ function onEntryCreated() {
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+
+.day-entry-image-indicator {
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .day-empty {
