@@ -10,9 +10,18 @@ export interface QueryCacheEntry {
   value: string;
 }
 
+export interface EntryContentCache {
+  id: string;
+  path_id: string;
+  day: string;
+  edit_id: string;
+  content: string;
+}
+
 const db = new Dexie('pathsFrontend') as Dexie & {
   pathPreferences: EntityTable<PathPreference, 'pathId'>;
   queryCache: EntityTable<QueryCacheEntry, 'key'>;
+  entryContent: EntityTable<EntryContentCache, 'id'>;
 };
 
 export { db };
@@ -26,6 +35,12 @@ db.version(2).stores({
   queryCache: '&key',
 });
 
+db.version(3).stores({
+  pathPreferences: '&pathId,hidden',
+  queryCache: '&key',
+  entryContent: '&id,edit_id,path_id',
+});
+
 export async function isPathHidden(pathId: string) {
   const pref = await db.pathPreferences.get(pathId);
   return pref?.hidden ?? false;
@@ -33,4 +48,18 @@ export async function isPathHidden(pathId: string) {
 
 export async function setPathHidden(pathId: string, hidden: boolean) {
   await db.pathPreferences.put({ pathId, hidden });
+}
+
+const PATH_ORDER_KEY = 'pathOrder';
+
+export function getPathOrder(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(PATH_ORDER_KEY) ?? '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
+export function setPathOrder(pathIds: string[]): void {
+  localStorage.setItem(PATH_ORDER_KEY, JSON.stringify(pathIds));
 }

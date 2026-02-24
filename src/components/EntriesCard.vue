@@ -78,7 +78,8 @@ const props = withDefaults(
 );
 
 const { data: entries, refetch } = useEntries(computed(() => props.pathId));
-const { mutateAsync: createEntryMutation, isPending: creating } = useCreateEntry();
+const { mutateAsync: createEntryMutation, isPending: creating } =
+  useCreateEntry();
 
 const showCreateForm = ref(false);
 const createError = ref('');

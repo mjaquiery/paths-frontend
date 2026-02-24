@@ -6,6 +6,6 @@
  */
 
 export type OauthCallbackGetV1AuthCallbackGetParams = {
-state: string;
-code: string;
+  state: string;
+  code: string;
 };

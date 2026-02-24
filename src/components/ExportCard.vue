@@ -61,7 +61,11 @@ import {
 } from '@ionic/vue';
 import { ref } from 'vue';
 
-import type { ExportJobResponse, PathResponse, DownloadURLResponse } from '../generated/types';
+import type {
+  ExportJobResponse,
+  PathResponse,
+  DownloadURLResponse,
+} from '../generated/types';
 import {
   useCreateExport,
   getExport,
@@ -87,14 +91,17 @@ async function triggerExport() {
   jsonDownloadUrl.value = '';
   imagesDownloadUrl.value = '';
   exportJob.value = (
-    await createExportMutation({ data: { path_ids: [...selectedForExport.value] } })
+    await createExportMutation({
+      data: { path_ids: [...selectedForExport.value] },
+    })
   ).data as ExportJobResponse;
   await pollExport();
 }
 
 async function pollExport() {
   if (!exportJob.value) return;
-  const latest = (await getExport(exportJob.value.id)).data as ExportJobResponse;
+  const latest = (await getExport(exportJob.value.id))
+    .data as ExportJobResponse;
   exportJob.value = latest;
   if (isExportReady(latest)) {
     const [jsonUrl, imagesUrl] = await Promise.all([
