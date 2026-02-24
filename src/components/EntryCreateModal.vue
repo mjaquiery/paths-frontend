@@ -131,8 +131,24 @@ async function submit() {
     });
     emit('created');
     emit('dismiss');
-  } catch {
-    error.value = 'Failed to create entry. Please try again.';
+  } catch (err: unknown) {
+    const fallback = 'Failed to create entry. Please try again.';
+    if (err && typeof err === 'object') {
+      const e = err as Record<string, unknown>;
+      const msg =
+        (e?.response as Record<string, unknown> | undefined)?.data &&
+        typeof (e.response as Record<string, unknown>).data === 'object'
+          ? (
+              (e.response as Record<string, unknown>).data as Record<
+                string,
+                unknown
+              >
+            )?.message
+          : (e?.message as string | undefined);
+      error.value = msg ? `Failed to create entry: ${String(msg)}` : fallback;
+    } else {
+      error.value = fallback;
+    }
   }
 }
 </script>

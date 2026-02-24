@@ -63,7 +63,7 @@
             />
           </ion-item>
           <ion-item>
-            <ion-label position="stacked">Colour</ion-label>
+            <ion-label position="stacked">Color</ion-label>
             <ion-input
               v-model="newPath.color"
               :placeholder="DEFAULT_COLOR"
@@ -95,6 +95,7 @@
               size="small"
               fill="clear"
               :disabled="index === 0"
+              aria-label="Move path up"
               @click="moveUp(index)"
               >▲</ion-button
             >
@@ -102,6 +103,7 @@
               size="small"
               fill="clear"
               :disabled="index === orderedPaths.length - 1"
+              aria-label="Move path down"
               @click="moveDown(index)"
               >▼</ion-button
             >
@@ -153,7 +155,7 @@ import {
   IonToggle,
   type ToggleCustomEvent,
 } from '@ionic/vue';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 
 import type { OAuthCallbackResponse, PathResponse } from '../generated/types';
 import {
@@ -186,8 +188,14 @@ const pathOrder = ref<string[]>([]);
 const DEFAULT_COLOR = '#3949ab';
 const newPath = ref({ title: '', description: '', color: DEFAULT_COLOR });
 
-// Detect mobile viewport
-const isMobile = computed(() => window.innerWidth < 768);
+// Detect mobile viewport (reactive to resize)
+const windowWidth = ref(window.innerWidth);
+const isMobile = computed(() => windowWidth.value < 768);
+function onResize() {
+  windowWidth.value = window.innerWidth;
+}
+onMounted(() => window.addEventListener('resize', onResize));
+onUnmounted(() => window.removeEventListener('resize', onResize));
 
 // Build ordered + hidden state when paths load
 watch(
@@ -234,7 +242,7 @@ watch(
     );
     emit('pathsChanged', visible);
   },
-  { deep: true },
+  { deep: true, immediate: true },
 );
 
 async function toggleVisibility(pathId: string) {
@@ -282,8 +290,26 @@ async function createPath() {
     });
     cancelCreate();
     await refetch();
-  } catch {
-    createError.value = 'Failed to create path. Please try again.';
+  } catch (err: unknown) {
+    const fallback = 'Failed to create path. Please try again.';
+    if (err && typeof err === 'object') {
+      const e = err as Record<string, unknown>;
+      const msg =
+        (e?.response as Record<string, unknown> | undefined)?.data &&
+        typeof (e.response as Record<string, unknown>).data === 'object'
+          ? (
+              (e.response as Record<string, unknown>).data as Record<
+                string,
+                unknown
+              >
+            )?.message
+          : (e?.message as string | undefined);
+      createError.value = msg
+        ? `Failed to create path: ${String(msg)}`
+        : fallback;
+    } else {
+      createError.value = fallback;
+    }
   }
 }
 
@@ -294,9 +320,17 @@ function cancelCreate() {
 }
 
 function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
+  if (typeof hex !== 'string') return `rgba(0,0,0,${alpha})`;
+  let normalized = hex.trim();
+  if (!normalized.startsWith('#')) normalized = `#${normalized}`;
+  // Expand 3-digit shorthand (#rgb → #rrggbb)
+  if (/^#[0-9a-fA-F]{3}$/.test(normalized)) {
+    normalized = `#${normalized[1]}${normalized[1]}${normalized[2]}${normalized[2]}${normalized[3]}${normalized[3]}`;
+  }
+  if (!/^#[0-9a-fA-F]{6}$/.test(normalized)) return `rgba(0,0,0,${alpha})`;
+  const r = parseInt(normalized.slice(1, 3), 16);
+  const g = parseInt(normalized.slice(3, 5), 16);
+  const b = parseInt(normalized.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
 }
 </script>

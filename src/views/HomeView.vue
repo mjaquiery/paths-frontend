@@ -119,6 +119,7 @@ import {
   IonCardContent,
 } from '@ionic/vue';
 import { ref, computed, onMounted } from 'vue';
+import { useQueryClient } from '@tanstack/vue-query';
 
 import PathsSelectorBar from '../components/PathsSelectorBar.vue';
 import OnThisDaySpotlight from '../components/OnThisDaySpotlight.vue';
@@ -135,6 +136,7 @@ import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 const loggingIn = ref(false);
 const loginError = ref('');
 const currentUser = ref<OAuthCallbackResponse | null>(null);
+const queryClient = useQueryClient();
 
 /** Ordered, visible paths managed by PathsSelectorBar */
 const visiblePaths = ref<PathResponse[]>([]);
@@ -189,7 +191,8 @@ function logout() {
 }
 
 function onEntryCreated() {
-  // TanStack Query automatically refetches invalidated queries
+  // Invalidate all path-entry queries so the week view refreshes immediately
+  void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
 }
 </script>
 

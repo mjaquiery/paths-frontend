@@ -111,23 +111,29 @@ const primaryPath = computed(() =>
   props.visiblePaths.find((p) => p.path_id === primaryEntry.value?.pathId),
 );
 
-const otherIndicators = computed(() =>
-  spotlightYears.value
+const visiblePathById = computed(
+  () => new Map(props.visiblePaths.map((p) => [p.path_id, p])),
+);
+
+const otherIndicators = computed(() => {
+  const pathMap = visiblePathById.value;
+  return spotlightYears.value
     .filter(
       (e) =>
         e.entryId !== primaryEntry.value?.entryId ||
         e.pathId !== primaryEntry.value?.pathId,
     )
     .slice(0, 12)
-    .map((e) => ({
-      key: `${e.pathId}-${e.year}`,
-      year: e.year,
-      color:
-        props.visiblePaths.find((p) => p.path_id === e.pathId)?.color ?? '#aaa',
-      pathTitle:
-        props.visiblePaths.find((p) => p.path_id === e.pathId)?.title ?? '',
-    })),
-);
+    .map((e) => {
+      const path = pathMap.get(e.pathId);
+      return {
+        key: `${e.pathId}-${e.year}`,
+        year: e.year,
+        color: path?.color ?? '#aaa',
+        pathTitle: path?.title ?? '',
+      };
+    });
+});
 </script>
 
 <style scoped>

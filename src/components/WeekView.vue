@@ -2,7 +2,12 @@
   <div class="week-view">
     <!-- Past-week navigation -->
     <div v-if="hasPreviousEntries" class="week-nav week-nav--top">
-      <ion-button fill="clear" size="small" @click="weekOffset--">
+      <ion-button
+        fill="clear"
+        size="small"
+        aria-label="Navigate to older week"
+        @click="weekOffset--"
+      >
         ▲ Older week
       </ion-button>
     </div>
@@ -37,8 +42,8 @@
           :class="`day-entries--count-${dayInfo.pathEntries.length}`"
         >
           <div
-            v-for="pe in dayInfo.pathEntries"
-            :key="pe.pathId + dayInfo.dateStr"
+            v-for="(pe, idx) in dayInfo.pathEntries"
+            :key="pe.pathId + '-' + dayInfo.dateStr + '-' + idx"
             class="day-entry"
             :style="{ borderLeftColor: pe.color }"
           >
@@ -58,7 +63,12 @@
 
     <!-- Future-week navigation -->
     <div v-if="weekOffset < 0" class="week-nav week-nav--bottom">
-      <ion-button fill="clear" size="small" @click="weekOffset++">
+      <ion-button
+        fill="clear"
+        size="small"
+        aria-label="Navigate to newer week"
+        @click="weekOffset++"
+      >
         ▼ Newer week
       </ion-button>
     </div>
@@ -145,7 +155,7 @@ const weekDays = computed<DayInfo[]>(() => {
       const path = props.visiblePaths.find((p) => p.path_id === pathId);
       if (!path) continue;
       const dayEntries = entries.filter((e) => e.day === dateStr);
-      for (let i = 0; i < dayEntries.length; i++) {
+      for (let j = 0; j < dayEntries.length; j++) {
         pathEntries.push({
           pathId,
           pathTitle: path.title,
