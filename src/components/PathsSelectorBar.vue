@@ -46,7 +46,7 @@
           v-if="currentUser"
           size="small"
           fill="clear"
-          @click="showCreateForm = !showCreateForm"
+          @click="openCreateForm"
           >+ New Path</ion-button
         >
       </div>
@@ -298,6 +298,11 @@ async function createPath() {
       ? `Failed to create path: ${detail}`
       : 'Failed to create path. Please try again.';
   }
+}
+
+function openCreateForm() {
+  expanded.value = true;
+  showCreateForm.value = true;
 }
 
 function cancelCreate() {
