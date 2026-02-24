@@ -79,6 +79,7 @@ import { computed, ref, watch } from 'vue';
 
 import type { PathResponse } from '../generated/types';
 import { useCreateEntry } from '../generated/apiClient';
+import { extractErrorMessage } from '../lib/errors';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -132,23 +133,10 @@ async function submit() {
     emit('created');
     emit('dismiss');
   } catch (err: unknown) {
-    const fallback = 'Failed to create entry. Please try again.';
-    if (err && typeof err === 'object') {
-      const e = err as Record<string, unknown>;
-      const msg =
-        (e?.response as Record<string, unknown> | undefined)?.data &&
-        typeof (e.response as Record<string, unknown>).data === 'object'
-          ? (
-              (e.response as Record<string, unknown>).data as Record<
-                string,
-                unknown
-              >
-            )?.message
-          : (e?.message as string | undefined);
-      error.value = msg ? `Failed to create entry: ${String(msg)}` : fallback;
-    } else {
-      error.value = fallback;
-    }
+    const detail = extractErrorMessage(err);
+    error.value = detail
+      ? `Failed to create entry: ${detail}`
+      : 'Failed to create entry. Please try again.';
   }
 }
 </script>

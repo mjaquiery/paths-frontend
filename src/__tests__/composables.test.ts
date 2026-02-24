@@ -12,6 +12,22 @@ vi.mock('../lib/customFetch', () => ({
   customFetch: vi.fn(),
 }));
 
+// Mock Dexie db used by useMultiPathEntries
+vi.mock('../lib/db', () => ({
+  db: {
+    entryContent: {
+      get: vi.fn().mockResolvedValue(undefined),
+      put: vi.fn().mockResolvedValue(undefined),
+    },
+    pathPreferences: {},
+    queryCache: {},
+  },
+  isPathHidden: vi.fn().mockResolvedValue(false),
+  setPathHidden: vi.fn().mockResolvedValue(undefined),
+  getPathOrder: vi.fn().mockReturnValue([]),
+  setPathOrder: vi.fn(),
+}));
+
 import { customFetch } from '../lib/customFetch';
 
 function createQueryClient() {
@@ -235,6 +251,26 @@ describe('useMultiPathEntries', () => {
 
   it('fetches entries for each provided pathId', async () => {
     vi.mocked(customFetch).mockImplementation((url: string) => {
+      // Match specific content fetch: /v1/paths/{id}/entries/{entryId} (no trailing segment)
+      const contentMatch = url.match(/\/v1\/paths\/([^/]+)\/entries\/([^/]+)$/);
+      if (
+        contentMatch &&
+        !url.endsWith('/entries/p1') &&
+        !url.endsWith('/entries/p2')
+      ) {
+        const [, pathId, entryId] = contentMatch;
+        return Promise.resolve({
+          data: {
+            id: entryId,
+            path_id: pathId,
+            day: '2024-01-01',
+            edit_id: 'ed1',
+            content: `Content for ${entryId}`,
+          },
+          status: 200,
+          headers: new Headers(),
+        });
+      }
       if (url.includes('/v1/paths/p1/entries')) {
         return Promise.resolve({
           data: [
@@ -271,6 +307,9 @@ describe('useMultiPathEntries', () => {
     mount(TestComponent, {
       global: { plugins: [[VueQueryPlugin, { queryClient }]] },
     });
+    // First flush: TanStack Query resolves entry lists
+    await flushPromises();
+    // Second flush: async watch resolves content fetches
     await flushPromises();
 
     expect(result?.value).toHaveLength(2);

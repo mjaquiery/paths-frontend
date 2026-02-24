@@ -10,9 +10,18 @@ export interface QueryCacheEntry {
   value: string;
 }
 
+export interface EntryContentCache {
+  id: string;
+  path_id: string;
+  day: string;
+  edit_id: string;
+  content: string;
+}
+
 const db = new Dexie('pathsFrontend') as Dexie & {
   pathPreferences: EntityTable<PathPreference, 'pathId'>;
   queryCache: EntityTable<QueryCacheEntry, 'key'>;
+  entryContent: EntityTable<EntryContentCache, 'id'>;
 };
 
 export { db };
@@ -24,6 +33,12 @@ db.version(1).stores({
 db.version(2).stores({
   pathPreferences: '&pathId,hidden',
   queryCache: '&key',
+});
+
+db.version(3).stores({
+  pathPreferences: '&pathId,hidden',
+  queryCache: '&key',
+  entryContent: '&id,edit_id,path_id',
 });
 
 export async function isPathHidden(pathId: string) {

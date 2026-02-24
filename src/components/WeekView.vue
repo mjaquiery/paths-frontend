@@ -42,8 +42,8 @@
           :class="`day-entries--count-${dayInfo.pathEntries.length}`"
         >
           <div
-            v-for="(pe, idx) in dayInfo.pathEntries"
-            :key="pe.pathId + '-' + dayInfo.dateStr + '-' + idx"
+            v-for="pe in dayInfo.pathEntries"
+            :key="pe.pathId + '-' + pe.entryId"
             class="day-entry"
             :style="{ borderLeftColor: pe.color }"
           >
@@ -126,6 +126,7 @@ function dayLabel(dateStr: string, isToday: boolean): string {
 }
 
 interface DayPathEntry {
+  entryId: string;
   pathId: string;
   pathTitle: string;
   color: string;
@@ -155,12 +156,13 @@ const weekDays = computed<DayInfo[]>(() => {
       const path = props.visiblePaths.find((p) => p.path_id === pathId);
       if (!path) continue;
       const dayEntries = entries.filter((e) => e.day === dateStr);
-      for (let j = 0; j < dayEntries.length; j++) {
+      for (const entry of dayEntries) {
         pathEntries.push({
+          entryId: entry.id,
           pathId,
           pathTitle: path.title,
           color: path.color,
-          preview: '', // content not loaded at list level
+          preview: entry.content ?? '',
         });
       }
     }

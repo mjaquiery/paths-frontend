@@ -2,13 +2,19 @@
   <div v-if="currentUser" class="paths-selector-bar">
     <!-- Compact bar -->
     <div class="paths-bar-row">
-      <!-- Mobile summary -->
-      <span v-if="isMobile && !expanded" class="paths-count-label">
+      <!-- Mobile summary (shown via CSS on small screens when not expanded) -->
+      <span
+        class="paths-count-label"
+        :class="{ 'paths-count-label--expanded': expanded }"
+      >
         {{ visibleCount }} path{{ visibleCount === 1 ? '' : 's' }} shown
       </span>
 
-      <!-- Chip list (desktop, or mobile when expanded) -->
-      <div v-else class="paths-chip-list">
+      <!-- Chip list (always rendered; CSS controls visibility on mobile) -->
+      <div
+        class="paths-chip-list"
+        :class="{ 'paths-chip-list--expanded': expanded }"
+      >
         <button
           v-for="path in orderedPaths"
           :key="path.path_id"
@@ -63,13 +69,18 @@
             />
           </ion-item>
           <ion-item>
-            <ion-label position="stacked">Color</ion-label>
-            <ion-input
-              v-model="newPath.color"
-              :placeholder="DEFAULT_COLOR"
-              pattern="^#[0-9A-Fa-f]{6}$"
-              :maxlength="7"
-            />
+            <ion-label for="path-colour-picker" position="stacked"
+              >Colour</ion-label
+            >
+            <div class="colour-picker-row">
+              <input
+                id="path-colour-picker"
+                type="color"
+                v-model="newPath.color"
+                class="colour-picker-input"
+              />
+              <span class="colour-picker-hex">{{ newPath.color }}</span>
+            </div>
           </ion-item>
           <div class="paths-form-actions">
             <ion-button
@@ -148,14 +159,13 @@ import {
   IonCard,
   IonCardContent,
   IonChip,
-  IonInput,
   IonItem,
   IonLabel,
   IonList,
   IonToggle,
   type ToggleCustomEvent,
 } from '@ionic/vue';
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import type { OAuthCallbackResponse, PathResponse } from '../generated/types';
 import {
@@ -164,6 +174,7 @@ import {
   getPathOrder,
   setPathOrder,
 } from '../lib/db';
+import { extractErrorMessage } from '../lib/errors';
 import { useCreatePath } from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
 
@@ -187,15 +198,6 @@ const pathOrder = ref<string[]>([]);
 
 const DEFAULT_COLOR = '#3949ab';
 const newPath = ref({ title: '', description: '', color: DEFAULT_COLOR });
-
-// Detect mobile viewport (reactive to resize)
-const windowWidth = ref(window.innerWidth);
-const isMobile = computed(() => windowWidth.value < 768);
-function onResize() {
-  windowWidth.value = window.innerWidth;
-}
-onMounted(() => window.addEventListener('resize', onResize));
-onUnmounted(() => window.removeEventListener('resize', onResize));
 
 // Build ordered + hidden state when paths load
 watch(
@@ -291,25 +293,10 @@ async function createPath() {
     cancelCreate();
     await refetch();
   } catch (err: unknown) {
-    const fallback = 'Failed to create path. Please try again.';
-    if (err && typeof err === 'object') {
-      const e = err as Record<string, unknown>;
-      const msg =
-        (e?.response as Record<string, unknown> | undefined)?.data &&
-        typeof (e.response as Record<string, unknown>).data === 'object'
-          ? (
-              (e.response as Record<string, unknown>).data as Record<
-                string,
-                unknown
-              >
-            )?.message
-          : (e?.message as string | undefined);
-      createError.value = msg
-        ? `Failed to create path: ${String(msg)}`
-        : fallback;
-    } else {
-      createError.value = fallback;
-    }
+    const detail = extractErrorMessage(err);
+    createError.value = detail
+      ? `Failed to create path: ${detail}`
+      : 'Failed to create path. Please try again.';
   }
 }
 
@@ -349,7 +336,9 @@ function hexToRgba(hex: string, alpha: number): string {
   flex-wrap: wrap;
 }
 
+/* Default (≥768 px): hide count label, show chips */
 .paths-count-label {
+  display: none;
   flex: 1;
   font-size: 0.875rem;
   color: var(--ion-color-medium, #666);
@@ -360,6 +349,25 @@ function hexToRgba(hex: string, alpha: number): string {
   flex-wrap: wrap;
   gap: 6px;
   flex: 1;
+}
+
+/* Mobile (<768 px): show count, hide chips unless expanded */
+@media (max-width: 767px) {
+  .paths-count-label {
+    display: inline;
+  }
+
+  .paths-count-label--expanded {
+    display: none;
+  }
+
+  .paths-chip-list {
+    display: none;
+  }
+
+  .paths-chip-list--expanded {
+    display: flex;
+  }
 }
 
 .path-chip {
@@ -436,5 +444,28 @@ function hexToRgba(hex: string, alpha: number): string {
 
 .paths-public-chip {
   font-size: 0.75rem;
+}
+
+.colour-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.colour-picker-input {
+  width: 44px;
+  height: 36px;
+  border: 1px solid var(--ion-color-light-shade, #ccc);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px;
+  background: none;
+}
+
+.colour-picker-hex {
+  font-size: 0.875rem;
+  color: var(--ion-color-dark, #333);
+  font-family: monospace;
 }
 </style>
