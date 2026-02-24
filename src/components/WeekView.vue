@@ -49,9 +49,9 @@
             role="button"
             tabindex="0"
             :aria-label="`View entry from ${pe.pathTitle}`"
-            @click="openDetail(pe, dayInfo.dateStr)"
-            @keydown.enter="openDetail(pe, dayInfo.dateStr)"
-            @keydown.space.prevent="openDetail(pe, dayInfo.dateStr)"
+            @click="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
+            @keydown.enter="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
+            @keydown.space.prevent="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
           >
             <span
               class="day-entry-path-dot"
@@ -98,14 +98,10 @@
 
   <!-- Entry detail modal -->
   <EntryDetailModal
-    v-if="detailEntry"
     :is-open="showDetailModal"
-    :path-title="detailEntry.pathTitle"
-    :color="detailEntry.color"
-    :day="detailEntry.day"
-    :content="detailEntry.preview"
-    :has-images="detailEntry.hasImages"
-    @dismiss="showDetailModal = false"
+    :entries="detailDayEntries"
+    :start-index="detailStartIndex"
+    @dismiss="closeDetail"
   />
 </template>
 
@@ -117,6 +113,7 @@ import type { PathResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
 import EntryCreateModal from './EntryCreateModal.vue';
 import EntryDetailModal from './EntryDetailModal.vue';
+import type { EntryDetailData } from './EntryDetailModal.vue';
 
 const props = defineProps<{
   visiblePaths: PathResponse[];
@@ -133,7 +130,8 @@ const weekOffset = ref(0); // 0 = current week, -1 = last week, etc.
 const showCreateModal = ref(false);
 const createModalDay = ref('');
 const showDetailModal = ref(false);
-const detailEntry = ref<(DayPathEntry & { day: string }) | null>(null);
+const detailDayEntries = ref<EntryDetailData[]>([]);
+const detailStartIndex = ref(0);
 
 /** Build ISO date string for a day offset from today */
 function isoDate(offsetDays: number): string {
@@ -220,9 +218,21 @@ function openCreate(dateStr: string) {
   showCreateModal.value = true;
 }
 
-function openDetail(pe: DayPathEntry, dateStr: string) {
-  detailEntry.value = { ...pe, day: dateStr };
+function openDetail(pe: DayPathEntry, dayEntries: DayPathEntry[], dateStr: string) {
+  detailDayEntries.value = dayEntries.map((e) => ({
+    pathTitle: e.pathTitle,
+    color: e.color,
+    day: dateStr,
+    content: e.preview,
+    hasImages: e.hasImages,
+  }));
+  detailStartIndex.value = dayEntries.indexOf(pe);
   showDetailModal.value = true;
+}
+
+function closeDetail() {
+  showDetailModal.value = false;
+  detailDayEntries.value = [];
 }
 
 function onEntryCreated() {
