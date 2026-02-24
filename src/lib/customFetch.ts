@@ -3,7 +3,7 @@ export const customFetch = async <T>(
   options?: RequestInit,
 ): Promise<T> => {
   const baseUrl = (
-    import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
   ).replace(/\/$/, '');
   const response = await fetch(`${baseUrl}${url}`, {
     credentials: 'include',
