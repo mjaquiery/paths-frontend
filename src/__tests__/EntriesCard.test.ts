@@ -122,16 +122,27 @@ describe('EntriesCard', () => {
 
   it('calls createEntry API when form is submitted', async () => {
     const queryClient = createQueryClient();
-    vi.mocked(customFetch).mockImplementation((url: string, options?: RequestInit) => {
-      if ((options as RequestInit)?.method === 'POST') {
+    vi.mocked(customFetch).mockImplementation(
+      (url: string, options?: RequestInit) => {
+        if ((options as RequestInit)?.method === 'POST') {
+          return Promise.resolve({
+            data: {
+              id: 'e1',
+              path_id: 'p1',
+              day: '2024-01-01',
+              edit_id: 'ed1',
+            },
+            status: 201,
+            headers: new Headers(),
+          });
+        }
         return Promise.resolve({
-          data: { id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 'ed1' },
-          status: 201,
+          data: [],
+          status: 200,
           headers: new Headers(),
         });
-      }
-      return Promise.resolve({ data: [], status: 200, headers: new Headers() });
-    });
+      },
+    );
 
     const wrapper = mount(EntriesCard, {
       props: { pathId: 'p1', canCreateEntries: true },
@@ -168,19 +179,28 @@ describe('EntriesCard', () => {
       '/v1/paths/p1/entries',
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ day: '2024-01-01', content: 'My entry content' }),
+        body: JSON.stringify({
+          day: '2024-01-01',
+          content: 'My entry content',
+        }),
       }),
     );
   });
 
   it('shows an error and keeps the form open when entry creation fails', async () => {
     const queryClient = createQueryClient();
-    vi.mocked(customFetch).mockImplementation((url: string, options?: RequestInit) => {
-      if ((options as RequestInit)?.method === 'POST') {
-        return Promise.reject(new Error('server error'));
-      }
-      return Promise.resolve({ data: [], status: 200, headers: new Headers() });
-    });
+    vi.mocked(customFetch).mockImplementation(
+      (url: string, options?: RequestInit) => {
+        if ((options as RequestInit)?.method === 'POST') {
+          return Promise.reject(new Error('server error'));
+        }
+        return Promise.resolve({
+          data: [],
+          status: 200,
+          headers: new Headers(),
+        });
+      },
+    );
 
     const wrapper = mount(EntriesCard, {
       props: { pathId: 'p1', canCreateEntries: true },

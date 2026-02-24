@@ -1,0 +1,17 @@
+/*
+ * Brand theme — colours taken from the Paths app icon.
+ * Primary: calendar header indigo #3949ab
+ * Accent orange #f57c00 and teal #0097a7 are used as path colours.
+ */
+
+:root {
+  --ion-color-primary: #3949ab;
+  --ion-color-primary-rgb: 57, 73, 171;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #324196;
+  --ion-color-primary-tint: #4d5bb3;
+
+  --paths-border-radius: 8px;
+  --paths-day-min-height: 72px;
+}

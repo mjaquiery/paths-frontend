@@ -34,3 +34,17 @@ export async function isPathHidden(pathId: string) {
 export async function setPathHidden(pathId: string, hidden: boolean) {
   await db.pathPreferences.put({ pathId, hidden });
 }
+
+const PATH_ORDER_KEY = 'pathOrder';
+
+export function getPathOrder(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(PATH_ORDER_KEY) ?? '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
+export function setPathOrder(pathIds: string[]): void {
+  localStorage.setItem(PATH_ORDER_KEY, JSON.stringify(pathIds));
+}

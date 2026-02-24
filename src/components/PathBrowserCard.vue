@@ -107,7 +107,8 @@ const emit = defineEmits<{
 }>();
 
 const { data: paths, refetch } = usePaths();
-const { mutateAsync: createPathMutation, isPending: creating } = useCreatePath();
+const { mutateAsync: createPathMutation, isPending: creating } =
+  useCreatePath();
 const hiddenByPath = ref<Record<string, boolean>>({});
 const showHidden = ref(false);
 
