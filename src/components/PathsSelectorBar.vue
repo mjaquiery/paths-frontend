@@ -159,6 +159,7 @@ import {
   IonCard,
   IonCardContent,
   IonChip,
+  IonInput,
   IonItem,
   IonLabel,
   IonList,
