@@ -149,6 +149,37 @@
           </ion-chip>
         </ion-item>
       </ion-list>
+
+      <!-- Subscription management (owned paths only) -->
+      <div
+        v-for="path in ownedPaths"
+        :key="'sub-' + path.path_id"
+        class="paths-invite-section"
+      >
+        <p class="paths-invite-label">
+          Invite to <strong>{{ path.title }}</strong>
+        </p>
+        <div class="paths-invite-row">
+          <ion-input
+            v-model="inviteUserId[path.path_id]"
+            placeholder="User ID to invite"
+            class="paths-invite-input"
+          />
+          <ion-button
+            size="small"
+            :disabled="!inviteUserId[path.path_id] || subscribing[path.path_id]"
+            @click="inviteUser(path.path_id)"
+          >
+            {{ subscribing[path.path_id] ? 'Inviting…' : 'Invite' }}
+          </ion-button>
+        </div>
+        <p v-if="inviteError[path.path_id]" class="paths-error">
+          {{ inviteError[path.path_id] }}
+        </p>
+        <p v-if="inviteSuccess[path.path_id]" class="paths-invite-success">
+          {{ inviteSuccess[path.path_id] }}
+        </p>
+      </div>
     </div>
   </div>
 </template>
@@ -176,10 +207,10 @@ import {
   setPathOrder,
 } from '../lib/db';
 import { extractErrorMessage } from '../lib/errors';
-import { useCreatePath } from '../generated/apiClient';
+import { useCreatePath, useCreateSubscription } from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
 
-defineProps<{
+const props = defineProps<{
   currentUser: OAuthCallbackResponse | null;
 }>();
 
@@ -190,6 +221,7 @@ const emit = defineEmits<{
 const { data: allPaths, refetch } = usePaths();
 const { mutateAsync: createPathMutation, isPending: creating } =
   useCreatePath();
+const { mutateAsync: createSubscription } = useCreateSubscription();
 
 const expanded = ref(false);
 const showCreateForm = ref(false);
@@ -231,6 +263,18 @@ const orderedPaths = computed<PathResponse[]>(() => {
     .map((id) => allPaths.value!.find((p: PathResponse) => p.path_id === id))
     .filter((p): p is PathResponse => !!p);
 });
+
+const ownedPaths = computed<PathResponse[]>(() =>
+  orderedPaths.value.filter(
+    (p) => p.owner_user_id === props.currentUser?.user_id,
+  ),
+);
+
+// Per-path invite form state
+const inviteUserId = ref<Record<string, string>>({});
+const subscribing = ref<Record<string, boolean>>({});
+const inviteError = ref<Record<string, string>>({});
+const inviteSuccess = ref<Record<string, string>>({});
 
 const visibleCount = computed(
   () => orderedPaths.value.filter((p) => !hiddenByPath.value[p.path_id]).length,
@@ -310,6 +354,26 @@ function cancelCreate() {
   showCreateForm.value = false;
   newPath.value = { title: '', description: '', color: DEFAULT_COLOR };
   createError.value = '';
+}
+
+async function inviteUser(pathId: string) {
+  const userId = inviteUserId.value[pathId];
+  if (!userId) return;
+  subscribing.value[pathId] = true;
+  inviteError.value[pathId] = '';
+  inviteSuccess.value[pathId] = '';
+  try {
+    await createSubscription({ pathCode: pathId, data: { user_id: userId } });
+    inviteSuccess.value[pathId] = `User invited successfully.`;
+    inviteUserId.value[pathId] = '';
+  } catch (err: unknown) {
+    const detail = extractErrorMessage(err);
+    inviteError.value[pathId] = detail
+      ? `Failed to invite: ${detail}`
+      : 'Failed to invite user. Please try again.';
+  } finally {
+    subscribing.value[pathId] = false;
+  }
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -473,5 +537,33 @@ function hexToRgba(hex: string, alpha: number): string {
   font-size: 0.875rem;
   color: var(--ion-color-dark, #333);
   font-family: monospace;
+}
+
+.paths-invite-section {
+  padding: 8px 0;
+  border-top: 1px solid var(--ion-color-light-shade, #e0e0e0);
+  margin-top: 4px;
+}
+
+.paths-invite-label {
+  font-size: 0.85rem;
+  margin: 0 0 6px;
+  color: var(--ion-color-dark, #333);
+}
+
+.paths-invite-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.paths-invite-input {
+  flex: 1;
+}
+
+.paths-invite-success {
+  color: var(--ion-color-success, green);
+  font-size: 0.85rem;
+  margin-top: 4px;
 }
 </style>
