@@ -108,6 +108,15 @@ import { extractErrorMessage } from '../lib/errors';
 import { db } from '../lib/db';
 
 const DEFAULT_IMAGE_CONTENT_TYPE = 'image/jpeg';
+const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_IMAGE_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+]);
 
 const props = defineProps<{
   isOpen: boolean;
@@ -156,7 +165,28 @@ watch(
 
 function onFilesSelected(event: Event) {
   const input = event.target as HTMLInputElement;
-  pendingImages.value = input.files ? Array.from(input.files) : [];
+  const files = input.files ? Array.from(input.files) : [];
+  const wrongType = files.filter((f) => !ALLOWED_IMAGE_TYPES.has(f.type));
+  const tooLarge = files.filter(
+    (f) => ALLOWED_IMAGE_TYPES.has(f.type) && f.size > MAX_IMAGE_SIZE_BYTES,
+  );
+  if (wrongType.length > 0 || tooLarge.length > 0) {
+    const messages: string[] = [];
+    if (wrongType.length > 0) {
+      messages.push(`Not an image: ${wrongType.map((f) => f.name).join(', ')}`);
+    }
+    if (tooLarge.length > 0) {
+      messages.push(
+        `Exceeds 10 MB: ${tooLarge.map((f) => f.name).join(', ')}`,
+      );
+    }
+    error.value = `Some files were rejected. ${messages.join('; ')}`;
+    input.value = '';
+    pendingImages.value = [];
+    return;
+  }
+  error.value = '';
+  pendingImages.value = files;
 }
 
 async function uploadImages(pathCode: string, entrySlug: string): Promise<string[]> {
@@ -169,11 +199,14 @@ async function uploadImages(pathCode: string, entrySlug: string): Promise<string
       data: { filename: file.name, content_type: contentType },
     });
     const { image_id, upload_url } = uploadResp.data as ImageUploadResponse;
-    await fetch(upload_url, {
+    const response = await fetch(upload_url, {
       method: 'PUT',
       body: file,
       headers: { 'Content-Type': contentType },
     });
+    if (!response.ok) {
+      throw new Error(`Image upload failed with status ${response.status}`);
+    }
     await completeUpload({
       imageId: image_id,
       data: { byte_size: file.size },

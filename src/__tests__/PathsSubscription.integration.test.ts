@@ -257,4 +257,30 @@ describe('PathsSelectorBar – subscription management (MSW integration)', () =>
 
     expect(wrapper.html()).toContain('Failed to invite');
   });
+
+  it('clears the success message when the user starts typing a new user ID', async () => {
+    const wrapper = await mountAndExpand();
+
+    // First successful invite
+    const textInputs = wrapper
+      .findAll('input')
+      .filter((i) => i.attributes('type') !== 'checkbox');
+    const inviteInput = textInputs[textInputs.length - 1];
+    await inviteInput.setValue('first-user');
+    await nextTick();
+
+    const inviteBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().trim() === 'Invite');
+    await inviteBtn!.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.html()).toContain('User invited successfully');
+
+    // User starts typing a second invite — success message should clear
+    await inviteInput.setValue('second-user');
+    await nextTick();
+
+    expect(wrapper.html()).not.toContain('User invited successfully');
+  });
 });

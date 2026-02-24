@@ -339,4 +339,74 @@ describe('EntryCreateModal – image upload (MSW integration)', () => {
 
     expect(wrapper.html()).toContain('my-photo.jpg');
   });
+
+  it('rejects files that are not images and shows an error', async () => {
+    const wrapper = await mountModal();
+    await nextTick();
+
+    const file = new File(['not an image'], 'document.pdf', { type: 'application/pdf' });
+    const fileInput = wrapper.find('input[type="file"]');
+    Object.defineProperty(fileInput.element, 'files', {
+      value: [file],
+      configurable: true,
+    });
+    await fileInput.trigger('change');
+    await nextTick();
+
+    expect(wrapper.html()).toContain('Not an image');
+    expect(wrapper.html()).toContain('document.pdf');
+    // Should not add the file to the pending list
+    expect(wrapper.html()).not.toContain('pending-image-name');
+  });
+
+  it('rejects files exceeding 10 MB and shows an error', async () => {
+    const wrapper = await mountModal();
+    await nextTick();
+
+    // Create a mock File whose size property reports > 10 MB
+    const largeFile = new File(['x'], 'huge.jpg', { type: 'image/jpeg' });
+    Object.defineProperty(largeFile, 'size', { value: 11 * 1024 * 1024 });
+
+    const fileInput = wrapper.find('input[type="file"]');
+    Object.defineProperty(fileInput.element, 'files', {
+      value: [largeFile],
+      configurable: true,
+    });
+    await fileInput.trigger('change');
+    await nextTick();
+
+    expect(wrapper.html()).toContain('Exceeds 10 MB');
+  });
+
+  it('shows an error and does not emit created when the presigned PUT fails', async () => {
+    server.use(
+      http.put('https://storage.example.com/put-here', () => {
+        return new HttpResponse(null, { status: 403 });
+      }),
+    );
+
+    const wrapper = await mountModal();
+    await nextTick();
+
+    const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
+    const fileInput = wrapper.find('input[type="file"]');
+    Object.defineProperty(fileInput.element, 'files', {
+      value: [file],
+      configurable: true,
+    });
+    await fileInput.trigger('change');
+    await nextTick();
+
+    await wrapper.find('textarea').setValue('Entry with broken upload');
+    await nextTick();
+
+    const createBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().trim() === 'Create Entry');
+    await createBtn!.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.html()).toContain('Failed to create entry');
+    expect(wrapper.emitted('created')).toBeUndefined();
+  });
 });

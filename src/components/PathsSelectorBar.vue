@@ -161,9 +161,10 @@
         </p>
         <div class="paths-invite-row">
           <ion-input
-            v-model="inviteUserId[path.path_id]"
+            :model-value="inviteUserId[path.path_id]"
             placeholder="User ID to invite"
             class="paths-invite-input"
+            @update:model-value="onInviteInput(path.path_id, $event as string)"
           />
           <ion-button
             size="small"
@@ -374,6 +375,12 @@ async function inviteUser(pathId: string) {
   } finally {
     subscribing.value[pathId] = false;
   }
+}
+
+function onInviteInput(pathId: string, value: string) {
+  inviteUserId.value[pathId] = value;
+  inviteSuccess.value[pathId] = '';
+  inviteError.value[pathId] = '';
 }
 
 function hexToRgba(hex: string, alpha: number): string {

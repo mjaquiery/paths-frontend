@@ -1,11 +1,11 @@
 /**
- * Integration tests for WeekView multi-path and multi-entry rendering.
+ * Tests for WeekView multi-path and multi-entry rendering.
  *
- * Uses MSW setupServer to intercept HTTP but WeekView itself receives already-
- * resolved PathEntries data via props, so these tests focus on the computed
- * rendering logic: entries from multiple paths on the same day are shown
- * side-by-side, multiple entries from the same path on the same day all
- * appear, and entries with images show the 📷 thumbnail indicator.
+ * WeekView receives already-resolved PathEntries data via props, so these
+ * tests focus on the computed rendering logic: entries from multiple paths on
+ * the same day are shown side-by-side, multiple entries from the same path on
+ * the same day all appear, and entries with images show the 📷 thumbnail
+ * indicator.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { nextTick } from 'vue';
