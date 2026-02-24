@@ -4,7 +4,10 @@
  * paths backend API
  * OpenAPI spec version: 0.1.0
  */
-import { useMutation, useQuery } from '@tanstack/vue-query';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/vue-query';
 import type {
   DataTag,
   MutationFunction,
@@ -14,11 +17,16 @@ import type {
   UseMutationOptions,
   UseMutationReturnType,
   UseQueryOptions,
-  UseQueryReturnType,
+  UseQueryReturnType
 } from '@tanstack/vue-query';
 
-import { computed, unref } from 'vue';
-import type { MaybeRef } from 'vue';
+import {
+  computed,
+  unref
+} from 'vue';
+import type {
+  MaybeRef
+} from 'vue';
 
 import type {
   AdminLoginRequest,
@@ -36,13 +44,20 @@ import type {
   PathCreationApprovalRequest,
   PathSubscriptionCreateRequest,
   PathVisibilityUpdateRequest,
-  UserDisplayNameUpdateRequest,
+  UserDisplayNameUpdateRequest
 } from './types';
 
-import { faker } from '@faker-js/faker';
+import {
+  faker
+} from '@faker-js/faker';
 
-import { HttpResponse, http } from 'msw';
-import type { RequestHandlerOptions } from 'msw';
+import {
+  HttpResponse,
+  http
+} from 'msw';
+import type {
+  RequestHandlerOptions
+} from 'msw';
 
 import type {
   AdminLoginResponse,
@@ -58,4123 +73,2964 @@ import type {
   OAuthLoginResponse,
   PathCreationApprovalResponse,
   PathResponse,
-  UserProfileResponse,
+  UserProfileResponse
 } from './types';
 
 import { customFetch } from '../lib/customFetch';
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
+
+
 /**
  * @summary Health
  */
 export type healthResponse200 = {
-  data: HealthResponse;
-  status: 200;
-};
+  data: HealthResponse
+  status: 200
+}
 
-export type healthResponseSuccess = healthResponse200 & {
+export type healthResponseSuccess = (healthResponse200) & {
   headers: Headers;
 };
-export type healthResponse = healthResponseSuccess;
+;
+
+export type healthResponse = (healthResponseSuccess)
 
 export const getHealthUrl = () => {
-  return `/health`;
-};
 
-export const health = async (
-  options?: RequestInit,
-): Promise<healthResponse> => {
-  return customFetch<healthResponse>(getHealthUrl(), {
+
+  
+
+  return `/health`
+}
+
+export const health = async ( options?: RequestInit): Promise<healthResponse> => {
+  
+  return customFetch<healthResponse>(getHealthUrl(),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
 
 export const getHealthQueryKey = () => {
-  return ['health'] as const;
-};
+    return [
+    'health'
+    ] as const;
+    }
 
-export const getHealthQueryOptions = <
-  TData = Awaited<ReturnType<typeof health>>,
-  TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+    
+export const getHealthQueryOptions = <TData = Awaited<ReturnType<typeof health>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
 
-  const queryKey = getHealthQueryKey();
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof health>>> = ({
-    signal,
-  }) => health({ signal, ...requestOptions });
+  const queryKey =  getHealthQueryKey();
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof health>>,
-    TError,
-    TData
-  >;
-};
+  
 
-export type HealthQueryResult = NonNullable<Awaited<ReturnType<typeof health>>>;
-export type HealthQueryError = unknown;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof health>>> = ({ signal }) => health({ signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData> 
+}
+
+export type HealthQueryResult = NonNullable<Awaited<ReturnType<typeof health>>>
+export type HealthQueryError = unknown
+
 
 /**
  * @summary Health
  */
 
-export function useHealth<
-  TData = Awaited<ReturnType<typeof health>>,
-  TError = unknown,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getHealthQueryOptions(options);
+export function useHealth<TData = Awaited<ReturnType<typeof health>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof health>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getHealthQueryOptions(options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * @summary List Paths
  */
 export type listPathsResponse200 = {
-  data: PathResponse[];
-  status: 200;
-};
+  data: PathResponse[]
+  status: 200
+}
 
-export type listPathsResponseSuccess = listPathsResponse200 & {
+export type listPathsResponseSuccess = (listPathsResponse200) & {
   headers: Headers;
 };
-export type listPathsResponse = listPathsResponseSuccess;
+;
+
+export type listPathsResponse = (listPathsResponseSuccess)
 
 export const getListPathsUrl = () => {
-  return `/v1/paths`;
-};
 
-export const listPaths = async (
-  options?: RequestInit,
-): Promise<listPathsResponse> => {
-  return customFetch<listPathsResponse>(getListPathsUrl(), {
+
+  
+
+  return `/v1/paths`
+}
+
+export const listPaths = async ( options?: RequestInit): Promise<listPathsResponse> => {
+  
+  return customFetch<listPathsResponse>(getListPathsUrl(),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
 
 export const getListPathsQueryKey = () => {
-  return ['v1', 'paths'] as const;
-};
+    return [
+    'v1','paths'
+    ] as const;
+    }
 
-export const getListPathsQueryOptions = <
-  TData = Awaited<ReturnType<typeof listPaths>>,
-  TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof listPaths>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+    
+export const getListPathsQueryOptions = <TData = Awaited<ReturnType<typeof listPaths>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPaths>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
 
-  const queryKey = getListPathsQueryKey();
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listPaths>>> = ({
-    signal,
-  }) => listPaths({ signal, ...requestOptions });
+  const queryKey =  getListPathsQueryKey();
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof listPaths>>,
-    TError,
-    TData
-  >;
-};
+  
 
-export type ListPathsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listPaths>>
->;
-export type ListPathsQueryError = unknown;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPaths>>> = ({ signal }) => listPaths({ signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPaths>>, TError, TData> 
+}
+
+export type ListPathsQueryResult = NonNullable<Awaited<ReturnType<typeof listPaths>>>
+export type ListPathsQueryError = unknown
+
 
 /**
  * @summary List Paths
  */
 
-export function useListPaths<
-  TData = Awaited<ReturnType<typeof listPaths>>,
-  TError = unknown,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listPaths>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getListPathsQueryOptions(options);
+export function useListPaths<TData = Awaited<ReturnType<typeof listPaths>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPaths>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getListPathsQueryOptions(options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * @summary Create Path
  */
 export type createPathResponse201 = {
-  data: PathResponse;
-  status: 201;
-};
+  data: PathResponse
+  status: 201
+}
 
 export type createPathResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type createPathResponseSuccess = createPathResponse201 & {
+export type createPathResponseSuccess = (createPathResponse201) & {
   headers: Headers;
 };
-export type createPathResponseError = createPathResponse422 & {
+export type createPathResponseError = (createPathResponse422) & {
   headers: Headers;
 };
 
-export type createPathResponse =
-  | createPathResponseSuccess
-  | createPathResponseError;
+export type createPathResponse = (createPathResponseSuccess | createPathResponseError)
 
 export const getCreatePathUrl = () => {
-  return `/v1/paths`;
-};
 
-export const createPath = async (
-  pathCreateRequest: PathCreateRequest,
-  options?: RequestInit,
-): Promise<createPathResponse> => {
-  return customFetch<createPathResponse>(getCreatePathUrl(), {
+
+  
+
+  return `/v1/paths`
+}
+
+export const createPath = async (pathCreateRequest: PathCreateRequest, options?: RequestInit): Promise<createPathResponse> => {
+  
+  return customFetch<createPathResponse>(getCreatePathUrl(),
+  {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(pathCreateRequest),
-  });
-};
+    body: JSON.stringify(
+      pathCreateRequest,)
+  }
+);}
+  
 
-export const getCreatePathMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createPath>>,
-    TError,
-    { data: PathCreateRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createPath>>,
-  TError,
-  { data: PathCreateRequest },
-  TContext
-> => {
-  const mutationKey = ['createPath'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createPath>>,
-    { data: PathCreateRequest }
-  > = (props) => {
-    const { data } = props ?? {};
 
-    return createPath(data, requestOptions);
-  };
+export const getCreatePathMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPath>>, TError,{data: PathCreateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPath>>, TError,{data: PathCreateRequest}, TContext> => {
 
-  return { mutationFn, ...mutationOptions };
-};
+const mutationKey = ['createPath'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-export type CreatePathMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createPath>>
->;
-export type CreatePathMutationBody = PathCreateRequest;
-export type CreatePathMutationError = HTTPValidationError;
+      
 
-/**
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPath>>, {data: PathCreateRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPath(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePathMutationResult = NonNullable<Awaited<ReturnType<typeof createPath>>>
+    export type CreatePathMutationBody = PathCreateRequest
+    export type CreatePathMutationError = HTTPValidationError
+
+    /**
  * @summary Create Path
  */
-export const useCreatePath = <TError = HTTPValidationError, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof createPath>>,
-      TError,
-      { data: PathCreateRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof createPath>>,
-  TError,
-  { data: PathCreateRequest },
-  TContext
-> => {
-  return useMutation(getCreatePathMutationOptions(options), queryClient);
-};
-
+export const useCreatePath = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPath>>, TError,{data: PathCreateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof createPath>>,
+        TError,
+        {data: PathCreateRequest},
+        TContext
+      > => {
+      return useMutation(getCreatePathMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Update Path Visibility
  */
 export type updatePathVisibilityResponse200 = {
-  data: PathResponse;
-  status: 200;
-};
+  data: PathResponse
+  status: 200
+}
 
 export type updatePathVisibilityResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
+  data: HTTPValidationError
+  status: 422
+}
+
+export type updatePathVisibilityResponseSuccess = (updatePathVisibilityResponse200) & {
+  headers: Headers;
+};
+export type updatePathVisibilityResponseError = (updatePathVisibilityResponse422) & {
+  headers: Headers;
 };
 
-export type updatePathVisibilityResponseSuccess =
-  updatePathVisibilityResponse200 & {
-    headers: Headers;
-  };
-export type updatePathVisibilityResponseError =
-  updatePathVisibilityResponse422 & {
-    headers: Headers;
-  };
+export type updatePathVisibilityResponse = (updatePathVisibilityResponseSuccess | updatePathVisibilityResponseError)
 
-export type updatePathVisibilityResponse =
-  | updatePathVisibilityResponseSuccess
-  | updatePathVisibilityResponseError;
+export const getUpdatePathVisibilityUrl = (pathCode: string,) => {
 
-export const getUpdatePathVisibilityUrl = (pathCode: string) => {
-  return `/v1/paths/${pathCode}/visibility`;
-};
 
-export const updatePathVisibility = async (
-  pathCode: string,
-  pathVisibilityUpdateRequest: PathVisibilityUpdateRequest,
-  options?: RequestInit,
-): Promise<updatePathVisibilityResponse> => {
-  return customFetch<updatePathVisibilityResponse>(
-    getUpdatePathVisibilityUrl(pathCode),
-    {
-      ...options,
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(pathVisibilityUpdateRequest),
-    },
-  );
-};
+  
 
-export const getUpdatePathVisibilityMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updatePathVisibility>>,
-    TError,
-    { pathCode: string; data: PathVisibilityUpdateRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updatePathVisibility>>,
-  TError,
-  { pathCode: string; data: PathVisibilityUpdateRequest },
-  TContext
-> => {
-  const mutationKey = ['updatePathVisibility'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/paths/${pathCode}/visibility`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updatePathVisibility>>,
-    { pathCode: string; data: PathVisibilityUpdateRequest }
-  > = (props) => {
-    const { pathCode, data } = props ?? {};
+export const updatePathVisibility = async (pathCode: string,
+    pathVisibilityUpdateRequest: PathVisibilityUpdateRequest, options?: RequestInit): Promise<updatePathVisibilityResponse> => {
+  
+  return customFetch<updatePathVisibilityResponse>(getUpdatePathVisibilityUrl(pathCode),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pathVisibilityUpdateRequest,)
+  }
+);}
+  
 
-    return updatePathVisibility(pathCode, data, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type UpdatePathVisibilityMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updatePathVisibility>>
->;
-export type UpdatePathVisibilityMutationBody = PathVisibilityUpdateRequest;
-export type UpdatePathVisibilityMutationError = HTTPValidationError;
+export const getUpdatePathVisibilityMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePathVisibility>>, TError,{pathCode: string;data: PathVisibilityUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePathVisibility>>, TError,{pathCode: string;data: PathVisibilityUpdateRequest}, TContext> => {
 
-/**
+const mutationKey = ['updatePathVisibility'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePathVisibility>>, {pathCode: string;data: PathVisibilityUpdateRequest}> = (props) => {
+          const {pathCode,data} = props ?? {};
+
+          return  updatePathVisibility(pathCode,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePathVisibilityMutationResult = NonNullable<Awaited<ReturnType<typeof updatePathVisibility>>>
+    export type UpdatePathVisibilityMutationBody = PathVisibilityUpdateRequest
+    export type UpdatePathVisibilityMutationError = HTTPValidationError
+
+    /**
  * @summary Update Path Visibility
  */
-export const useUpdatePathVisibility = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof updatePathVisibility>>,
-      TError,
-      { pathCode: string; data: PathVisibilityUpdateRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof updatePathVisibility>>,
-  TError,
-  { pathCode: string; data: PathVisibilityUpdateRequest },
-  TContext
-> => {
-  return useMutation(
-    getUpdatePathVisibilityMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useUpdatePathVisibility = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePathVisibility>>, TError,{pathCode: string;data: PathVisibilityUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof updatePathVisibility>>,
+        TError,
+        {pathCode: string;data: PathVisibilityUpdateRequest},
+        TContext
+      > => {
+      return useMutation(getUpdatePathVisibilityMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Create Subscription
  */
 export type createSubscriptionResponse204 = {
-  data: void;
-  status: 204;
-};
+  data: void
+  status: 204
+}
 
 export type createSubscriptionResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type createSubscriptionResponseSuccess =
-  createSubscriptionResponse204 & {
-    headers: Headers;
-  };
-export type createSubscriptionResponseError = createSubscriptionResponse422 & {
+export type createSubscriptionResponseSuccess = (createSubscriptionResponse204) & {
+  headers: Headers;
+};
+export type createSubscriptionResponseError = (createSubscriptionResponse422) & {
   headers: Headers;
 };
 
-export type createSubscriptionResponse =
-  | createSubscriptionResponseSuccess
-  | createSubscriptionResponseError;
+export type createSubscriptionResponse = (createSubscriptionResponseSuccess | createSubscriptionResponseError)
 
-export const getCreateSubscriptionUrl = (pathCode: string) => {
-  return `/v1/paths/${pathCode}/subscriptions`;
-};
+export const getCreateSubscriptionUrl = (pathCode: string,) => {
 
-export const createSubscription = async (
-  pathCode: string,
-  pathSubscriptionCreateRequest: PathSubscriptionCreateRequest,
-  options?: RequestInit,
-): Promise<createSubscriptionResponse> => {
-  return customFetch<createSubscriptionResponse>(
-    getCreateSubscriptionUrl(pathCode),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(pathSubscriptionCreateRequest),
-    },
-  );
-};
 
-export const getCreateSubscriptionMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createSubscription>>,
-    TError,
-    { pathCode: string; data: PathSubscriptionCreateRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createSubscription>>,
-  TError,
-  { pathCode: string; data: PathSubscriptionCreateRequest },
-  TContext
-> => {
-  const mutationKey = ['createSubscription'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createSubscription>>,
-    { pathCode: string; data: PathSubscriptionCreateRequest }
-  > = (props) => {
-    const { pathCode, data } = props ?? {};
+  return `/v1/paths/${pathCode}/subscriptions`
+}
 
-    return createSubscription(pathCode, data, requestOptions);
-  };
+export const createSubscription = async (pathCode: string,
+    pathSubscriptionCreateRequest: PathSubscriptionCreateRequest, options?: RequestInit): Promise<createSubscriptionResponse> => {
+  
+  return customFetch<createSubscriptionResponse>(getCreateSubscriptionUrl(pathCode),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pathSubscriptionCreateRequest,)
+  }
+);}
+  
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type CreateSubscriptionMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createSubscription>>
->;
-export type CreateSubscriptionMutationBody = PathSubscriptionCreateRequest;
-export type CreateSubscriptionMutationError = HTTPValidationError;
 
-/**
+export const getCreateSubscriptionMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,{pathCode: string;data: PathSubscriptionCreateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,{pathCode: string;data: PathSubscriptionCreateRequest}, TContext> => {
+
+const mutationKey = ['createSubscription'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSubscription>>, {pathCode: string;data: PathSubscriptionCreateRequest}> = (props) => {
+          const {pathCode,data} = props ?? {};
+
+          return  createSubscription(pathCode,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof createSubscription>>>
+    export type CreateSubscriptionMutationBody = PathSubscriptionCreateRequest
+    export type CreateSubscriptionMutationError = HTTPValidationError
+
+    /**
  * @summary Create Subscription
  */
-export const useCreateSubscription = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof createSubscription>>,
-      TError,
-      { pathCode: string; data: PathSubscriptionCreateRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof createSubscription>>,
-  TError,
-  { pathCode: string; data: PathSubscriptionCreateRequest },
-  TContext
-> => {
-  return useMutation(
-    getCreateSubscriptionMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useCreateSubscription = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,{pathCode: string;data: PathSubscriptionCreateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof createSubscription>>,
+        TError,
+        {pathCode: string;data: PathSubscriptionCreateRequest},
+        TContext
+      > => {
+      return useMutation(getCreateSubscriptionMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Delete Subscription
  */
 export type deleteSubscriptionResponse204 = {
-  data: void;
-  status: 204;
-};
+  data: void
+  status: 204
+}
 
 export type deleteSubscriptionResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type deleteSubscriptionResponseSuccess =
-  deleteSubscriptionResponse204 & {
-    headers: Headers;
-  };
-export type deleteSubscriptionResponseError = deleteSubscriptionResponse422 & {
+export type deleteSubscriptionResponseSuccess = (deleteSubscriptionResponse204) & {
+  headers: Headers;
+};
+export type deleteSubscriptionResponseError = (deleteSubscriptionResponse422) & {
   headers: Headers;
 };
 
-export type deleteSubscriptionResponse =
-  | deleteSubscriptionResponseSuccess
-  | deleteSubscriptionResponseError;
+export type deleteSubscriptionResponse = (deleteSubscriptionResponseSuccess | deleteSubscriptionResponseError)
 
-export const getDeleteSubscriptionUrl = (
-  pathCode: string,
-  targetUserId: string,
-) => {
-  return `/v1/paths/${pathCode}/subscriptions/${targetUserId}`;
-};
+export const getDeleteSubscriptionUrl = (pathCode: string,
+    targetUserId: string,) => {
 
-export const deleteSubscription = async (
-  pathCode: string,
-  targetUserId: string,
-  options?: RequestInit,
-): Promise<deleteSubscriptionResponse> => {
-  return customFetch<deleteSubscriptionResponse>(
-    getDeleteSubscriptionUrl(pathCode, targetUserId),
-    {
-      ...options,
-      method: 'DELETE',
-    },
-  );
-};
 
-export const getDeleteSubscriptionMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteSubscription>>,
-    TError,
-    { pathCode: string; targetUserId: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof deleteSubscription>>,
-  TError,
-  { pathCode: string; targetUserId: string },
-  TContext
-> => {
-  const mutationKey = ['deleteSubscription'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof deleteSubscription>>,
-    { pathCode: string; targetUserId: string }
-  > = (props) => {
-    const { pathCode, targetUserId } = props ?? {};
+  return `/v1/paths/${pathCode}/subscriptions/${targetUserId}`
+}
 
-    return deleteSubscription(pathCode, targetUserId, requestOptions);
-  };
+export const deleteSubscription = async (pathCode: string,
+    targetUserId: string, options?: RequestInit): Promise<deleteSubscriptionResponse> => {
+  
+  return customFetch<deleteSubscriptionResponse>(getDeleteSubscriptionUrl(pathCode,targetUserId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+  
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type DeleteSubscriptionMutationResult = NonNullable<
-  Awaited<ReturnType<typeof deleteSubscription>>
->;
 
-export type DeleteSubscriptionMutationError = HTTPValidationError;
+export const getDeleteSubscriptionMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSubscription>>, TError,{pathCode: string;targetUserId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSubscription>>, TError,{pathCode: string;targetUserId: string}, TContext> => {
 
-/**
+const mutationKey = ['deleteSubscription'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSubscription>>, {pathCode: string;targetUserId: string}> = (props) => {
+          const {pathCode,targetUserId} = props ?? {};
+
+          return  deleteSubscription(pathCode,targetUserId,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSubscription>>>
+    
+    export type DeleteSubscriptionMutationError = HTTPValidationError
+
+    /**
  * @summary Delete Subscription
  */
-export const useDeleteSubscription = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof deleteSubscription>>,
-      TError,
-      { pathCode: string; targetUserId: string },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof deleteSubscription>>,
-  TError,
-  { pathCode: string; targetUserId: string },
-  TContext
-> => {
-  return useMutation(
-    getDeleteSubscriptionMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useDeleteSubscription = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSubscription>>, TError,{pathCode: string;targetUserId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof deleteSubscription>>,
+        TError,
+        {pathCode: string;targetUserId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteSubscriptionMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary List Entries
  */
 export type listEntriesResponse200 = {
-  data: EntryResponse[];
-  status: 200;
-};
+  data: EntryResponse[]
+  status: 200
+}
 
 export type listEntriesResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type listEntriesResponseSuccess = listEntriesResponse200 & {
+export type listEntriesResponseSuccess = (listEntriesResponse200) & {
   headers: Headers;
 };
-export type listEntriesResponseError = listEntriesResponse422 & {
+export type listEntriesResponseError = (listEntriesResponse422) & {
   headers: Headers;
 };
 
-export type listEntriesResponse =
-  | listEntriesResponseSuccess
-  | listEntriesResponseError;
+export type listEntriesResponse = (listEntriesResponseSuccess | listEntriesResponseError)
 
-export const getListEntriesUrl = (pathCode: string) => {
-  return `/v1/paths/${pathCode}/entries`;
-};
+export const getListEntriesUrl = (pathCode: string,) => {
 
-export const listEntries = async (
-  pathCode: string,
-  options?: RequestInit,
-): Promise<listEntriesResponse> => {
-  return customFetch<listEntriesResponse>(getListEntriesUrl(pathCode), {
+
+  
+
+  return `/v1/paths/${pathCode}/entries`
+}
+
+export const listEntries = async (pathCode: string, options?: RequestInit): Promise<listEntriesResponse> => {
+  
+  return customFetch<listEntriesResponse>(getListEntriesUrl(pathCode),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
 
-export const getListEntriesQueryKey = (pathCode: MaybeRef<string>) => {
-  return ['v1', 'paths', pathCode, 'entries'] as const;
-};
 
-export const getListEntriesQueryOptions = <
-  TData = Awaited<ReturnType<typeof listEntries>>,
-  TError = HTTPValidationError,
->(
-  pathCode: MaybeRef<string>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listEntries>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
+
+
+export const getListEntriesQueryKey = (pathCode: MaybeRef<string>,) => {
+    return [
+    'v1','paths',pathCode,'entries'
+    ] as const;
+    }
+
+    
+export const getListEntriesQueryOptions = <TData = Awaited<ReturnType<typeof listEntries>>, TError = HTTPValidationError>(pathCode: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEntries>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = getListEntriesQueryKey(pathCode);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listEntries>>> = ({
-    signal,
-  }) => listEntries(unref(pathCode), { signal, ...requestOptions });
+  const queryKey =  getListEntriesQueryKey(pathCode);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: computed(() => !!unref(pathCode)),
-    ...queryOptions,
-  } as UseQueryOptions<Awaited<ReturnType<typeof listEntries>>, TError, TData>;
-};
+  
 
-export type ListEntriesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listEntries>>
->;
-export type ListEntriesQueryError = HTTPValidationError;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEntries>>> = ({ signal }) => listEntries(unref(pathCode), { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(pathCode))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEntries>>, TError, TData> 
+}
+
+export type ListEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof listEntries>>>
+export type ListEntriesQueryError = HTTPValidationError
+
 
 /**
  * @summary List Entries
  */
 
-export function useListEntries<
-  TData = Awaited<ReturnType<typeof listEntries>>,
-  TError = HTTPValidationError,
->(
-  pathCode: MaybeRef<string>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listEntries>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getListEntriesQueryOptions(pathCode, options);
+export function useListEntries<TData = Awaited<ReturnType<typeof listEntries>>, TError = HTTPValidationError>(
+ pathCode: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEntries>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getListEntriesQueryOptions(pathCode,options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * @summary Create Entry
  */
 export type createEntryResponse201 = {
-  data: EntryResponse;
-  status: 201;
-};
+  data: EntryResponse
+  status: 201
+}
 
 export type createEntryResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type createEntryResponseSuccess = createEntryResponse201 & {
+export type createEntryResponseSuccess = (createEntryResponse201) & {
   headers: Headers;
 };
-export type createEntryResponseError = createEntryResponse422 & {
+export type createEntryResponseError = (createEntryResponse422) & {
   headers: Headers;
 };
 
-export type createEntryResponse =
-  | createEntryResponseSuccess
-  | createEntryResponseError;
+export type createEntryResponse = (createEntryResponseSuccess | createEntryResponseError)
 
-export const getCreateEntryUrl = (pathCode: string) => {
-  return `/v1/paths/${pathCode}/entries`;
-};
+export const getCreateEntryUrl = (pathCode: string,) => {
 
-export const createEntry = async (
-  pathCode: string,
-  entryCreateRequest: EntryCreateRequest,
-  options?: RequestInit,
-): Promise<createEntryResponse> => {
-  return customFetch<createEntryResponse>(getCreateEntryUrl(pathCode), {
+
+  
+
+  return `/v1/paths/${pathCode}/entries`
+}
+
+export const createEntry = async (pathCode: string,
+    entryCreateRequest: EntryCreateRequest, options?: RequestInit): Promise<createEntryResponse> => {
+  
+  return customFetch<createEntryResponse>(getCreateEntryUrl(pathCode),
+  {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(entryCreateRequest),
-  });
-};
+    body: JSON.stringify(
+      entryCreateRequest,)
+  }
+);}
+  
 
-export const getCreateEntryMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createEntry>>,
-    TError,
-    { pathCode: string; data: EntryCreateRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createEntry>>,
-  TError,
-  { pathCode: string; data: EntryCreateRequest },
-  TContext
-> => {
-  const mutationKey = ['createEntry'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createEntry>>,
-    { pathCode: string; data: EntryCreateRequest }
-  > = (props) => {
-    const { pathCode, data } = props ?? {};
 
-    return createEntry(pathCode, data, requestOptions);
-  };
+export const getCreateEntryMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEntry>>, TError,{pathCode: string;data: EntryCreateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createEntry>>, TError,{pathCode: string;data: EntryCreateRequest}, TContext> => {
 
-  return { mutationFn, ...mutationOptions };
-};
+const mutationKey = ['createEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-export type CreateEntryMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createEntry>>
->;
-export type CreateEntryMutationBody = EntryCreateRequest;
-export type CreateEntryMutationError = HTTPValidationError;
+      
 
-/**
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEntry>>, {pathCode: string;data: EntryCreateRequest}> = (props) => {
+          const {pathCode,data} = props ?? {};
+
+          return  createEntry(pathCode,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEntryMutationResult = NonNullable<Awaited<ReturnType<typeof createEntry>>>
+    export type CreateEntryMutationBody = EntryCreateRequest
+    export type CreateEntryMutationError = HTTPValidationError
+
+    /**
  * @summary Create Entry
  */
-export const useCreateEntry = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof createEntry>>,
-      TError,
-      { pathCode: string; data: EntryCreateRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof createEntry>>,
-  TError,
-  { pathCode: string; data: EntryCreateRequest },
-  TContext
-> => {
-  return useMutation(getCreateEntryMutationOptions(options), queryClient);
-};
-
+export const useCreateEntry = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEntry>>, TError,{pathCode: string;data: EntryCreateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof createEntry>>,
+        TError,
+        {pathCode: string;data: EntryCreateRequest},
+        TContext
+      > => {
+      return useMutation(getCreateEntryMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Get Entry
  */
 export type getEntryResponse200 = {
-  data: EntryContentResponse;
-  status: 200;
-};
+  data: EntryContentResponse
+  status: 200
+}
 
 export type getEntryResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type getEntryResponseSuccess = getEntryResponse200 & {
+export type getEntryResponseSuccess = (getEntryResponse200) & {
   headers: Headers;
 };
-export type getEntryResponseError = getEntryResponse422 & {
+export type getEntryResponseError = (getEntryResponse422) & {
   headers: Headers;
 };
 
-export type getEntryResponse = getEntryResponseSuccess | getEntryResponseError;
+export type getEntryResponse = (getEntryResponseSuccess | getEntryResponseError)
 
-export const getGetEntryUrl = (pathCode: string, entrySlug: string) => {
-  return `/v1/paths/${pathCode}/entries/${entrySlug}`;
-};
+export const getGetEntryUrl = (pathCode: string,
+    entrySlug: string,) => {
 
-export const getEntry = async (
-  pathCode: string,
-  entrySlug: string,
-  options?: RequestInit,
-): Promise<getEntryResponse> => {
-  return customFetch<getEntryResponse>(getGetEntryUrl(pathCode, entrySlug), {
+
+  
+
+  return `/v1/paths/${pathCode}/entries/${entrySlug}`
+}
+
+export const getEntry = async (pathCode: string,
+    entrySlug: string, options?: RequestInit): Promise<getEntryResponse> => {
+  
+  return customFetch<getEntryResponse>(getGetEntryUrl(pathCode,entrySlug),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
 
-export const getGetEntryQueryKey = (
-  pathCode: MaybeRef<string>,
-  entrySlug: MaybeRef<string>,
+
+
+
+export const getGetEntryQueryKey = (pathCode: MaybeRef<string>,
+    entrySlug: MaybeRef<string>,) => {
+    return [
+    'v1','paths',pathCode,'entries',entrySlug
+    ] as const;
+    }
+
+    
+export const getGetEntryQueryOptions = <TData = Awaited<ReturnType<typeof getEntry>>, TError = HTTPValidationError>(pathCode: MaybeRef<string>,
+    entrySlug: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntry>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
-  return ['v1', 'paths', pathCode, 'entries', entrySlug] as const;
-};
 
-export const getGetEntryQueryOptions = <
-  TData = Awaited<ReturnType<typeof getEntry>>,
-  TError = HTTPValidationError,
->(
-  pathCode: MaybeRef<string>,
-  entrySlug: MaybeRef<string>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getEntry>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey = getGetEntryQueryKey(pathCode, entrySlug);
+  const queryKey =  getGetEntryQueryKey(pathCode,entrySlug);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getEntry>>> = ({
-    signal,
-  }) =>
-    getEntry(unref(pathCode), unref(entrySlug), { signal, ...requestOptions });
+  
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: computed(() => !!(unref(pathCode) && unref(entrySlug))),
-    ...queryOptions,
-  } as UseQueryOptions<Awaited<ReturnType<typeof getEntry>>, TError, TData>;
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEntry>>> = ({ signal }) => getEntry(unref(pathCode),unref(entrySlug), { signal, ...requestOptions });
 
-export type GetEntryQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getEntry>>
->;
-export type GetEntryQueryError = HTTPValidationError;
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(pathCode) && unref(entrySlug))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEntry>>, TError, TData> 
+}
+
+export type GetEntryQueryResult = NonNullable<Awaited<ReturnType<typeof getEntry>>>
+export type GetEntryQueryError = HTTPValidationError
+
 
 /**
  * @summary Get Entry
  */
 
-export function useGetEntry<
-  TData = Awaited<ReturnType<typeof getEntry>>,
-  TError = HTTPValidationError,
->(
-  pathCode: MaybeRef<string>,
-  entrySlug: MaybeRef<string>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getEntry>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetEntryQueryOptions(pathCode, entrySlug, options);
+export function useGetEntry<TData = Awaited<ReturnType<typeof getEntry>>, TError = HTTPValidationError>(
+ pathCode: MaybeRef<string>,
+    entrySlug: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntry>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetEntryQueryOptions(pathCode,entrySlug,options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * @summary Update Entry
  */
 export type updateEntryResponse200 = {
-  data: EntryResponse;
-  status: 200;
-};
+  data: EntryResponse
+  status: 200
+}
 
 export type updateEntryResponse409 = {
-  data: OptimisticLockHTTPErrorResponse;
-  status: 409;
-};
+  data: OptimisticLockHTTPErrorResponse
+  status: 409
+}
 
 export type updateEntryResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type updateEntryResponseSuccess = updateEntryResponse200 & {
+export type updateEntryResponseSuccess = (updateEntryResponse200) & {
   headers: Headers;
 };
-export type updateEntryResponseError = (
-  | updateEntryResponse409
-  | updateEntryResponse422
-) & {
+export type updateEntryResponseError = (updateEntryResponse409 | updateEntryResponse422) & {
   headers: Headers;
 };
 
-export type updateEntryResponse =
-  | updateEntryResponseSuccess
-  | updateEntryResponseError;
+export type updateEntryResponse = (updateEntryResponseSuccess | updateEntryResponseError)
 
-export const getUpdateEntryUrl = (pathCode: string, entrySlug: string) => {
-  return `/v1/paths/${pathCode}/entries/${entrySlug}`;
-};
+export const getUpdateEntryUrl = (pathCode: string,
+    entrySlug: string,) => {
 
-export const updateEntry = async (
-  pathCode: string,
-  entrySlug: string,
-  entryUpdateRequest: EntryUpdateRequest,
-  options?: RequestInit,
-): Promise<updateEntryResponse> => {
-  return customFetch<updateEntryResponse>(
-    getUpdateEntryUrl(pathCode, entrySlug),
-    {
-      ...options,
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(entryUpdateRequest),
-    },
-  );
-};
 
-export const getUpdateEntryMutationOptions = <
-  TError = OptimisticLockHTTPErrorResponse | HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateEntry>>,
-    TError,
-    { pathCode: string; entrySlug: string; data: EntryUpdateRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updateEntry>>,
-  TError,
-  { pathCode: string; entrySlug: string; data: EntryUpdateRequest },
-  TContext
-> => {
-  const mutationKey = ['updateEntry'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateEntry>>,
-    { pathCode: string; entrySlug: string; data: EntryUpdateRequest }
-  > = (props) => {
-    const { pathCode, entrySlug, data } = props ?? {};
+  return `/v1/paths/${pathCode}/entries/${entrySlug}`
+}
 
-    return updateEntry(pathCode, entrySlug, data, requestOptions);
-  };
+export const updateEntry = async (pathCode: string,
+    entrySlug: string,
+    entryUpdateRequest: EntryUpdateRequest, options?: RequestInit): Promise<updateEntryResponse> => {
+  
+  return customFetch<updateEntryResponse>(getUpdateEntryUrl(pathCode,entrySlug),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      entryUpdateRequest,)
+  }
+);}
+  
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type UpdateEntryMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updateEntry>>
->;
-export type UpdateEntryMutationBody = EntryUpdateRequest;
-export type UpdateEntryMutationError =
-  | OptimisticLockHTTPErrorResponse
-  | HTTPValidationError;
 
-/**
+export const getUpdateEntryMutationOptions = <TError = OptimisticLockHTTPErrorResponse | HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEntry>>, TError,{pathCode: string;entrySlug: string;data: EntryUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateEntry>>, TError,{pathCode: string;entrySlug: string;data: EntryUpdateRequest}, TContext> => {
+
+const mutationKey = ['updateEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEntry>>, {pathCode: string;entrySlug: string;data: EntryUpdateRequest}> = (props) => {
+          const {pathCode,entrySlug,data} = props ?? {};
+
+          return  updateEntry(pathCode,entrySlug,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateEntryMutationResult = NonNullable<Awaited<ReturnType<typeof updateEntry>>>
+    export type UpdateEntryMutationBody = EntryUpdateRequest
+    export type UpdateEntryMutationError = OptimisticLockHTTPErrorResponse | HTTPValidationError
+
+    /**
  * @summary Update Entry
  */
-export const useUpdateEntry = <
-  TError = OptimisticLockHTTPErrorResponse | HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof updateEntry>>,
-      TError,
-      { pathCode: string; entrySlug: string; data: EntryUpdateRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof updateEntry>>,
-  TError,
-  { pathCode: string; entrySlug: string; data: EntryUpdateRequest },
-  TContext
-> => {
-  return useMutation(getUpdateEntryMutationOptions(options), queryClient);
-};
-
+export const useUpdateEntry = <TError = OptimisticLockHTTPErrorResponse | HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEntry>>, TError,{pathCode: string;entrySlug: string;data: EntryUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof updateEntry>>,
+        TError,
+        {pathCode: string;entrySlug: string;data: EntryUpdateRequest},
+        TContext
+      > => {
+      return useMutation(getUpdateEntryMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Delete Entry
  */
 export type deleteEntryResponse204 = {
-  data: void;
-  status: 204;
-};
+  data: void
+  status: 204
+}
 
 export type deleteEntryResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type deleteEntryResponseSuccess = deleteEntryResponse204 & {
+export type deleteEntryResponseSuccess = (deleteEntryResponse204) & {
   headers: Headers;
 };
-export type deleteEntryResponseError = deleteEntryResponse422 & {
+export type deleteEntryResponseError = (deleteEntryResponse422) & {
   headers: Headers;
 };
 
-export type deleteEntryResponse =
-  | deleteEntryResponseSuccess
-  | deleteEntryResponseError;
+export type deleteEntryResponse = (deleteEntryResponseSuccess | deleteEntryResponseError)
 
-export const getDeleteEntryUrl = (pathCode: string, entrySlug: string) => {
-  return `/v1/paths/${pathCode}/entries/${entrySlug}`;
-};
+export const getDeleteEntryUrl = (pathCode: string,
+    entrySlug: string,) => {
 
-export const deleteEntry = async (
-  pathCode: string,
-  entrySlug: string,
-  options?: RequestInit,
-): Promise<deleteEntryResponse> => {
-  return customFetch<deleteEntryResponse>(
-    getDeleteEntryUrl(pathCode, entrySlug),
-    {
-      ...options,
-      method: 'DELETE',
-    },
-  );
-};
 
-export const getDeleteEntryMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof deleteEntry>>,
-    TError,
-    { pathCode: string; entrySlug: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof deleteEntry>>,
-  TError,
-  { pathCode: string; entrySlug: string },
-  TContext
-> => {
-  const mutationKey = ['deleteEntry'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof deleteEntry>>,
-    { pathCode: string; entrySlug: string }
-  > = (props) => {
-    const { pathCode, entrySlug } = props ?? {};
+  return `/v1/paths/${pathCode}/entries/${entrySlug}`
+}
 
-    return deleteEntry(pathCode, entrySlug, requestOptions);
-  };
+export const deleteEntry = async (pathCode: string,
+    entrySlug: string, options?: RequestInit): Promise<deleteEntryResponse> => {
+  
+  return customFetch<deleteEntryResponse>(getDeleteEntryUrl(pathCode,entrySlug),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+  
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type DeleteEntryMutationResult = NonNullable<
-  Awaited<ReturnType<typeof deleteEntry>>
->;
 
-export type DeleteEntryMutationError = HTTPValidationError;
+export const getDeleteEntryMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEntry>>, TError,{pathCode: string;entrySlug: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteEntry>>, TError,{pathCode: string;entrySlug: string}, TContext> => {
 
-/**
+const mutationKey = ['deleteEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteEntry>>, {pathCode: string;entrySlug: string}> = (props) => {
+          const {pathCode,entrySlug} = props ?? {};
+
+          return  deleteEntry(pathCode,entrySlug,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteEntryMutationResult = NonNullable<Awaited<ReturnType<typeof deleteEntry>>>
+    
+    export type DeleteEntryMutationError = HTTPValidationError
+
+    /**
  * @summary Delete Entry
  */
-export const useDeleteEntry = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof deleteEntry>>,
-      TError,
-      { pathCode: string; entrySlug: string },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof deleteEntry>>,
-  TError,
-  { pathCode: string; entrySlug: string },
-  TContext
-> => {
-  return useMutation(getDeleteEntryMutationOptions(options), queryClient);
-};
-
+export const useDeleteEntry = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEntry>>, TError,{pathCode: string;entrySlug: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof deleteEntry>>,
+        TError,
+        {pathCode: string;entrySlug: string},
+        TContext
+      > => {
+      return useMutation(getDeleteEntryMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Create Image Upload Url
  */
 export type createImageUploadUrlResponse200 = {
-  data: ImageUploadResponse;
-  status: 200;
-};
+  data: ImageUploadResponse
+  status: 200
+}
 
 export type createImageUploadUrlResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
+  data: HTTPValidationError
+  status: 422
+}
+
+export type createImageUploadUrlResponseSuccess = (createImageUploadUrlResponse200) & {
+  headers: Headers;
+};
+export type createImageUploadUrlResponseError = (createImageUploadUrlResponse422) & {
+  headers: Headers;
 };
 
-export type createImageUploadUrlResponseSuccess =
-  createImageUploadUrlResponse200 & {
-    headers: Headers;
-  };
-export type createImageUploadUrlResponseError =
-  createImageUploadUrlResponse422 & {
-    headers: Headers;
-  };
+export type createImageUploadUrlResponse = (createImageUploadUrlResponseSuccess | createImageUploadUrlResponseError)
 
-export type createImageUploadUrlResponse =
-  | createImageUploadUrlResponseSuccess
-  | createImageUploadUrlResponseError;
+export const getCreateImageUploadUrlUrl = (pathCode: string,
+    entrySlug: string,) => {
 
-export const getCreateImageUploadUrlUrl = (
-  pathCode: string,
-  entrySlug: string,
-) => {
-  return `/v1/paths/${pathCode}/entries/${entrySlug}/images/upload-url`;
-};
 
-export const createImageUploadUrl = async (
-  pathCode: string,
-  entrySlug: string,
-  imageUploadRequest: ImageUploadRequest,
-  options?: RequestInit,
-): Promise<createImageUploadUrlResponse> => {
-  return customFetch<createImageUploadUrlResponse>(
-    getCreateImageUploadUrlUrl(pathCode, entrySlug),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(imageUploadRequest),
-    },
-  );
-};
+  
 
-export const getCreateImageUploadUrlMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createImageUploadUrl>>,
-    TError,
-    { pathCode: string; entrySlug: string; data: ImageUploadRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createImageUploadUrl>>,
-  TError,
-  { pathCode: string; entrySlug: string; data: ImageUploadRequest },
-  TContext
-> => {
-  const mutationKey = ['createImageUploadUrl'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/paths/${pathCode}/entries/${entrySlug}/images/upload-url`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createImageUploadUrl>>,
-    { pathCode: string; entrySlug: string; data: ImageUploadRequest }
-  > = (props) => {
-    const { pathCode, entrySlug, data } = props ?? {};
+export const createImageUploadUrl = async (pathCode: string,
+    entrySlug: string,
+    imageUploadRequest: ImageUploadRequest, options?: RequestInit): Promise<createImageUploadUrlResponse> => {
+  
+  return customFetch<createImageUploadUrlResponse>(getCreateImageUploadUrlUrl(pathCode,entrySlug),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      imageUploadRequest,)
+  }
+);}
+  
 
-    return createImageUploadUrl(pathCode, entrySlug, data, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type CreateImageUploadUrlMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createImageUploadUrl>>
->;
-export type CreateImageUploadUrlMutationBody = ImageUploadRequest;
-export type CreateImageUploadUrlMutationError = HTTPValidationError;
+export const getCreateImageUploadUrlMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createImageUploadUrl>>, TError,{pathCode: string;entrySlug: string;data: ImageUploadRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createImageUploadUrl>>, TError,{pathCode: string;entrySlug: string;data: ImageUploadRequest}, TContext> => {
 
-/**
+const mutationKey = ['createImageUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createImageUploadUrl>>, {pathCode: string;entrySlug: string;data: ImageUploadRequest}> = (props) => {
+          const {pathCode,entrySlug,data} = props ?? {};
+
+          return  createImageUploadUrl(pathCode,entrySlug,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateImageUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof createImageUploadUrl>>>
+    export type CreateImageUploadUrlMutationBody = ImageUploadRequest
+    export type CreateImageUploadUrlMutationError = HTTPValidationError
+
+    /**
  * @summary Create Image Upload Url
  */
-export const useCreateImageUploadUrl = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof createImageUploadUrl>>,
-      TError,
-      { pathCode: string; entrySlug: string; data: ImageUploadRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof createImageUploadUrl>>,
-  TError,
-  { pathCode: string; entrySlug: string; data: ImageUploadRequest },
-  TContext
-> => {
-  return useMutation(
-    getCreateImageUploadUrlMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useCreateImageUploadUrl = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createImageUploadUrl>>, TError,{pathCode: string;entrySlug: string;data: ImageUploadRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof createImageUploadUrl>>,
+        TError,
+        {pathCode: string;entrySlug: string;data: ImageUploadRequest},
+        TContext
+      > => {
+      return useMutation(getCreateImageUploadUrlMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Admin Login
  */
 export type adminLoginResponse200 = {
-  data: AdminLoginResponse;
-  status: 200;
-};
+  data: AdminLoginResponse
+  status: 200
+}
 
 export type adminLoginResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type adminLoginResponseSuccess = adminLoginResponse200 & {
+export type adminLoginResponseSuccess = (adminLoginResponse200) & {
   headers: Headers;
 };
-export type adminLoginResponseError = adminLoginResponse422 & {
+export type adminLoginResponseError = (adminLoginResponse422) & {
   headers: Headers;
 };
 
-export type adminLoginResponse =
-  | adminLoginResponseSuccess
-  | adminLoginResponseError;
+export type adminLoginResponse = (adminLoginResponseSuccess | adminLoginResponseError)
 
 export const getAdminLoginUrl = () => {
-  return `/v1/admin/login`;
-};
 
-export const adminLogin = async (
-  adminLoginRequest: AdminLoginRequest,
-  options?: RequestInit,
-): Promise<adminLoginResponse> => {
-  return customFetch<adminLoginResponse>(getAdminLoginUrl(), {
+
+  
+
+  return `/v1/admin/login`
+}
+
+export const adminLogin = async (adminLoginRequest: AdminLoginRequest, options?: RequestInit): Promise<adminLoginResponse> => {
+  
+  return customFetch<adminLoginResponse>(getAdminLoginUrl(),
+  {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(adminLoginRequest),
-  });
-};
+    body: JSON.stringify(
+      adminLoginRequest,)
+  }
+);}
+  
 
-export const getAdminLoginMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof adminLogin>>,
-    TError,
-    { data: AdminLoginRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof adminLogin>>,
-  TError,
-  { data: AdminLoginRequest },
-  TContext
-> => {
-  const mutationKey = ['adminLogin'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof adminLogin>>,
-    { data: AdminLoginRequest }
-  > = (props) => {
-    const { data } = props ?? {};
 
-    return adminLogin(data, requestOptions);
-  };
+export const getAdminLoginMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminLogin>>, TError,{data: AdminLoginRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminLogin>>, TError,{data: AdminLoginRequest}, TContext> => {
 
-  return { mutationFn, ...mutationOptions };
-};
+const mutationKey = ['adminLogin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-export type AdminLoginMutationResult = NonNullable<
-  Awaited<ReturnType<typeof adminLogin>>
->;
-export type AdminLoginMutationBody = AdminLoginRequest;
-export type AdminLoginMutationError = HTTPValidationError;
+      
 
-/**
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminLogin>>, {data: AdminLoginRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  adminLogin(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminLoginMutationResult = NonNullable<Awaited<ReturnType<typeof adminLogin>>>
+    export type AdminLoginMutationBody = AdminLoginRequest
+    export type AdminLoginMutationError = HTTPValidationError
+
+    /**
  * @summary Admin Login
  */
-export const useAdminLogin = <TError = HTTPValidationError, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof adminLogin>>,
-      TError,
-      { data: AdminLoginRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof adminLogin>>,
-  TError,
-  { data: AdminLoginRequest },
-  TContext
-> => {
-  return useMutation(getAdminLoginMutationOptions(options), queryClient);
-};
-
+export const useAdminLogin = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminLogin>>, TError,{data: AdminLoginRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof adminLogin>>,
+        TError,
+        {data: AdminLoginRequest},
+        TContext
+      > => {
+      return useMutation(getAdminLoginMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Set Path Creation Approval
  */
 export type setPathCreationApprovalResponse200 = {
-  data: PathCreationApprovalResponse;
-  status: 200;
-};
+  data: PathCreationApprovalResponse
+  status: 200
+}
 
 export type setPathCreationApprovalResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
+  data: HTTPValidationError
+  status: 422
+}
+
+export type setPathCreationApprovalResponseSuccess = (setPathCreationApprovalResponse200) & {
+  headers: Headers;
+};
+export type setPathCreationApprovalResponseError = (setPathCreationApprovalResponse422) & {
+  headers: Headers;
 };
 
-export type setPathCreationApprovalResponseSuccess =
-  setPathCreationApprovalResponse200 & {
-    headers: Headers;
-  };
-export type setPathCreationApprovalResponseError =
-  setPathCreationApprovalResponse422 & {
-    headers: Headers;
-  };
+export type setPathCreationApprovalResponse = (setPathCreationApprovalResponseSuccess | setPathCreationApprovalResponseError)
 
-export type setPathCreationApprovalResponse =
-  | setPathCreationApprovalResponseSuccess
-  | setPathCreationApprovalResponseError;
+export const getSetPathCreationApprovalUrl = (userId: string,) => {
 
-export const getSetPathCreationApprovalUrl = (userId: string) => {
-  return `/v1/admin/users/${userId}/path-creation-approval`;
-};
 
-export const setPathCreationApproval = async (
-  userId: string,
-  pathCreationApprovalRequest: PathCreationApprovalRequest,
-  options?: RequestInit,
-): Promise<setPathCreationApprovalResponse> => {
-  return customFetch<setPathCreationApprovalResponse>(
-    getSetPathCreationApprovalUrl(userId),
-    {
-      ...options,
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(pathCreationApprovalRequest),
-    },
-  );
-};
+  
 
-export const getSetPathCreationApprovalMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof setPathCreationApproval>>,
-    TError,
-    { userId: string; data: PathCreationApprovalRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof setPathCreationApproval>>,
-  TError,
-  { userId: string; data: PathCreationApprovalRequest },
-  TContext
-> => {
-  const mutationKey = ['setPathCreationApproval'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/admin/users/${userId}/path-creation-approval`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof setPathCreationApproval>>,
-    { userId: string; data: PathCreationApprovalRequest }
-  > = (props) => {
-    const { userId, data } = props ?? {};
+export const setPathCreationApproval = async (userId: string,
+    pathCreationApprovalRequest: PathCreationApprovalRequest, options?: RequestInit): Promise<setPathCreationApprovalResponse> => {
+  
+  return customFetch<setPathCreationApprovalResponse>(getSetPathCreationApprovalUrl(userId),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pathCreationApprovalRequest,)
+  }
+);}
+  
 
-    return setPathCreationApproval(userId, data, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type SetPathCreationApprovalMutationResult = NonNullable<
-  Awaited<ReturnType<typeof setPathCreationApproval>>
->;
-export type SetPathCreationApprovalMutationBody = PathCreationApprovalRequest;
-export type SetPathCreationApprovalMutationError = HTTPValidationError;
+export const getSetPathCreationApprovalMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setPathCreationApproval>>, TError,{userId: string;data: PathCreationApprovalRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setPathCreationApproval>>, TError,{userId: string;data: PathCreationApprovalRequest}, TContext> => {
 
-/**
+const mutationKey = ['setPathCreationApproval'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setPathCreationApproval>>, {userId: string;data: PathCreationApprovalRequest}> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  setPathCreationApproval(userId,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetPathCreationApprovalMutationResult = NonNullable<Awaited<ReturnType<typeof setPathCreationApproval>>>
+    export type SetPathCreationApprovalMutationBody = PathCreationApprovalRequest
+    export type SetPathCreationApprovalMutationError = HTTPValidationError
+
+    /**
  * @summary Set Path Creation Approval
  */
-export const useSetPathCreationApproval = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof setPathCreationApproval>>,
-      TError,
-      { userId: string; data: PathCreationApprovalRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof setPathCreationApproval>>,
-  TError,
-  { userId: string; data: PathCreationApprovalRequest },
-  TContext
-> => {
-  return useMutation(
-    getSetPathCreationApprovalMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useSetPathCreationApproval = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setPathCreationApproval>>, TError,{userId: string;data: PathCreationApprovalRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof setPathCreationApproval>>,
+        TError,
+        {userId: string;data: PathCreationApprovalRequest},
+        TContext
+      > => {
+      return useMutation(getSetPathCreationApprovalMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Get Profile
  */
 export type getProfileResponse200 = {
-  data: UserProfileResponse;
-  status: 200;
-};
+  data: UserProfileResponse
+  status: 200
+}
 
-export type getProfileResponseSuccess = getProfileResponse200 & {
+export type getProfileResponseSuccess = (getProfileResponse200) & {
   headers: Headers;
 };
-export type getProfileResponse = getProfileResponseSuccess;
+;
+
+export type getProfileResponse = (getProfileResponseSuccess)
 
 export const getGetProfileUrl = () => {
-  return `/v1/account/profile`;
-};
 
-export const getProfile = async (
-  options?: RequestInit,
-): Promise<getProfileResponse> => {
-  return customFetch<getProfileResponse>(getGetProfileUrl(), {
+
+  
+
+  return `/v1/account/profile`
+}
+
+export const getProfile = async ( options?: RequestInit): Promise<getProfileResponse> => {
+  
+  return customFetch<getProfileResponse>(getGetProfileUrl(),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
 
 export const getGetProfileQueryKey = () => {
-  return ['v1', 'account', 'profile'] as const;
-};
+    return [
+    'v1','account','profile'
+    ] as const;
+    }
 
-export const getGetProfileQueryOptions = <
-  TData = Awaited<ReturnType<typeof getProfile>>,
-  TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+    
+export const getGetProfileQueryOptions = <TData = Awaited<ReturnType<typeof getProfile>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
 
-  const queryKey = getGetProfileQueryKey();
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfile>>> = ({
-    signal,
-  }) => getProfile({ signal, ...requestOptions });
+  const queryKey =  getGetProfileQueryKey();
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getProfile>>,
-    TError,
-    TData
-  >;
-};
+  
 
-export type GetProfileQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getProfile>>
->;
-export type GetProfileQueryError = unknown;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfile>>> = ({ signal }) => getProfile({ signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData> 
+}
+
+export type GetProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getProfile>>>
+export type GetProfileQueryError = unknown
+
 
 /**
  * @summary Get Profile
  */
 
-export function useGetProfile<
-  TData = Awaited<ReturnType<typeof getProfile>>,
-  TError = unknown,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetProfileQueryOptions(options);
+export function useGetProfile<TData = Awaited<ReturnType<typeof getProfile>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetProfileQueryOptions(options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * @summary Update Display Name
  */
 export type updateDisplayNameResponse200 = {
-  data: UserProfileResponse;
-  status: 200;
-};
+  data: UserProfileResponse
+  status: 200
+}
 
 export type updateDisplayNameResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type updateDisplayNameResponseSuccess = updateDisplayNameResponse200 & {
+export type updateDisplayNameResponseSuccess = (updateDisplayNameResponse200) & {
   headers: Headers;
 };
-export type updateDisplayNameResponseError = updateDisplayNameResponse422 & {
+export type updateDisplayNameResponseError = (updateDisplayNameResponse422) & {
   headers: Headers;
 };
 
-export type updateDisplayNameResponse =
-  | updateDisplayNameResponseSuccess
-  | updateDisplayNameResponseError;
+export type updateDisplayNameResponse = (updateDisplayNameResponseSuccess | updateDisplayNameResponseError)
 
 export const getUpdateDisplayNameUrl = () => {
-  return `/v1/account/display-name`;
-};
 
-export const updateDisplayName = async (
-  userDisplayNameUpdateRequest: UserDisplayNameUpdateRequest,
-  options?: RequestInit,
-): Promise<updateDisplayNameResponse> => {
-  return customFetch<updateDisplayNameResponse>(getUpdateDisplayNameUrl(), {
+
+  
+
+  return `/v1/account/display-name`
+}
+
+export const updateDisplayName = async (userDisplayNameUpdateRequest: UserDisplayNameUpdateRequest, options?: RequestInit): Promise<updateDisplayNameResponse> => {
+  
+  return customFetch<updateDisplayNameResponse>(getUpdateDisplayNameUrl(),
+  {      
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(userDisplayNameUpdateRequest),
-  });
-};
+    body: JSON.stringify(
+      userDisplayNameUpdateRequest,)
+  }
+);}
+  
 
-export const getUpdateDisplayNameMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateDisplayName>>,
-    TError,
-    { data: UserDisplayNameUpdateRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updateDisplayName>>,
-  TError,
-  { data: UserDisplayNameUpdateRequest },
-  TContext
-> => {
-  const mutationKey = ['updateDisplayName'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateDisplayName>>,
-    { data: UserDisplayNameUpdateRequest }
-  > = (props) => {
-    const { data } = props ?? {};
 
-    return updateDisplayName(data, requestOptions);
-  };
+export const getUpdateDisplayNameMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDisplayName>>, TError,{data: UserDisplayNameUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateDisplayName>>, TError,{data: UserDisplayNameUpdateRequest}, TContext> => {
 
-  return { mutationFn, ...mutationOptions };
-};
+const mutationKey = ['updateDisplayName'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-export type UpdateDisplayNameMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updateDisplayName>>
->;
-export type UpdateDisplayNameMutationBody = UserDisplayNameUpdateRequest;
-export type UpdateDisplayNameMutationError = HTTPValidationError;
+      
 
-/**
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDisplayName>>, {data: UserDisplayNameUpdateRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateDisplayName(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateDisplayNameMutationResult = NonNullable<Awaited<ReturnType<typeof updateDisplayName>>>
+    export type UpdateDisplayNameMutationBody = UserDisplayNameUpdateRequest
+    export type UpdateDisplayNameMutationError = HTTPValidationError
+
+    /**
  * @summary Update Display Name
  */
-export const useUpdateDisplayName = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof updateDisplayName>>,
-      TError,
-      { data: UserDisplayNameUpdateRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof updateDisplayName>>,
-  TError,
-  { data: UserDisplayNameUpdateRequest },
-  TContext
-> => {
-  return useMutation(getUpdateDisplayNameMutationOptions(options), queryClient);
-};
-
+export const useUpdateDisplayName = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDisplayName>>, TError,{data: UserDisplayNameUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof updateDisplayName>>,
+        TError,
+        {data: UserDisplayNameUpdateRequest},
+        TContext
+      > => {
+      return useMutation(getUpdateDisplayNameMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Create Deletion Request
  */
 export type createDeletionRequestResponse200 = {
-  data: DeletionRequestResponse;
-  status: 200;
-};
+  data: DeletionRequestResponse
+  status: 200
+}
 
-export type createDeletionRequestResponseSuccess =
-  createDeletionRequestResponse200 & {
-    headers: Headers;
-  };
-export type createDeletionRequestResponse =
-  createDeletionRequestResponseSuccess;
+export type createDeletionRequestResponseSuccess = (createDeletionRequestResponse200) & {
+  headers: Headers;
+};
+;
+
+export type createDeletionRequestResponse = (createDeletionRequestResponseSuccess)
 
 export const getCreateDeletionRequestUrl = () => {
-  return `/v1/account/deletion-requests`;
-};
 
-export const createDeletionRequest = async (
-  options?: RequestInit,
-): Promise<createDeletionRequestResponse> => {
-  return customFetch<createDeletionRequestResponse>(
-    getCreateDeletionRequestUrl(),
-    {
-      ...options,
-      method: 'POST',
-    },
-  );
-};
 
-export const getCreateDeletionRequestMutationOptions = <
-  TError = unknown,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createDeletionRequest>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createDeletionRequest>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ['createDeletionRequest'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createDeletionRequest>>,
-    void
-  > = () => {
-    return createDeletionRequest(requestOptions);
-  };
+  return `/v1/account/deletion-requests`
+}
 
-  return { mutationFn, ...mutationOptions };
-};
+export const createDeletionRequest = async ( options?: RequestInit): Promise<createDeletionRequestResponse> => {
+  
+  return customFetch<createDeletionRequestResponse>(getCreateDeletionRequestUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+  
 
-export type CreateDeletionRequestMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createDeletionRequest>>
->;
 
-export type CreateDeletionRequestMutationError = unknown;
 
-/**
+export const getCreateDeletionRequestMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDeletionRequest>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createDeletionRequest>>, TError,void, TContext> => {
+
+const mutationKey = ['createDeletionRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDeletionRequest>>, void> = () => {
+          
+
+          return  createDeletionRequest(requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDeletionRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createDeletionRequest>>>
+    
+    export type CreateDeletionRequestMutationError = unknown
+
+    /**
  * @summary Create Deletion Request
  */
-export const useCreateDeletionRequest = <TError = unknown, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof createDeletionRequest>>,
-      TError,
-      void,
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof createDeletionRequest>>,
-  TError,
-  void,
-  TContext
-> => {
-  return useMutation(
-    getCreateDeletionRequestMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useCreateDeletionRequest = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDeletionRequest>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof createDeletionRequest>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCreateDeletionRequestMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Latest Deletion Request
  */
 export type getLatestDeletionRequestResponse200 = {
-  data: DeletionRequestResponse;
-  status: 200;
-};
+  data: DeletionRequestResponse
+  status: 200
+}
 
-export type getLatestDeletionRequestResponseSuccess =
-  getLatestDeletionRequestResponse200 & {
-    headers: Headers;
-  };
-export type getLatestDeletionRequestResponse =
-  getLatestDeletionRequestResponseSuccess;
+export type getLatestDeletionRequestResponseSuccess = (getLatestDeletionRequestResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getLatestDeletionRequestResponse = (getLatestDeletionRequestResponseSuccess)
 
 export const getGetLatestDeletionRequestUrl = () => {
-  return `/v1/account/deletion-requests/latest`;
-};
 
-export const getLatestDeletionRequest = async (
-  options?: RequestInit,
-): Promise<getLatestDeletionRequestResponse> => {
-  return customFetch<getLatestDeletionRequestResponse>(
-    getGetLatestDeletionRequestUrl(),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
+
+  
+
+  return `/v1/account/deletion-requests/latest`
+}
+
+export const getLatestDeletionRequest = async ( options?: RequestInit): Promise<getLatestDeletionRequestResponse> => {
+  
+  return customFetch<getLatestDeletionRequestResponse>(getGetLatestDeletionRequestUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
 
 export const getGetLatestDeletionRequestQueryKey = () => {
-  return ['v1', 'account', 'deletion-requests', 'latest'] as const;
-};
+    return [
+    'v1','account','deletion-requests','latest'
+    ] as const;
+    }
 
-export const getGetLatestDeletionRequestQueryOptions = <
-  TData = Awaited<ReturnType<typeof getLatestDeletionRequest>>,
-  TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getLatestDeletionRequest>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+    
+export const getGetLatestDeletionRequestQueryOptions = <TData = Awaited<ReturnType<typeof getLatestDeletionRequest>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLatestDeletionRequest>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
 
-  const queryKey = getGetLatestDeletionRequestQueryKey();
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getLatestDeletionRequest>>
-  > = ({ signal }) => getLatestDeletionRequest({ signal, ...requestOptions });
+  const queryKey =  getGetLatestDeletionRequestQueryKey();
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getLatestDeletionRequest>>,
-    TError,
-    TData
-  >;
-};
+  
 
-export type GetLatestDeletionRequestQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getLatestDeletionRequest>>
->;
-export type GetLatestDeletionRequestQueryError = unknown;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLatestDeletionRequest>>> = ({ signal }) => getLatestDeletionRequest({ signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLatestDeletionRequest>>, TError, TData> 
+}
+
+export type GetLatestDeletionRequestQueryResult = NonNullable<Awaited<ReturnType<typeof getLatestDeletionRequest>>>
+export type GetLatestDeletionRequestQueryError = unknown
+
 
 /**
  * @summary Latest Deletion Request
  */
 
-export function useGetLatestDeletionRequest<
-  TData = Awaited<ReturnType<typeof getLatestDeletionRequest>>,
-  TError = unknown,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getLatestDeletionRequest>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetLatestDeletionRequestQueryOptions(options);
+export function useGetLatestDeletionRequest<TData = Awaited<ReturnType<typeof getLatestDeletionRequest>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLatestDeletionRequest>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetLatestDeletionRequestQueryOptions(options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * @summary Complete Image Upload
  */
 export type completeImageUploadResponse200 = {
-  data: ImageResponse;
-  status: 200;
-};
+  data: ImageResponse
+  status: 200
+}
 
 export type completeImageUploadResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
+  data: HTTPValidationError
+  status: 422
+}
+
+export type completeImageUploadResponseSuccess = (completeImageUploadResponse200) & {
+  headers: Headers;
+};
+export type completeImageUploadResponseError = (completeImageUploadResponse422) & {
+  headers: Headers;
 };
 
-export type completeImageUploadResponseSuccess =
-  completeImageUploadResponse200 & {
-    headers: Headers;
-  };
-export type completeImageUploadResponseError =
-  completeImageUploadResponse422 & {
-    headers: Headers;
-  };
+export type completeImageUploadResponse = (completeImageUploadResponseSuccess | completeImageUploadResponseError)
 
-export type completeImageUploadResponse =
-  | completeImageUploadResponseSuccess
-  | completeImageUploadResponseError;
+export const getCompleteImageUploadUrl = (imageId: string,) => {
 
-export const getCompleteImageUploadUrl = (imageId: string) => {
-  return `/v1/images/${imageId}/complete`;
-};
 
-export const completeImageUpload = async (
-  imageId: string,
-  imageCompleteRequest: ImageCompleteRequest,
-  options?: RequestInit,
-): Promise<completeImageUploadResponse> => {
-  return customFetch<completeImageUploadResponse>(
-    getCompleteImageUploadUrl(imageId),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(imageCompleteRequest),
-    },
-  );
-};
+  
 
-export const getCompleteImageUploadMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof completeImageUpload>>,
-    TError,
-    { imageId: string; data: ImageCompleteRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof completeImageUpload>>,
-  TError,
-  { imageId: string; data: ImageCompleteRequest },
-  TContext
-> => {
-  const mutationKey = ['completeImageUpload'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  return `/v1/images/${imageId}/complete`
+}
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof completeImageUpload>>,
-    { imageId: string; data: ImageCompleteRequest }
-  > = (props) => {
-    const { imageId, data } = props ?? {};
+export const completeImageUpload = async (imageId: string,
+    imageCompleteRequest: ImageCompleteRequest, options?: RequestInit): Promise<completeImageUploadResponse> => {
+  
+  return customFetch<completeImageUploadResponse>(getCompleteImageUploadUrl(imageId),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      imageCompleteRequest,)
+  }
+);}
+  
 
-    return completeImageUpload(imageId, data, requestOptions);
-  };
 
-  return { mutationFn, ...mutationOptions };
-};
 
-export type CompleteImageUploadMutationResult = NonNullable<
-  Awaited<ReturnType<typeof completeImageUpload>>
->;
-export type CompleteImageUploadMutationBody = ImageCompleteRequest;
-export type CompleteImageUploadMutationError = HTTPValidationError;
+export const getCompleteImageUploadMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeImageUpload>>, TError,{imageId: string;data: ImageCompleteRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof completeImageUpload>>, TError,{imageId: string;data: ImageCompleteRequest}, TContext> => {
 
-/**
+const mutationKey = ['completeImageUpload'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeImageUpload>>, {imageId: string;data: ImageCompleteRequest}> = (props) => {
+          const {imageId,data} = props ?? {};
+
+          return  completeImageUpload(imageId,data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteImageUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completeImageUpload>>>
+    export type CompleteImageUploadMutationBody = ImageCompleteRequest
+    export type CompleteImageUploadMutationError = HTTPValidationError
+
+    /**
  * @summary Complete Image Upload
  */
-export const useCompleteImageUpload = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof completeImageUpload>>,
-      TError,
-      { imageId: string; data: ImageCompleteRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof completeImageUpload>>,
-  TError,
-  { imageId: string; data: ImageCompleteRequest },
-  TContext
-> => {
-  return useMutation(
-    getCompleteImageUploadMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useCompleteImageUpload = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeImageUpload>>, TError,{imageId: string;data: ImageCompleteRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof completeImageUpload>>,
+        TError,
+        {imageId: string;data: ImageCompleteRequest},
+        TContext
+      > => {
+      return useMutation(getCompleteImageUploadMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Process Pending Images
  */
 export type processPendingImagesResponse204 = {
-  data: void;
-  status: 204;
-};
+  data: void
+  status: 204
+}
 
-export type processPendingImagesResponseSuccess =
-  processPendingImagesResponse204 & {
-    headers: Headers;
-  };
-export type processPendingImagesResponse = processPendingImagesResponseSuccess;
+export type processPendingImagesResponseSuccess = (processPendingImagesResponse204) & {
+  headers: Headers;
+};
+;
+
+export type processPendingImagesResponse = (processPendingImagesResponseSuccess)
 
 export const getProcessPendingImagesUrl = () => {
-  return `/v1/images/process-pending`;
-};
 
-export const processPendingImages = async (
-  options?: RequestInit,
-): Promise<processPendingImagesResponse> => {
-  return customFetch<processPendingImagesResponse>(
-    getProcessPendingImagesUrl(),
-    {
-      ...options,
-      method: 'POST',
-    },
-  );
-};
 
-export const getProcessPendingImagesMutationOptions = <
-  TError = unknown,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof processPendingImages>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof processPendingImages>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ['processPendingImages'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
+  
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof processPendingImages>>,
-    void
-  > = () => {
-    return processPendingImages(requestOptions);
-  };
+  return `/v1/images/process-pending`
+}
 
-  return { mutationFn, ...mutationOptions };
-};
+export const processPendingImages = async ( options?: RequestInit): Promise<processPendingImagesResponse> => {
+  
+  return customFetch<processPendingImagesResponse>(getProcessPendingImagesUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+  
 
-export type ProcessPendingImagesMutationResult = NonNullable<
-  Awaited<ReturnType<typeof processPendingImages>>
->;
 
-export type ProcessPendingImagesMutationError = unknown;
 
-/**
+export const getProcessPendingImagesMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processPendingImages>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof processPendingImages>>, TError,void, TContext> => {
+
+const mutationKey = ['processPendingImages'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof processPendingImages>>, void> = () => {
+          
+
+          return  processPendingImages(requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProcessPendingImagesMutationResult = NonNullable<Awaited<ReturnType<typeof processPendingImages>>>
+    
+    export type ProcessPendingImagesMutationError = unknown
+
+    /**
  * @summary Process Pending Images
  */
-export const useProcessPendingImages = <TError = unknown, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof processPendingImages>>,
-      TError,
-      void,
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof processPendingImages>>,
-  TError,
-  void,
-  TContext
-> => {
-  return useMutation(
-    getProcessPendingImagesMutationOptions(options),
-    queryClient,
-  );
-};
-
+export const useProcessPendingImages = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processPendingImages>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof processPendingImages>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getProcessPendingImagesMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Create Export
  */
 export type createExportResponse202 = {
-  data: ExportJobResponse;
-  status: 202;
-};
+  data: ExportJobResponse
+  status: 202
+}
 
 export type createExportResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type createExportResponseSuccess = createExportResponse202 & {
+export type createExportResponseSuccess = (createExportResponse202) & {
   headers: Headers;
 };
-export type createExportResponseError = createExportResponse422 & {
+export type createExportResponseError = (createExportResponse422) & {
   headers: Headers;
 };
 
-export type createExportResponse =
-  | createExportResponseSuccess
-  | createExportResponseError;
+export type createExportResponse = (createExportResponseSuccess | createExportResponseError)
 
 export const getCreateExportUrl = () => {
-  return `/v1/exports`;
-};
 
-export const createExport = async (
-  exportCreateRequest: ExportCreateRequest,
-  options?: RequestInit,
-): Promise<createExportResponse> => {
-  return customFetch<createExportResponse>(getCreateExportUrl(), {
+
+  
+
+  return `/v1/exports`
+}
+
+export const createExport = async (exportCreateRequest: ExportCreateRequest, options?: RequestInit): Promise<createExportResponse> => {
+  
+  return customFetch<createExportResponse>(getCreateExportUrl(),
+  {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(exportCreateRequest),
-  });
-};
+    body: JSON.stringify(
+      exportCreateRequest,)
+  }
+);}
+  
 
-export const getCreateExportMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createExport>>,
-    TError,
-    { data: ExportCreateRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createExport>>,
-  TError,
-  { data: ExportCreateRequest },
-  TContext
-> => {
-  const mutationKey = ['createExport'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createExport>>,
-    { data: ExportCreateRequest }
-  > = (props) => {
-    const { data } = props ?? {};
 
-    return createExport(data, requestOptions);
-  };
+export const getCreateExportMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExport>>, TError,{data: ExportCreateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createExport>>, TError,{data: ExportCreateRequest}, TContext> => {
 
-  return { mutationFn, ...mutationOptions };
-};
+const mutationKey = ['createExport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-export type CreateExportMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createExport>>
->;
-export type CreateExportMutationBody = ExportCreateRequest;
-export type CreateExportMutationError = HTTPValidationError;
+      
 
-/**
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createExport>>, {data: ExportCreateRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createExport(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateExportMutationResult = NonNullable<Awaited<ReturnType<typeof createExport>>>
+    export type CreateExportMutationBody = ExportCreateRequest
+    export type CreateExportMutationError = HTTPValidationError
+
+    /**
  * @summary Create Export
  */
-export const useCreateExport = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof createExport>>,
-      TError,
-      { data: ExportCreateRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof createExport>>,
-  TError,
-  { data: ExportCreateRequest },
-  TContext
-> => {
-  return useMutation(getCreateExportMutationOptions(options), queryClient);
-};
-
+export const useCreateExport = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExport>>, TError,{data: ExportCreateRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof createExport>>,
+        TError,
+        {data: ExportCreateRequest},
+        TContext
+      > => {
+      return useMutation(getCreateExportMutationOptions(options), queryClient);
+    }
+    
 /**
  * @summary Get Export
  */
 export type getExportResponse200 = {
-  data: ExportJobResponse;
-  status: 200;
-};
+  data: ExportJobResponse
+  status: 200
+}
 
 export type getExportResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type getExportResponseSuccess = getExportResponse200 & {
+export type getExportResponseSuccess = (getExportResponse200) & {
   headers: Headers;
 };
-export type getExportResponseError = getExportResponse422 & {
+export type getExportResponseError = (getExportResponse422) & {
   headers: Headers;
 };
 
-export type getExportResponse =
-  | getExportResponseSuccess
-  | getExportResponseError;
+export type getExportResponse = (getExportResponseSuccess | getExportResponseError)
 
-export const getGetExportUrl = (exportId: string) => {
-  return `/v1/exports/${exportId}`;
-};
+export const getGetExportUrl = (exportId: string,) => {
 
-export const getExport = async (
-  exportId: string,
-  options?: RequestInit,
-): Promise<getExportResponse> => {
-  return customFetch<getExportResponse>(getGetExportUrl(exportId), {
+
+  
+
+  return `/v1/exports/${exportId}`
+}
+
+export const getExport = async (exportId: string, options?: RequestInit): Promise<getExportResponse> => {
+  
+  return customFetch<getExportResponse>(getGetExportUrl(exportId),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
 
-export const getGetExportQueryKey = (exportId: MaybeRef<string>) => {
-  return ['v1', 'exports', exportId] as const;
-};
 
-export const getGetExportQueryOptions = <
-  TData = Awaited<ReturnType<typeof getExport>>,
-  TError = HTTPValidationError,
->(
-  exportId: MaybeRef<string>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getExport>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
+
+
+export const getGetExportQueryKey = (exportId: MaybeRef<string>,) => {
+    return [
+    'v1','exports',exportId
+    ] as const;
+    }
+
+    
+export const getGetExportQueryOptions = <TData = Awaited<ReturnType<typeof getExport>>, TError = HTTPValidationError>(exportId: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExport>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = getGetExportQueryKey(exportId);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getExport>>> = ({
-    signal,
-  }) => getExport(unref(exportId), { signal, ...requestOptions });
+  const queryKey =  getGetExportQueryKey(exportId);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: computed(() => !!unref(exportId)),
-    ...queryOptions,
-  } as UseQueryOptions<Awaited<ReturnType<typeof getExport>>, TError, TData>;
-};
+  
 
-export type GetExportQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getExport>>
->;
-export type GetExportQueryError = HTTPValidationError;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getExport>>> = ({ signal }) => getExport(unref(exportId), { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(exportId))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExport>>, TError, TData> 
+}
+
+export type GetExportQueryResult = NonNullable<Awaited<ReturnType<typeof getExport>>>
+export type GetExportQueryError = HTTPValidationError
+
 
 /**
  * @summary Get Export
  */
 
-export function useGetExport<
-  TData = Awaited<ReturnType<typeof getExport>>,
-  TError = HTTPValidationError,
->(
-  exportId: MaybeRef<string>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getExport>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetExportQueryOptions(exportId, options);
+export function useGetExport<TData = Awaited<ReturnType<typeof getExport>>, TError = HTTPValidationError>(
+ exportId: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExport>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getGetExportQueryOptions(exportId,options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * @summary Download Json
  */
 export type downloadExportJsonResponse200 = {
-  data: DownloadURLResponse;
-  status: 200;
-};
+  data: DownloadURLResponse
+  status: 200
+}
 
 export type downloadExportJsonResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type downloadExportJsonResponseSuccess =
-  downloadExportJsonResponse200 & {
-    headers: Headers;
-  };
-export type downloadExportJsonResponseError = downloadExportJsonResponse422 & {
+export type downloadExportJsonResponseSuccess = (downloadExportJsonResponse200) & {
+  headers: Headers;
+};
+export type downloadExportJsonResponseError = (downloadExportJsonResponse422) & {
   headers: Headers;
 };
 
-export type downloadExportJsonResponse =
-  | downloadExportJsonResponseSuccess
-  | downloadExportJsonResponseError;
+export type downloadExportJsonResponse = (downloadExportJsonResponseSuccess | downloadExportJsonResponseError)
 
-export const getDownloadExportJsonUrl = (exportId: string) => {
-  return `/v1/exports/${exportId}/download/json`;
-};
+export const getDownloadExportJsonUrl = (exportId: string,) => {
 
-export const downloadExportJson = async (
-  exportId: string,
-  options?: RequestInit,
-): Promise<downloadExportJsonResponse> => {
-  return customFetch<downloadExportJsonResponse>(
-    getDownloadExportJsonUrl(exportId),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
 
-export const getDownloadExportJsonQueryKey = (exportId: MaybeRef<string>) => {
-  return ['v1', 'exports', exportId, 'download', 'json'] as const;
-};
+  
 
-export const getDownloadExportJsonQueryOptions = <
-  TData = Awaited<ReturnType<typeof downloadExportJson>>,
-  TError = HTTPValidationError,
->(
-  exportId: MaybeRef<string>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof downloadExportJson>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
+  return `/v1/exports/${exportId}/download/json`
+}
+
+export const downloadExportJson = async (exportId: string, options?: RequestInit): Promise<downloadExportJsonResponse> => {
+  
+  return customFetch<downloadExportJsonResponse>(getDownloadExportJsonUrl(exportId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getDownloadExportJsonQueryKey = (exportId: MaybeRef<string>,) => {
+    return [
+    'v1','exports',exportId,'download','json'
+    ] as const;
+    }
+
+    
+export const getDownloadExportJsonQueryOptions = <TData = Awaited<ReturnType<typeof downloadExportJson>>, TError = HTTPValidationError>(exportId: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadExportJson>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = getDownloadExportJsonQueryKey(exportId);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof downloadExportJson>>
-  > = ({ signal }) =>
-    downloadExportJson(unref(exportId), { signal, ...requestOptions });
+  const queryKey =  getDownloadExportJsonQueryKey(exportId);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: computed(() => !!unref(exportId)),
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof downloadExportJson>>,
-    TError,
-    TData
-  >;
-};
+  
 
-export type DownloadExportJsonQueryResult = NonNullable<
-  Awaited<ReturnType<typeof downloadExportJson>>
->;
-export type DownloadExportJsonQueryError = HTTPValidationError;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadExportJson>>> = ({ signal }) => downloadExportJson(unref(exportId), { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(exportId))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadExportJson>>, TError, TData> 
+}
+
+export type DownloadExportJsonQueryResult = NonNullable<Awaited<ReturnType<typeof downloadExportJson>>>
+export type DownloadExportJsonQueryError = HTTPValidationError
+
 
 /**
  * @summary Download Json
  */
 
-export function useDownloadExportJson<
-  TData = Awaited<ReturnType<typeof downloadExportJson>>,
-  TError = HTTPValidationError,
->(
-  exportId: MaybeRef<string>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof downloadExportJson>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getDownloadExportJsonQueryOptions(exportId, options);
+export function useDownloadExportJson<TData = Awaited<ReturnType<typeof downloadExportJson>>, TError = HTTPValidationError>(
+ exportId: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadExportJson>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getDownloadExportJsonQueryOptions(exportId,options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * @summary Download Images
  */
 export type downloadExportImagesResponse200 = {
-  data: DownloadURLResponse;
-  status: 200;
-};
+  data: DownloadURLResponse
+  status: 200
+}
 
 export type downloadExportImagesResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
+  data: HTTPValidationError
+  status: 422
+}
+
+export type downloadExportImagesResponseSuccess = (downloadExportImagesResponse200) & {
+  headers: Headers;
+};
+export type downloadExportImagesResponseError = (downloadExportImagesResponse422) & {
+  headers: Headers;
 };
 
-export type downloadExportImagesResponseSuccess =
-  downloadExportImagesResponse200 & {
-    headers: Headers;
-  };
-export type downloadExportImagesResponseError =
-  downloadExportImagesResponse422 & {
-    headers: Headers;
-  };
+export type downloadExportImagesResponse = (downloadExportImagesResponseSuccess | downloadExportImagesResponseError)
 
-export type downloadExportImagesResponse =
-  | downloadExportImagesResponseSuccess
-  | downloadExportImagesResponseError;
+export const getDownloadExportImagesUrl = (exportId: string,) => {
 
-export const getDownloadExportImagesUrl = (exportId: string) => {
-  return `/v1/exports/${exportId}/download/images`;
-};
 
-export const downloadExportImages = async (
-  exportId: string,
-  options?: RequestInit,
-): Promise<downloadExportImagesResponse> => {
-  return customFetch<downloadExportImagesResponse>(
-    getDownloadExportImagesUrl(exportId),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
+  
 
-export const getDownloadExportImagesQueryKey = (exportId: MaybeRef<string>) => {
-  return ['v1', 'exports', exportId, 'download', 'images'] as const;
-};
+  return `/v1/exports/${exportId}/download/images`
+}
 
-export const getDownloadExportImagesQueryOptions = <
-  TData = Awaited<ReturnType<typeof downloadExportImages>>,
-  TError = HTTPValidationError,
->(
-  exportId: MaybeRef<string>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof downloadExportImages>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
+export const downloadExportImages = async (exportId: string, options?: RequestInit): Promise<downloadExportImagesResponse> => {
+  
+  return customFetch<downloadExportImagesResponse>(getDownloadExportImagesUrl(exportId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
+
+export const getDownloadExportImagesQueryKey = (exportId: MaybeRef<string>,) => {
+    return [
+    'v1','exports',exportId,'download','images'
+    ] as const;
+    }
+
+    
+export const getDownloadExportImagesQueryOptions = <TData = Awaited<ReturnType<typeof downloadExportImages>>, TError = HTTPValidationError>(exportId: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadExportImages>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = getDownloadExportImagesQueryKey(exportId);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof downloadExportImages>>
-  > = ({ signal }) =>
-    downloadExportImages(unref(exportId), { signal, ...requestOptions });
+  const queryKey =  getDownloadExportImagesQueryKey(exportId);
 
-  return {
-    queryKey,
-    queryFn,
-    enabled: computed(() => !!unref(exportId)),
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof downloadExportImages>>,
-    TError,
-    TData
-  >;
-};
+  
 
-export type DownloadExportImagesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof downloadExportImages>>
->;
-export type DownloadExportImagesQueryError = HTTPValidationError;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadExportImages>>> = ({ signal }) => downloadExportImages(unref(exportId), { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: computed(() => !!(unref(exportId))), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadExportImages>>, TError, TData> 
+}
+
+export type DownloadExportImagesQueryResult = NonNullable<Awaited<ReturnType<typeof downloadExportImages>>>
+export type DownloadExportImagesQueryError = HTTPValidationError
+
 
 /**
  * @summary Download Images
  */
 
-export function useDownloadExportImages<
-  TData = Awaited<ReturnType<typeof downloadExportImages>>,
-  TError = HTTPValidationError,
->(
-  exportId: MaybeRef<string>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof downloadExportImages>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getDownloadExportImagesQueryOptions(exportId, options);
+export function useDownloadExportImages<TData = Awaited<ReturnType<typeof downloadExportImages>>, TError = HTTPValidationError>(
+ exportId: MaybeRef<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof downloadExportImages>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getDownloadExportImagesQueryOptions(exportId,options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * Return the Google OAuth authorization URL for the given callback URI.
  * @summary Oauth Login
  */
 export type authLoginResponse200 = {
-  data: OAuthLoginResponse;
-  status: 200;
-};
+  data: OAuthLoginResponse
+  status: 200
+}
 
 export type authLoginResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type authLoginResponseSuccess = authLoginResponse200 & {
+export type authLoginResponseSuccess = (authLoginResponse200) & {
   headers: Headers;
 };
-export type authLoginResponseError = authLoginResponse422 & {
+export type authLoginResponseError = (authLoginResponse422) & {
   headers: Headers;
 };
 
-export type authLoginResponse =
-  | authLoginResponseSuccess
-  | authLoginResponseError;
+export type authLoginResponse = (authLoginResponseSuccess | authLoginResponseError)
 
-export const getAuthLoginUrl = (params: AuthLoginParams) => {
+export const getAuthLoginUrl = (params: AuthLoginParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString());
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0
-    ? `/v1/auth/login?${stringifiedParams}`
-    : `/v1/auth/login`;
-};
+  return stringifiedParams.length > 0 ? `/v1/auth/login?${stringifiedParams}` : `/v1/auth/login`
+}
 
-export const authLogin = async (
-  params: AuthLoginParams,
-  options?: RequestInit,
-): Promise<authLoginResponse> => {
-  return customFetch<authLoginResponse>(getAuthLoginUrl(params), {
+export const authLogin = async (params: AuthLoginParams, options?: RequestInit): Promise<authLoginResponse> => {
+  
+  return customFetch<authLoginResponse>(getAuthLoginUrl(params),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
 
-export const getAuthLoginQueryKey = (params?: MaybeRef<AuthLoginParams>) => {
-  return ['v1', 'auth', 'login', ...(params ? [params] : [])] as const;
-};
 
-export const getAuthLoginQueryOptions = <
-  TData = Awaited<ReturnType<typeof authLogin>>,
-  TError = HTTPValidationError,
->(
-  params: MaybeRef<AuthLoginParams>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof authLogin>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
+
+
+export const getAuthLoginQueryKey = (params?: MaybeRef<AuthLoginParams>,) => {
+    return [
+    'v1','auth','login', ...(params ? [params] : [])
+    ] as const;
+    }
+
+    
+export const getAuthLoginQueryOptions = <TData = Awaited<ReturnType<typeof authLogin>>, TError = HTTPValidationError>(params: MaybeRef<AuthLoginParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authLogin>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = getAuthLoginQueryKey(params);
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof authLogin>>> = ({
-    signal,
-  }) => authLogin(unref(params), { signal, ...requestOptions });
+  const queryKey =  getAuthLoginQueryKey(params);
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof authLogin>>,
-    TError,
-    TData
-  >;
-};
+  
 
-export type AuthLoginQueryResult = NonNullable<
-  Awaited<ReturnType<typeof authLogin>>
->;
-export type AuthLoginQueryError = HTTPValidationError;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof authLogin>>> = ({ signal }) => authLogin(unref(params), { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof authLogin>>, TError, TData> 
+}
+
+export type AuthLoginQueryResult = NonNullable<Awaited<ReturnType<typeof authLogin>>>
+export type AuthLoginQueryError = HTTPValidationError
+
 
 /**
  * @summary Oauth Login
  */
 
-export function useAuthLogin<
-  TData = Awaited<ReturnType<typeof authLogin>>,
-  TError = HTTPValidationError,
->(
-  params: MaybeRef<AuthLoginParams>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof authLogin>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getAuthLoginQueryOptions(params, options);
+export function useAuthLogin<TData = Awaited<ReturnType<typeof authLogin>>, TError = HTTPValidationError>(
+ params: MaybeRef<AuthLoginParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authLogin>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getAuthLoginQueryOptions(params,options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * Exchange the OAuth code for a user session token.
  * @summary Oauth Callback
  */
 export type authCallbackResponse200 = {
-  data: OAuthCallbackResponse;
-  status: 200;
-};
+  data: OAuthCallbackResponse
+  status: 200
+}
 
 export type authCallbackResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
+  data: HTTPValidationError
+  status: 422
+}
 
-export type authCallbackResponseSuccess = authCallbackResponse200 & {
+export type authCallbackResponseSuccess = (authCallbackResponse200) & {
   headers: Headers;
 };
-export type authCallbackResponseError = authCallbackResponse422 & {
+export type authCallbackResponseError = (authCallbackResponse422) & {
   headers: Headers;
 };
 
-export type authCallbackResponse =
-  | authCallbackResponseSuccess
-  | authCallbackResponseError;
+export type authCallbackResponse = (authCallbackResponseSuccess | authCallbackResponseError)
 
 export const getAuthCallbackUrl = () => {
-  return `/v1/auth/callback`;
-};
 
-export const authCallback = async (
-  oAuthCallbackRequest: OAuthCallbackRequest,
-  options?: RequestInit,
-): Promise<authCallbackResponse> => {
-  return customFetch<authCallbackResponse>(getAuthCallbackUrl(), {
+
+  
+
+  return `/v1/auth/callback`
+}
+
+export const authCallback = async (oAuthCallbackRequest: OAuthCallbackRequest, options?: RequestInit): Promise<authCallbackResponse> => {
+  
+  return customFetch<authCallbackResponse>(getAuthCallbackUrl(),
+  {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(oAuthCallbackRequest),
-  });
-};
+    body: JSON.stringify(
+      oAuthCallbackRequest,)
+  }
+);}
+  
 
-export const getAuthCallbackMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof authCallback>>,
-    TError,
-    { data: OAuthCallbackRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof authCallback>>,
-  TError,
-  { data: OAuthCallbackRequest },
-  TContext
-> => {
-  const mutationKey = ['authCallback'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
 
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof authCallback>>,
-    { data: OAuthCallbackRequest }
-  > = (props) => {
-    const { data } = props ?? {};
 
-    return authCallback(data, requestOptions);
-  };
+export const getAuthCallbackMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authCallback>>, TError,{data: OAuthCallbackRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof authCallback>>, TError,{data: OAuthCallbackRequest}, TContext> => {
 
-  return { mutationFn, ...mutationOptions };
-};
+const mutationKey = ['authCallback'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
 
-export type AuthCallbackMutationResult = NonNullable<
-  Awaited<ReturnType<typeof authCallback>>
->;
-export type AuthCallbackMutationBody = OAuthCallbackRequest;
-export type AuthCallbackMutationError = HTTPValidationError;
+      
 
-/**
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authCallback>>, {data: OAuthCallbackRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  authCallback(data,requestOptions)
+        }
+
+
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthCallbackMutationResult = NonNullable<Awaited<ReturnType<typeof authCallback>>>
+    export type AuthCallbackMutationBody = OAuthCallbackRequest
+    export type AuthCallbackMutationError = HTTPValidationError
+
+    /**
  * @summary Oauth Callback
  */
-export const useAuthCallback = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof authCallback>>,
-      TError,
-      { data: OAuthCallbackRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof authCallback>>,
-  TError,
-  { data: OAuthCallbackRequest },
-  TContext
-> => {
-  return useMutation(getAuthCallbackMutationOptions(options), queryClient);
-};
-
+export const useAuthCallback = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authCallback>>, TError,{data: OAuthCallbackRequest}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof authCallback>>,
+        TError,
+        {data: OAuthCallbackRequest},
+        TContext
+      > => {
+      return useMutation(getAuthCallbackMutationOptions(options), queryClient);
+    }
+    
 /**
  * Return a response for GET requests to the OAuth callback endpoint.
  * @summary Oauth Callback Get
  */
 export type authCallbackRedirectResponse200 = {
-  data: OAuthCallbackResponse;
-  status: 200;
-};
+  data: OAuthCallbackResponse
+  status: 200
+}
 
 export type authCallbackRedirectResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
+  data: HTTPValidationError
+  status: 422
+}
+
+export type authCallbackRedirectResponseSuccess = (authCallbackRedirectResponse200) & {
+  headers: Headers;
+};
+export type authCallbackRedirectResponseError = (authCallbackRedirectResponse422) & {
+  headers: Headers;
 };
 
-export type authCallbackRedirectResponseSuccess =
-  authCallbackRedirectResponse200 & {
-    headers: Headers;
-  };
-export type authCallbackRedirectResponseError =
-  authCallbackRedirectResponse422 & {
-    headers: Headers;
-  };
+export type authCallbackRedirectResponse = (authCallbackRedirectResponseSuccess | authCallbackRedirectResponseError)
 
-export type authCallbackRedirectResponse =
-  | authCallbackRedirectResponseSuccess
-  | authCallbackRedirectResponseError;
-
-export const getAuthCallbackRedirectUrl = (
-  params: AuthCallbackRedirectParams,
-) => {
+export const getAuthCallbackRedirectUrl = (params: AuthCallbackRedirectParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    
     if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString());
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
     }
   });
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0
-    ? `/v1/auth/callback?${stringifiedParams}`
-    : `/v1/auth/callback`;
-};
+  return stringifiedParams.length > 0 ? `/v1/auth/callback?${stringifiedParams}` : `/v1/auth/callback`
+}
 
-export const authCallbackRedirect = async (
-  params: AuthCallbackRedirectParams,
-  options?: RequestInit,
-): Promise<authCallbackRedirectResponse> => {
-  return customFetch<authCallbackRedirectResponse>(
-    getAuthCallbackRedirectUrl(params),
-    {
-      ...options,
-      method: 'GET',
-    },
-  );
-};
+export const authCallbackRedirect = async (params: AuthCallbackRedirectParams, options?: RequestInit): Promise<authCallbackRedirectResponse> => {
+  
+  return customFetch<authCallbackRedirectResponse>(getAuthCallbackRedirectUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+  
 
-export const getAuthCallbackRedirectQueryKey = (
-  params?: MaybeRef<AuthCallbackRedirectParams>,
+
+
+
+export const getAuthCallbackRedirectQueryKey = (params?: MaybeRef<AuthCallbackRedirectParams>,) => {
+    return [
+    'v1','auth','callback', ...(params ? [params] : [])
+    ] as const;
+    }
+
+    
+export const getAuthCallbackRedirectQueryOptions = <TData = Awaited<ReturnType<typeof authCallbackRedirect>>, TError = HTTPValidationError>(params: MaybeRef<AuthCallbackRedirectParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authCallbackRedirect>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
 ) => {
-  return ['v1', 'auth', 'callback', ...(params ? [params] : [])] as const;
-};
 
-export const getAuthCallbackRedirectQueryOptions = <
-  TData = Awaited<ReturnType<typeof authCallbackRedirect>>,
-  TError = HTTPValidationError,
->(
-  params: MaybeRef<AuthCallbackRedirectParams>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof authCallbackRedirect>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey = getAuthCallbackRedirectQueryKey(params);
+  const queryKey =  getAuthCallbackRedirectQueryKey(params);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof authCallbackRedirect>>
-  > = ({ signal }) =>
-    authCallbackRedirect(unref(params), { signal, ...requestOptions });
+  
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof authCallbackRedirect>>,
-    TError,
-    TData
-  >;
-};
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof authCallbackRedirect>>> = ({ signal }) => authCallbackRedirect(unref(params), { signal, ...requestOptions });
 
-export type AuthCallbackRedirectQueryResult = NonNullable<
-  Awaited<ReturnType<typeof authCallbackRedirect>>
->;
-export type AuthCallbackRedirectQueryError = HTTPValidationError;
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof authCallbackRedirect>>, TError, TData> 
+}
+
+export type AuthCallbackRedirectQueryResult = NonNullable<Awaited<ReturnType<typeof authCallbackRedirect>>>
+export type AuthCallbackRedirectQueryError = HTTPValidationError
+
 
 /**
  * @summary Oauth Callback Get
  */
 
-export function useAuthCallbackRedirect<
-  TData = Awaited<ReturnType<typeof authCallbackRedirect>>,
-  TError = HTTPValidationError,
->(
-  params: MaybeRef<AuthCallbackRedirectParams>,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof authCallbackRedirect>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getAuthCallbackRedirectQueryOptions(params, options);
+export function useAuthCallbackRedirect<TData = Awaited<ReturnType<typeof authCallbackRedirect>>, TError = HTTPValidationError>(
+ params: MaybeRef<AuthCallbackRedirectParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authCallbackRedirect>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getAuthCallbackRedirectQueryOptions(params,options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
+
+
+
+
 
 /**
  * @summary Root
  */
 export type rootResponse200 = {
-  data: unknown;
-  status: 200;
-};
+  data: unknown
+  status: 200
+}
 
-export type rootResponseSuccess = rootResponse200 & {
+export type rootResponseSuccess = (rootResponse200) & {
   headers: Headers;
 };
-export type rootResponse = rootResponseSuccess;
+;
+
+export type rootResponse = (rootResponseSuccess)
 
 export const getRootUrl = () => {
-  return `/`;
-};
 
-export const root = async (options?: RequestInit): Promise<rootResponse> => {
-  return customFetch<rootResponse>(getRootUrl(), {
+
+  
+
+  return `/`
+}
+
+export const root = async ( options?: RequestInit): Promise<rootResponse> => {
+  
+  return customFetch<rootResponse>(getRootUrl(),
+  {      
     ...options,
-    method: 'GET',
-  });
-};
+    method: 'GET'
+    
+    
+  }
+);}
+  
+
+
+
 
 export const getRootQueryKey = () => {
-  return [] as const;
-};
+    return [
+    
+    ] as const;
+    }
 
-export const getRootQueryOptions = <
-  TData = Awaited<ReturnType<typeof root>>,
-  TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<Awaited<ReturnType<typeof root>>, TError, TData>
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
+    
+export const getRootQueryOptions = <TData = Awaited<ReturnType<typeof root>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof root>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
 
-  const queryKey = getRootQueryKey();
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof root>>> = ({
-    signal,
-  }) => root({ signal, ...requestOptions });
+  const queryKey =  getRootQueryKey();
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof root>>,
-    TError,
-    TData
-  >;
-};
+  
 
-export type RootQueryResult = NonNullable<Awaited<ReturnType<typeof root>>>;
-export type RootQueryError = unknown;
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof root>>> = ({ signal }) => root({ signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof root>>, TError, TData> 
+}
+
+export type RootQueryResult = NonNullable<Awaited<ReturnType<typeof root>>>
+export type RootQueryError = unknown
+
 
 /**
  * @summary Root
  */
 
-export function useRoot<
-  TData = Awaited<ReturnType<typeof root>>,
-  TError = unknown,
->(
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof root>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseQueryReturnType<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getRootQueryOptions(options);
+export function useRoot<TData = Awaited<ReturnType<typeof root>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof root>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient 
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
+  const queryOptions = getRootQueryOptions(options)
 
-  query.queryKey = unref(queryOptions).queryKey as DataTag<
-    QueryKey,
-    TData,
-    TError
-  >;
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
 
   return query;
 }
 
-export const getHealthResponseMock = (
-  overrideResponse: Partial<Extract<HealthResponse, object>> = {},
-): HealthResponse => ({
-  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  service: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
 
-export const getListPathsResponseMock = (): PathResponse[] =>
-  Array.from(
-    { length: faker.number.int({ min: 1, max: 10 }) },
-    (_, i) => i + 1,
-  ).map(() => ({
-    path_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    uuid: faker.string.uuid(),
-    owner_user_id: faker.string.uuid(),
-    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    description: faker.helpers.arrayElement([
-      faker.string.alpha({ length: { min: 10, max: 20 } }),
-      null,
-    ]),
-    color: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    is_public: faker.datatype.boolean(),
-    created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-    updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  }));
+export const getHealthResponseMock = (overrideResponse: Partial<Extract<HealthResponse, object>> = {}): HealthResponse => ({status: faker.string.alpha({length: {min: 10, max: 20}}), service: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getCreatePathResponseMock = (
-  overrideResponse: Partial<Extract<PathResponse, object>> = {},
-): PathResponse => ({
-  path_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  uuid: faker.string.uuid(),
-  owner_user_id: faker.string.uuid(),
-  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  description: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  color: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  is_public: faker.datatype.boolean(),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  ...overrideResponse,
-});
+export const getListPathsResponseMock = (): PathResponse[] => (Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({path_id: faker.string.alpha({length: {min: 10, max: 20}}), uuid: faker.string.uuid(), owner_user_id: faker.string.uuid(), title: faker.string.alpha({length: {min: 10, max: 20}}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), color: faker.string.alpha({length: {min: 10, max: 20}}), is_public: faker.datatype.boolean(), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z'})))
 
-export const getUpdatePathVisibilityResponseMock = (
-  overrideResponse: Partial<Extract<PathResponse, object>> = {},
-): PathResponse => ({
-  path_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  uuid: faker.string.uuid(),
-  owner_user_id: faker.string.uuid(),
-  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  description: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  color: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  is_public: faker.datatype.boolean(),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  ...overrideResponse,
-});
+export const getCreatePathResponseMock = (overrideResponse: Partial<Extract<PathResponse, object>> = {}): PathResponse => ({path_id: faker.string.alpha({length: {min: 10, max: 20}}), uuid: faker.string.uuid(), owner_user_id: faker.string.uuid(), title: faker.string.alpha({length: {min: 10, max: 20}}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), color: faker.string.alpha({length: {min: 10, max: 20}}), is_public: faker.datatype.boolean(), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', ...overrideResponse})
 
-export const getListEntriesResponseMock = (): EntryResponse[] =>
-  Array.from(
-    { length: faker.number.int({ min: 1, max: 10 }) },
-    (_, i) => i + 1,
-  ).map(() => ({
-    id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    path_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    day: faker.date.past().toISOString().slice(0, 10),
-    edit_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  }));
+export const getUpdatePathVisibilityResponseMock = (overrideResponse: Partial<Extract<PathResponse, object>> = {}): PathResponse => ({path_id: faker.string.alpha({length: {min: 10, max: 20}}), uuid: faker.string.uuid(), owner_user_id: faker.string.uuid(), title: faker.string.alpha({length: {min: 10, max: 20}}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), color: faker.string.alpha({length: {min: 10, max: 20}}), is_public: faker.datatype.boolean(), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', ...overrideResponse})
 
-export const getCreateEntryResponseMock = (
-  overrideResponse: Partial<Extract<EntryResponse, object>> = {},
-): EntryResponse => ({
-  id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  path_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  day: faker.date.past().toISOString().slice(0, 10),
-  edit_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
+export const getListEntriesResponseMock = (): EntryResponse[] => (Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), path_id: faker.string.alpha({length: {min: 10, max: 20}}), day: faker.date.past().toISOString().slice(0, 10), edit_id: faker.string.alpha({length: {min: 10, max: 20}})})))
 
-export const getGetEntryResponseMock = (
-  overrideResponse: Partial<Extract<EntryContentResponse, object>> = {},
-): EntryContentResponse => ({
-  id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  path_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  day: faker.date.past().toISOString().slice(0, 10),
-  edit_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  content: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
+export const getCreateEntryResponseMock = (overrideResponse: Partial<Extract<EntryResponse, object>> = {}): EntryResponse => ({id: faker.string.alpha({length: {min: 10, max: 20}}), path_id: faker.string.alpha({length: {min: 10, max: 20}}), day: faker.date.past().toISOString().slice(0, 10), edit_id: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getUpdateEntryResponseMock = (
-  overrideResponse: Partial<Extract<EntryResponse, object>> = {},
-): EntryResponse => ({
-  id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  path_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  day: faker.date.past().toISOString().slice(0, 10),
-  edit_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
+export const getGetEntryResponseMock = (overrideResponse: Partial<Extract<EntryContentResponse, object>> = {}): EntryContentResponse => ({id: faker.string.alpha({length: {min: 10, max: 20}}), path_id: faker.string.alpha({length: {min: 10, max: 20}}), day: faker.date.past().toISOString().slice(0, 10), edit_id: faker.string.alpha({length: {min: 10, max: 20}}), content: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getCreateImageUploadUrlResponseMock = (
-  overrideResponse: Partial<Extract<ImageUploadResponse, object>> = {},
-): ImageUploadResponse => ({
-  image_id: faker.string.uuid(),
-  upload_url: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  expires_in_seconds: faker.number.int(),
-  ...overrideResponse,
-});
+export const getUpdateEntryResponseMock = (overrideResponse: Partial<Extract<EntryResponse, object>> = {}): EntryResponse => ({id: faker.string.alpha({length: {min: 10, max: 20}}), path_id: faker.string.alpha({length: {min: 10, max: 20}}), day: faker.date.past().toISOString().slice(0, 10), edit_id: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getAdminLoginResponseMock = (
-  overrideResponse: Partial<Extract<AdminLoginResponse, object>> = {},
-): AdminLoginResponse => ({
-  token: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
+export const getCreateImageUploadUrlResponseMock = (overrideResponse: Partial<Extract<ImageUploadResponse, object>> = {}): ImageUploadResponse => ({image_id: faker.string.uuid(), upload_url: faker.string.alpha({length: {min: 10, max: 20}}), expires_in_seconds: faker.number.int(), ...overrideResponse})
 
-export const getSetPathCreationApprovalResponseMock = (
-  overrideResponse: Partial<Extract<PathCreationApprovalResponse, object>> = {},
-): PathCreationApprovalResponse => ({
-  user_id: faker.string.uuid(),
-  allowed: faker.datatype.boolean(),
-  ...overrideResponse,
-});
+export const getAdminLoginResponseMock = (overrideResponse: Partial<Extract<AdminLoginResponse, object>> = {}): AdminLoginResponse => ({token: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getGetProfileResponseMock = (
-  overrideResponse: Partial<Extract<UserProfileResponse, object>> = {},
-): UserProfileResponse => ({
-  user_id: faker.string.uuid(),
-  display_name: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  ...overrideResponse,
-});
+export const getSetPathCreationApprovalResponseMock = (overrideResponse: Partial<Extract<PathCreationApprovalResponse, object>> = {}): PathCreationApprovalResponse => ({user_id: faker.string.uuid(), allowed: faker.datatype.boolean(), ...overrideResponse})
 
-export const getUpdateDisplayNameResponseMock = (
-  overrideResponse: Partial<Extract<UserProfileResponse, object>> = {},
-): UserProfileResponse => ({
-  user_id: faker.string.uuid(),
-  display_name: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  ...overrideResponse,
-});
+export const getGetProfileResponseMock = (overrideResponse: Partial<Extract<UserProfileResponse, object>> = {}): UserProfileResponse => ({user_id: faker.string.uuid(), display_name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), ...overrideResponse})
 
-export const getCreateDeletionRequestResponseMock = (
-  overrideResponse: Partial<Extract<DeletionRequestResponse, object>> = {},
-): DeletionRequestResponse => ({
-  id: faker.string.uuid(),
-  state: faker.helpers.arrayElement([
-    'requested',
-    'running',
-    'complete',
-    'failed',
-  ] as const),
-  error_message: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  failure_code: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  attempt_count: faker.number.int(),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  ...overrideResponse,
-});
+export const getUpdateDisplayNameResponseMock = (overrideResponse: Partial<Extract<UserProfileResponse, object>> = {}): UserProfileResponse => ({user_id: faker.string.uuid(), display_name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), ...overrideResponse})
 
-export const getGetLatestDeletionRequestResponseMock = (
-  overrideResponse: Partial<Extract<DeletionRequestResponse, object>> = {},
-): DeletionRequestResponse => ({
-  id: faker.string.uuid(),
-  state: faker.helpers.arrayElement([
-    'requested',
-    'running',
-    'complete',
-    'failed',
-  ] as const),
-  error_message: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  failure_code: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  attempt_count: faker.number.int(),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  ...overrideResponse,
-});
+export const getCreateDeletionRequestResponseMock = (overrideResponse: Partial<Extract<DeletionRequestResponse, object>> = {}): DeletionRequestResponse => ({id: faker.string.uuid(), state: faker.helpers.arrayElement(['requested','running','complete','failed'] as const), error_message: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), failure_code: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), attempt_count: faker.number.int(), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', ...overrideResponse})
 
-export const getCompleteImageUploadResponseMock = (
-  overrideResponse: Partial<Extract<ImageResponse, object>> = {},
-): ImageResponse => ({
-  id: faker.string.uuid(),
-  entry_id: faker.string.uuid(),
-  filename: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  strip_metadata: faker.datatype.boolean(),
-  content_type: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  byte_size: faker.helpers.arrayElement([faker.number.int(), null]),
-  ...overrideResponse,
-});
+export const getGetLatestDeletionRequestResponseMock = (overrideResponse: Partial<Extract<DeletionRequestResponse, object>> = {}): DeletionRequestResponse => ({id: faker.string.uuid(), state: faker.helpers.arrayElement(['requested','running','complete','failed'] as const), error_message: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), failure_code: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), attempt_count: faker.number.int(), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', ...overrideResponse})
 
-export const getCreateExportResponseMock = (
-  overrideResponse: Partial<Extract<ExportJobResponse, object>> = {},
-): ExportJobResponse => ({
-  id: faker.string.uuid(),
-  state: faker.helpers.arrayElement([
-    'queued',
-    'running',
-    'ready',
-    'failed',
-    'expired',
-    'cleaned',
-  ] as const),
-  requested_path_ids: Array.from(
-    { length: faker.number.int({ min: 1, max: 10 }) },
-    (_, i) => i + 1,
-  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  expires_at: faker.helpers.arrayElement([
-    faker.date.past().toISOString().slice(0, 19) + 'Z',
-    null,
-  ]),
-  failure_code: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  attempt_count: faker.number.int(),
-  ...overrideResponse,
-});
+export const getCompleteImageUploadResponseMock = (overrideResponse: Partial<Extract<ImageResponse, object>> = {}): ImageResponse => ({id: faker.string.uuid(), entry_id: faker.string.uuid(), filename: faker.string.alpha({length: {min: 10, max: 20}}), status: faker.string.alpha({length: {min: 10, max: 20}}), strip_metadata: faker.datatype.boolean(), content_type: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), byte_size: faker.helpers.arrayElement([faker.number.int(),null,]), ...overrideResponse})
 
-export const getGetExportResponseMock = (
-  overrideResponse: Partial<Extract<ExportJobResponse, object>> = {},
-): ExportJobResponse => ({
-  id: faker.string.uuid(),
-  state: faker.helpers.arrayElement([
-    'queued',
-    'running',
-    'ready',
-    'failed',
-    'expired',
-    'cleaned',
-  ] as const),
-  requested_path_ids: Array.from(
-    { length: faker.number.int({ min: 1, max: 10 }) },
-    (_, i) => i + 1,
-  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
-  created_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z',
-  expires_at: faker.helpers.arrayElement([
-    faker.date.past().toISOString().slice(0, 19) + 'Z',
-    null,
-  ]),
-  failure_code: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  attempt_count: faker.number.int(),
-  ...overrideResponse,
-});
+export const getCreateExportResponseMock = (overrideResponse: Partial<Extract<ExportJobResponse, object>> = {}): ExportJobResponse => ({id: faker.string.uuid(), state: faker.helpers.arrayElement(['queued','running','ready','failed','expired','cleaned'] as const), requested_path_ids: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', expires_at: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z',null,]), failure_code: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), attempt_count: faker.number.int(), ...overrideResponse})
 
-export const getDownloadExportJsonResponseMock = (
-  overrideResponse: Partial<Extract<DownloadURLResponse, object>> = {},
-): DownloadURLResponse => ({
-  url: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  expires_in_seconds: faker.number.int(),
-  ...overrideResponse,
-});
+export const getGetExportResponseMock = (overrideResponse: Partial<Extract<ExportJobResponse, object>> = {}): ExportJobResponse => ({id: faker.string.uuid(), state: faker.helpers.arrayElement(['queued','running','ready','failed','expired','cleaned'] as const), requested_path_ids: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), created_at: faker.date.past().toISOString().slice(0, 19) + 'Z', updated_at: faker.date.past().toISOString().slice(0, 19) + 'Z', expires_at: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z',null,]), failure_code: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), attempt_count: faker.number.int(), ...overrideResponse})
 
-export const getDownloadExportImagesResponseMock = (
-  overrideResponse: Partial<Extract<DownloadURLResponse, object>> = {},
-): DownloadURLResponse => ({
-  url: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  expires_in_seconds: faker.number.int(),
-  ...overrideResponse,
-});
+export const getDownloadExportJsonResponseMock = (overrideResponse: Partial<Extract<DownloadURLResponse, object>> = {}): DownloadURLResponse => ({url: faker.string.alpha({length: {min: 10, max: 20}}), expires_in_seconds: faker.number.int(), ...overrideResponse})
 
-export const getAuthLoginResponseMock = (
-  overrideResponse: Partial<Extract<OAuthLoginResponse, object>> = {},
-): OAuthLoginResponse => ({
-  authorization_url: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-});
+export const getDownloadExportImagesResponseMock = (overrideResponse: Partial<Extract<DownloadURLResponse, object>> = {}): DownloadURLResponse => ({url: faker.string.alpha({length: {min: 10, max: 20}}), expires_in_seconds: faker.number.int(), ...overrideResponse})
 
-export const getAuthCallbackResponseMock = (
-  overrideResponse: Partial<Extract<OAuthCallbackResponse, object>> = {},
-): OAuthCallbackResponse => ({
-  token: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  user_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  display_name: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  ...overrideResponse,
-});
+export const getAuthLoginResponseMock = (overrideResponse: Partial<Extract<OAuthLoginResponse, object>> = {}): OAuthLoginResponse => ({authorization_url: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
 
-export const getAuthCallbackRedirectResponseMock = (
-  overrideResponse: Partial<Extract<OAuthCallbackResponse, object>> = {},
-): OAuthCallbackResponse => ({
-  token: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  user_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  display_name: faker.helpers.arrayElement([
-    faker.string.alpha({ length: { min: 10, max: 20 } }),
-    null,
-  ]),
-  ...overrideResponse,
-});
+export const getAuthCallbackResponseMock = (overrideResponse: Partial<Extract<OAuthCallbackResponse, object>> = {}): OAuthCallbackResponse => ({token: faker.string.alpha({length: {min: 10, max: 20}}), user_id: faker.string.alpha({length: {min: 10, max: 20}}), display_name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), ...overrideResponse})
 
-export const getHealthMockHandler = (
-  overrideResponse?:
-    | HealthResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<HealthResponse> | HealthResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/health',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getHealthResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getAuthCallbackRedirectResponseMock = (overrideResponse: Partial<Extract<OAuthCallbackResponse, object>> = {}): OAuthCallbackResponse => ({token: faker.string.alpha({length: {min: 10, max: 20}}), user_id: faker.string.alpha({length: {min: 10, max: 20}}), display_name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}),null,]), ...overrideResponse})
 
-export const getListPathsMockHandler = (
-  overrideResponse?:
-    | PathResponse[]
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<PathResponse[]> | PathResponse[]),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/paths',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getListPathsResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
 
-export const getCreatePathMockHandler = (
-  overrideResponse?:
-    | PathResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<PathResponse> | PathResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/paths',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getCreatePathResponseMock(),
-        { status: 201 },
-      );
-    },
-    options,
-  );
-};
+export const getHealthMockHandler = (overrideResponse?: HealthResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<HealthResponse> | HealthResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/health', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getHealthResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getUpdatePathVisibilityMockHandler = (
-  overrideResponse?:
-    | PathResponse
-    | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0],
-      ) => Promise<PathResponse> | PathResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.patch(
-    '*/v1/paths/:pathCode/visibility',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getUpdatePathVisibilityResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getListPathsMockHandler = (overrideResponse?: PathResponse[] | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PathResponse[]> | PathResponse[]), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/paths', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getListPathsResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getCreateSubscriptionMockHandler = (
-  overrideResponse?:
-    | void
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<void> | void),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/paths/:pathCode/subscriptions',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      if (typeof overrideResponse === 'function') {
-        await overrideResponse(info);
-      }
+export const getCreatePathMockHandler = (overrideResponse?: PathResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<PathResponse> | PathResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/paths', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreatePathResponseMock(),
+      { status: 201
+      })
+  }, options)
+}
 
-      return new HttpResponse(null, { status: 204 });
-    },
-    options,
-  );
-};
+export const getUpdatePathVisibilityMockHandler = (overrideResponse?: PathResponse | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<PathResponse> | PathResponse), options?: RequestHandlerOptions) => {
+  return http.patch('*/v1/paths/:pathCode/visibility', async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUpdatePathVisibilityResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getDeleteSubscriptionMockHandler = (
-  overrideResponse?:
-    | void
-    | ((
-        info: Parameters<Parameters<typeof http.delete>[1]>[0],
-      ) => Promise<void> | void),
-  options?: RequestHandlerOptions,
-) => {
-  return http.delete(
-    '*/v1/paths/:pathCode/subscriptions/:targetUserId',
-    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-      if (typeof overrideResponse === 'function') {
-        await overrideResponse(info);
-      }
+export const getCreateSubscriptionMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/paths/:pathCode/subscriptions', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+  
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
 
-      return new HttpResponse(null, { status: 204 });
-    },
-    options,
-  );
-};
+export const getDeleteSubscriptionMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.delete('*/v1/paths/:pathCode/subscriptions/:targetUserId', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+  
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
 
-export const getListEntriesMockHandler = (
-  overrideResponse?:
-    | EntryResponse[]
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<EntryResponse[]> | EntryResponse[]),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/paths/:pathCode/entries',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getListEntriesResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getListEntriesMockHandler = (overrideResponse?: EntryResponse[] | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<EntryResponse[]> | EntryResponse[]), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/paths/:pathCode/entries', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getListEntriesResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getCreateEntryMockHandler = (
-  overrideResponse?:
-    | EntryResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<EntryResponse> | EntryResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/paths/:pathCode/entries',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getCreateEntryResponseMock(),
-        { status: 201 },
-      );
-    },
-    options,
-  );
-};
+export const getCreateEntryMockHandler = (overrideResponse?: EntryResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<EntryResponse> | EntryResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/paths/:pathCode/entries', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreateEntryResponseMock(),
+      { status: 201
+      })
+  }, options)
+}
 
-export const getGetEntryMockHandler = (
-  overrideResponse?:
-    | EntryContentResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<EntryContentResponse> | EntryContentResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/paths/:pathCode/entries/:entrySlug',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getGetEntryResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getGetEntryMockHandler = (overrideResponse?: EntryContentResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<EntryContentResponse> | EntryContentResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/paths/:pathCode/entries/:entrySlug', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetEntryResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getUpdateEntryMockHandler = (
-  overrideResponse?:
-    | EntryResponse
-    | ((
-        info: Parameters<Parameters<typeof http.put>[1]>[0],
-      ) => Promise<EntryResponse> | EntryResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.put(
-    '*/v1/paths/:pathCode/entries/:entrySlug',
-    async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getUpdateEntryResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getUpdateEntryMockHandler = (overrideResponse?: EntryResponse | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<EntryResponse> | EntryResponse), options?: RequestHandlerOptions) => {
+  return http.put('*/v1/paths/:pathCode/entries/:entrySlug', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUpdateEntryResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getDeleteEntryMockHandler = (
-  overrideResponse?:
-    | void
-    | ((
-        info: Parameters<Parameters<typeof http.delete>[1]>[0],
-      ) => Promise<void> | void),
-  options?: RequestHandlerOptions,
-) => {
-  return http.delete(
-    '*/v1/paths/:pathCode/entries/:entrySlug',
-    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-      if (typeof overrideResponse === 'function') {
-        await overrideResponse(info);
-      }
+export const getDeleteEntryMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.delete('*/v1/paths/:pathCode/entries/:entrySlug', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+  
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
 
-      return new HttpResponse(null, { status: 204 });
-    },
-    options,
-  );
-};
+export const getCreateImageUploadUrlMockHandler = (overrideResponse?: ImageUploadResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ImageUploadResponse> | ImageUploadResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/paths/:pathCode/entries/:entrySlug/images/upload-url', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreateImageUploadUrlResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getCreateImageUploadUrlMockHandler = (
-  overrideResponse?:
-    | ImageUploadResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<ImageUploadResponse> | ImageUploadResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/paths/:pathCode/entries/:entrySlug/images/upload-url',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getCreateImageUploadUrlResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getAdminLoginMockHandler = (overrideResponse?: AdminLoginResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<AdminLoginResponse> | AdminLoginResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/admin/login', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAdminLoginResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getAdminLoginMockHandler = (
-  overrideResponse?:
-    | AdminLoginResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<AdminLoginResponse> | AdminLoginResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/admin/login',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getAdminLoginResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getSetPathCreationApprovalMockHandler = (overrideResponse?: PathCreationApprovalResponse | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<PathCreationApprovalResponse> | PathCreationApprovalResponse), options?: RequestHandlerOptions) => {
+  return http.put('*/v1/admin/users/:userId/path-creation-approval', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getSetPathCreationApprovalResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getSetPathCreationApprovalMockHandler = (
-  overrideResponse?:
-    | PathCreationApprovalResponse
-    | ((
-        info: Parameters<Parameters<typeof http.put>[1]>[0],
-      ) =>
-        | Promise<PathCreationApprovalResponse>
-        | PathCreationApprovalResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.put(
-    '*/v1/admin/users/:userId/path-creation-approval',
-    async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getSetPathCreationApprovalResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getGetProfileMockHandler = (overrideResponse?: UserProfileResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<UserProfileResponse> | UserProfileResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/account/profile', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetProfileResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getGetProfileMockHandler = (
-  overrideResponse?:
-    | UserProfileResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<UserProfileResponse> | UserProfileResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/account/profile',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getGetProfileResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getUpdateDisplayNameMockHandler = (overrideResponse?: UserProfileResponse | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<UserProfileResponse> | UserProfileResponse), options?: RequestHandlerOptions) => {
+  return http.patch('*/v1/account/display-name', async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getUpdateDisplayNameResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getUpdateDisplayNameMockHandler = (
-  overrideResponse?:
-    | UserProfileResponse
-    | ((
-        info: Parameters<Parameters<typeof http.patch>[1]>[0],
-      ) => Promise<UserProfileResponse> | UserProfileResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.patch(
-    '*/v1/account/display-name',
-    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getUpdateDisplayNameResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getCreateDeletionRequestMockHandler = (overrideResponse?: DeletionRequestResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<DeletionRequestResponse> | DeletionRequestResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/account/deletion-requests', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreateDeletionRequestResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getCreateDeletionRequestMockHandler = (
-  overrideResponse?:
-    | DeletionRequestResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<DeletionRequestResponse> | DeletionRequestResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/account/deletion-requests',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getCreateDeletionRequestResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getGetLatestDeletionRequestMockHandler = (overrideResponse?: DeletionRequestResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<DeletionRequestResponse> | DeletionRequestResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/account/deletion-requests/latest', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetLatestDeletionRequestResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getGetLatestDeletionRequestMockHandler = (
-  overrideResponse?:
-    | DeletionRequestResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<DeletionRequestResponse> | DeletionRequestResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/account/deletion-requests/latest',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getGetLatestDeletionRequestResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getCompleteImageUploadMockHandler = (overrideResponse?: ImageResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ImageResponse> | ImageResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/images/:imageId/complete', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCompleteImageUploadResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getCompleteImageUploadMockHandler = (
-  overrideResponse?:
-    | ImageResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<ImageResponse> | ImageResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/images/:imageId/complete',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getCompleteImageUploadResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getProcessPendingImagesMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/images/process-pending', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+  
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
 
-export const getProcessPendingImagesMockHandler = (
-  overrideResponse?:
-    | void
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<void> | void),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/images/process-pending',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      if (typeof overrideResponse === 'function') {
-        await overrideResponse(info);
-      }
+export const getCreateExportMockHandler = (overrideResponse?: ExportJobResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ExportJobResponse> | ExportJobResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/exports', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getCreateExportResponseMock(),
+      { status: 202
+      })
+  }, options)
+}
 
-      return new HttpResponse(null, { status: 204 });
-    },
-    options,
-  );
-};
+export const getGetExportMockHandler = (overrideResponse?: ExportJobResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ExportJobResponse> | ExportJobResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/exports/:exportId', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getGetExportResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getCreateExportMockHandler = (
-  overrideResponse?:
-    | ExportJobResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<ExportJobResponse> | ExportJobResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/exports',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getCreateExportResponseMock(),
-        { status: 202 },
-      );
-    },
-    options,
-  );
-};
+export const getDownloadExportJsonMockHandler = (overrideResponse?: DownloadURLResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<DownloadURLResponse> | DownloadURLResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/exports/:exportId/download/json', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getDownloadExportJsonResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getGetExportMockHandler = (
-  overrideResponse?:
-    | ExportJobResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<ExportJobResponse> | ExportJobResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/exports/:exportId',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getGetExportResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getDownloadExportImagesMockHandler = (overrideResponse?: DownloadURLResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<DownloadURLResponse> | DownloadURLResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/exports/:exportId/download/images', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getDownloadExportImagesResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getDownloadExportJsonMockHandler = (
-  overrideResponse?:
-    | DownloadURLResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<DownloadURLResponse> | DownloadURLResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/exports/:exportId/download/json',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getDownloadExportJsonResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getAuthLoginMockHandler = (overrideResponse?: OAuthLoginResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<OAuthLoginResponse> | OAuthLoginResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/auth/login', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAuthLoginResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getDownloadExportImagesMockHandler = (
-  overrideResponse?:
-    | DownloadURLResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<DownloadURLResponse> | DownloadURLResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/exports/:exportId/download/images',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getDownloadExportImagesResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getAuthCallbackMockHandler = (overrideResponse?: OAuthCallbackResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<OAuthCallbackResponse> | OAuthCallbackResponse), options?: RequestHandlerOptions) => {
+  return http.post('*/v1/auth/callback', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAuthCallbackResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getAuthLoginMockHandler = (
-  overrideResponse?:
-    | OAuthLoginResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<OAuthLoginResponse> | OAuthLoginResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/auth/login',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getAuthLoginResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
+export const getAuthCallbackRedirectMockHandler = (overrideResponse?: OAuthCallbackResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<OAuthCallbackResponse> | OAuthCallbackResponse), options?: RequestHandlerOptions) => {
+  return http.get('*/v1/auth/callback', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  
+  
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getAuthCallbackRedirectResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 
-export const getAuthCallbackMockHandler = (
-  overrideResponse?:
-    | OAuthCallbackResponse
-    | ((
-        info: Parameters<Parameters<typeof http.post>[1]>[0],
-      ) => Promise<OAuthCallbackResponse> | OAuthCallbackResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.post(
-    '*/v1/auth/callback',
-    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getAuthCallbackResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
-
-export const getAuthCallbackRedirectMockHandler = (
-  overrideResponse?:
-    | OAuthCallbackResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<OAuthCallbackResponse> | OAuthCallbackResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/v1/auth/callback',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === 'function'
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getAuthCallbackRedirectResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
-
-export const getRootMockHandler = (
-  overrideResponse?:
-    | unknown
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<unknown> | unknown),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    '*/',
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      if (typeof overrideResponse === 'function') {
-        await overrideResponse(info);
-      }
-
-      return new HttpResponse(null, { status: 200 });
-    },
-    options,
-  );
-};
+export const getRootMockHandler = (overrideResponse?: unknown | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<unknown> | unknown), options?: RequestHandlerOptions) => {
+  return http.get('*/', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+  
+    return new HttpResponse(null,
+      { status: 200
+      })
+  }, options)
+}
 export const getPathsBackendAPIMock = () => [
   getHealthMockHandler(),
   getListPathsMockHandler(),
@@ -4203,5 +3059,5 @@ export const getPathsBackendAPIMock = () => [
   getAuthLoginMockHandler(),
   getAuthCallbackMockHandler(),
   getAuthCallbackRedirectMockHandler(),
-  getRootMockHandler(),
-];
+  getRootMockHandler()
+]
