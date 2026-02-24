@@ -37,6 +37,16 @@ vi.mock('../components/EntryCreateModal.vue', () => ({
   },
 }));
 
+// Stub EntryDetailModal so we can test open/close without Ionic
+vi.mock('../components/EntryDetailModal.vue', () => ({
+  default: {
+    template:
+      '<div data-testid="entry-detail-modal" :data-open="isOpen" :data-content="content"></div>',
+    props: ['isOpen', 'pathTitle', 'color', 'day', 'content', 'hasImages'],
+    emits: ['dismiss'],
+  },
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -270,5 +280,59 @@ describe('WeekView – image thumbnail indicator', () => {
 
     const indicators = wrapper.findAll('.day-entry-image-indicator');
     expect(indicators).toHaveLength(1);
+  });
+});
+
+describe('WeekView – entry detail modal', () => {
+  it('opens the detail modal when a day-entry is clicked', async () => {
+    const path = makePathResponse({ path_id: 'p1', title: 'My Path', color: '#3949ab' });
+    const todayStr = today();
+
+    const pathEntries: PathEntries[] = [
+      {
+        pathId: 'p1',
+        entries: [
+          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'Detailed entry content' },
+        ],
+      },
+    ];
+
+    const wrapper = mountWeekView([path], pathEntries);
+    await nextTick();
+
+    // Detail modal should not be rendered before clicking
+    expect(wrapper.find('[data-testid="entry-detail-modal"]').exists()).toBe(false);
+
+    // Click the day-entry
+    const entry = wrapper.find('.day-entry');
+    await entry.trigger('click');
+    await nextTick();
+
+    // Detail modal should now be open
+    const modal = wrapper.find('[data-testid="entry-detail-modal"]');
+    expect(modal.exists()).toBe(true);
+    expect(modal.attributes('data-open')).toBe('true');
+    expect(modal.attributes('data-content')).toBe('Detailed entry content');
+  });
+
+  it('entries are keyboard-accessible (role=button, tabindex=0)', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const todayStr = today();
+
+    const pathEntries: PathEntries[] = [
+      {
+        pathId: 'p1',
+        entries: [
+          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'Accessible entry' },
+        ],
+      },
+    ];
+
+    const wrapper = mountWeekView([path], pathEntries);
+    await nextTick();
+
+    const entry = wrapper.find('.day-entry');
+    expect(entry.attributes('role')).toBe('button');
+    expect(entry.attributes('tabindex')).toBe('0');
   });
 });

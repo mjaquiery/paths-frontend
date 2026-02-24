@@ -46,6 +46,12 @@
             :key="pe.pathId + '-' + pe.entryId"
             class="day-entry"
             :style="{ borderLeftColor: pe.color }"
+            role="button"
+            tabindex="0"
+            :aria-label="`View entry from ${pe.pathTitle}`"
+            @click="openDetail(pe, dayInfo.dateStr)"
+            @keydown.enter="openDetail(pe, dayInfo.dateStr)"
+            @keydown.space.prevent="openDetail(pe, dayInfo.dateStr)"
           >
             <span
               class="day-entry-path-dot"
@@ -89,6 +95,18 @@
     @dismiss="showCreateModal = false"
     @created="onEntryCreated"
   />
+
+  <!-- Entry detail modal -->
+  <EntryDetailModal
+    v-if="detailEntry"
+    :is-open="showDetailModal"
+    :path-title="detailEntry.pathTitle"
+    :color="detailEntry.color"
+    :day="detailEntry.day"
+    :content="detailEntry.preview"
+    :has-images="detailEntry.hasImages"
+    @dismiss="showDetailModal = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -98,6 +116,7 @@ import { computed, ref } from 'vue';
 import type { PathResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
 import EntryCreateModal from './EntryCreateModal.vue';
+import EntryDetailModal from './EntryDetailModal.vue';
 
 const props = defineProps<{
   visiblePaths: PathResponse[];
@@ -113,6 +132,8 @@ const emit = defineEmits<{
 const weekOffset = ref(0); // 0 = current week, -1 = last week, etc.
 const showCreateModal = ref(false);
 const createModalDay = ref('');
+const showDetailModal = ref(false);
+const detailEntry = ref<(DayPathEntry & { day: string }) | null>(null);
 
 /** Build ISO date string for a day offset from today */
 function isoDate(offsetDays: number): string {
@@ -197,6 +218,11 @@ const hasPreviousEntries = computed(() => {
 function openCreate(dateStr: string) {
   createModalDay.value = dateStr;
   showCreateModal.value = true;
+}
+
+function openDetail(pe: DayPathEntry, dateStr: string) {
+  detailEntry.value = { ...pe, day: dateStr };
+  showDetailModal.value = true;
 }
 
 function onEntryCreated() {
@@ -284,6 +310,16 @@ function onEntryCreated() {
   padding: 6px 8px;
   border-left: 3px solid transparent;
   overflow: hidden;
+  cursor: pointer;
+}
+
+.day-entry:hover {
+  background: var(--ion-color-light, #f4f4f4);
+}
+
+.day-entry:focus-visible {
+  outline: 2px solid var(--ion-color-primary, #3949ab);
+  outline-offset: -2px;
 }
 
 .day-entry-path-dot {
