@@ -456,4 +456,96 @@ describe('useMultiPathEntries', () => {
     expect(p2Slot?.entries[0]?.path_id).toBe('p2');
     expect(p1Slot?.entries[0]?.path_id).toBe('p1');
   });
+
+  it('does not overwrite content when two paths share the same entry slug', async () => {
+    // Both paths have an entry with the same id ('same-slug') but different content.
+    vi.mocked(customFetch).mockImplementation((url: string) => {
+      if (url.match(/\/v1\/paths\/[^/]+\/entries\/[^/]+\/images$/)) {
+        return Promise.resolve({
+          data: [],
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      if (url === '/v1/paths/p1/entries/same-slug') {
+        return Promise.resolve({
+          data: {
+            id: 'same-slug',
+            path_id: 'p1',
+            day: '2024-03-01',
+            edit_id: 'ed-p1',
+            content: 'Content from p1',
+          },
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      if (url === '/v1/paths/p2/entries/same-slug') {
+        return Promise.resolve({
+          data: {
+            id: 'same-slug',
+            path_id: 'p2',
+            day: '2024-03-01',
+            edit_id: 'ed-p2',
+            content: 'Content from p2',
+          },
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      if (url === '/v1/paths/p1/entries') {
+        return Promise.resolve({
+          data: [
+            {
+              id: 'same-slug',
+              path_id: 'p1',
+              day: '2024-03-01',
+              edit_id: 'ed-p1',
+            },
+          ],
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      if (url === '/v1/paths/p2/entries') {
+        return Promise.resolve({
+          data: [
+            {
+              id: 'same-slug',
+              path_id: 'p2',
+              day: '2024-03-01',
+              edit_id: 'ed-p2',
+            },
+          ],
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      return Promise.resolve({ data: [], status: 200, headers: new Headers() });
+    });
+
+    const pathIds = ref(['p1', 'p2']);
+    const queryClient = createQueryClient();
+    let result: ReturnType<typeof useMultiPathEntries> | undefined;
+
+    const TestComponent = defineComponent({
+      setup() {
+        result = useMultiPathEntries(pathIds);
+        return {};
+      },
+      template: '<div></div>',
+    });
+
+    mount(TestComponent, {
+      global: { plugins: [[VueQueryPlugin, { queryClient }]] },
+    });
+    await flushPromises();
+    await flushPromises();
+
+    const p1Entry = result?.value.find((pe) => pe.pathId === 'p1')?.entries[0];
+    const p2Entry = result?.value.find((pe) => pe.pathId === 'p2')?.entries[0];
+
+    expect(p1Entry?.content).toBe('Content from p1');
+    expect(p2Entry?.content).toBe('Content from p2');
+  });
 });

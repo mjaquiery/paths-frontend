@@ -11,6 +11,7 @@ export interface QueryCacheEntry {
 }
 
 export interface EntryContentCache {
+  cache_key: string;
   id: string;
   path_id: string;
   day: string;
@@ -32,7 +33,7 @@ export interface EntryImageCache {
 const db = new Dexie('pathsFrontend') as Dexie & {
   pathPreferences: EntityTable<PathPreference, 'pathId'>;
   queryCache: EntityTable<QueryCacheEntry, 'key'>;
-  entryContent: EntityTable<EntryContentCache, 'id'>;
+  entryContent: EntityTable<EntryContentCache, 'cache_key'>;
   entryImages: EntityTable<EntryImageCache, 'id'>;
 };
 
@@ -57,6 +58,13 @@ db.version(4).stores({
   pathPreferences: '&pathId,hidden',
   queryCache: '&key',
   entryContent: '&id,edit_id,path_id',
+  entryImages: '&id,entry_id',
+});
+
+db.version(5).stores({
+  pathPreferences: '&pathId,hidden',
+  queryCache: '&key',
+  entryContent: '&cache_key,edit_id,path_id,id',
   entryImages: '&id,entry_id',
 });
 

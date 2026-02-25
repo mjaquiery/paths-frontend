@@ -76,17 +76,18 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
             ?.data ?? [];
 
         for (const entry of entries) {
+          const cacheKey = `${pathId}:${entry.id}`;
           // Skip if we already have up-to-date content for this edit_id.
-          if (contentCache.value[entry.id]?.editId === entry.edit_id) continue;
+          if (contentCache.value[cacheKey]?.editId === entry.edit_id) continue;
 
           // Try Dexie cache first.
-          const cached = await db.entryContent.get(entry.id);
+          const cached = await db.entryContent.get(cacheKey);
           if (cached && cached.edit_id === entry.edit_id) {
             const cachedImages = await db.entryImages
               .where('entry_id')
               .equals(entry.id)
               .toArray();
-            contentCache.value[entry.id] = {
+            contentCache.value[cacheKey] = {
               editId: entry.edit_id,
               content: cached.content,
               image_filenames: cached.image_filenames,
@@ -106,17 +107,18 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
             entryResult.status === 'fulfilled'
               ? ((entryResult.value.data as EntryContentResponse | undefined)
                   ?.content ?? '')
-              : (contentCache.value[entry.id]?.content ?? '');
+              : (contentCache.value[cacheKey]?.content ?? '');
 
           const images: ImageResponse[] =
             imagesResult.status === 'fulfilled'
               ? ((imagesResult.value.data as ImageResponse[] | undefined) ?? [])
-              : (contentCache.value[entry.id]?.images ?? []);
+              : (contentCache.value[cacheKey]?.images ?? []);
 
           const image_filenames = images.map((img) => img.filename);
 
           // Persist to Dexie.
           await db.entryContent.put({
+            cache_key: cacheKey,
             id: entry.id,
             path_id: entry.path_id,
             day: entry.day,
@@ -143,7 +145,7 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
             }
           }
 
-          contentCache.value[entry.id] = {
+          contentCache.value[cacheKey] = {
             editId: entry.edit_id,
             content,
             image_filenames,
@@ -158,12 +160,15 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
   return computed<PathEntries[]>(() =>
     pathIds.value.map((pathId) => ({
       pathId,
-      entries: (rawEntriesMap.value[pathId] ?? []).map((entry) => ({
-        ...entry,
-        content: contentCache.value[entry.id]?.content,
-        image_filenames: contentCache.value[entry.id]?.image_filenames,
-        images: contentCache.value[entry.id]?.images,
-      })),
+      entries: (rawEntriesMap.value[pathId] ?? []).map((entry) => {
+        const cacheKey = `${pathId}:${entry.id}`;
+        return {
+          ...entry,
+          content: contentCache.value[cacheKey]?.content,
+          image_filenames: contentCache.value[cacheKey]?.image_filenames,
+          images: contentCache.value[cacheKey]?.images,
+        };
+      }),
     })),
   );
 }
