@@ -63,12 +63,13 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
           // Fetch from API and store in Dexie.
           try {
             const resp = await getEntry(pathId, entry.id);
-            const content =
-              (resp.data as EntryContentResponse | undefined)?.content ?? '';
-            // image_filenames are stored locally (not returned by API).
-            // Prefer stale Dexie row first (survives page reload), then
-            // in-memory cache, then default to empty.
+            const respData = resp.data as EntryContentResponse | undefined;
+            const content = respData?.content ?? '';
+            // Prefer API-returned image_filenames (authoritative), then fall
+            // back to stale Dexie row (survives page reload), then in-memory
+            // cache, then default to empty.
             const image_filenames =
+              respData?.image_filenames ??
               cached?.image_filenames ??
               contentCache.value[entry.id]?.image_filenames ??
               [];

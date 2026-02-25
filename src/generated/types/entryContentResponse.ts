@@ -11,4 +11,5 @@ export interface EntryContentResponse {
   day: string;
   edit_id: string;
   content: string;
+  image_filenames?: string[];
 }

@@ -319,6 +319,54 @@ describe('useMultiPathEntries', () => {
     expect(result?.value[1]?.entries).toHaveLength(1);
   });
 
+  it('uses image_filenames from API response for non-cached entries', async () => {
+    vi.mocked(customFetch).mockImplementation((url: string) => {
+      const contentMatch = url.match(/\/v1\/paths\/([^/]+)\/entries\/([^/]+)$/);
+      if (contentMatch && !url.endsWith('/entries/p1')) {
+        return Promise.resolve({
+          data: {
+            id: 'e1',
+            path_id: 'p1',
+            day: '2024-01-01',
+            edit_id: 'ed1',
+            content: 'Entry with image',
+            image_filenames: ['photo.jpg'],
+          },
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      if (url.includes('/v1/paths/p1/entries')) {
+        return Promise.resolve({
+          data: [{ id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 'ed1' }],
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      return Promise.resolve({ data: [], status: 200, headers: new Headers() });
+    });
+
+    const pathIds = ref(['p1']);
+    const queryClient = createQueryClient();
+    let result: ReturnType<typeof useMultiPathEntries> | undefined;
+
+    const TestComponent = defineComponent({
+      setup() {
+        result = useMultiPathEntries(pathIds);
+        return {};
+      },
+      template: '<div></div>',
+    });
+
+    mount(TestComponent, {
+      global: { plugins: [[VueQueryPlugin, { queryClient }]] },
+    });
+    await flushPromises();
+    await flushPromises();
+
+    expect(result?.value[0]?.entries[0]?.image_filenames).toEqual(['photo.jpg']);
+  });
+
   it('returns empty entries array when a query fails', async () => {
     vi.mocked(customFetch).mockRejectedValue(new Error('Network error'));
 
