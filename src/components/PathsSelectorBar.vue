@@ -95,7 +95,7 @@
               color="danger"
               fill="outline"
               :disabled="invitationBusy[inv.id]"
-              @click="blockInv(inv.inviter_user_id)"
+              @click="blockInv(inv.id, inv.inviter_user_id)"
               >Block sender</ion-button
             >
           </div>
@@ -431,7 +431,7 @@ async function acceptInv(invitationId: string) {
     await Promise.all([refetchInvitations(), refetch()]);
     void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
   } catch {
-    // silently fail — invitation list will refresh
+    // silently fail
   } finally {
     invitationBusy.value[invitationId] = false;
   }
@@ -449,12 +449,15 @@ async function ignoreInv(invitationId: string) {
   }
 }
 
-async function blockInv(inviterUserId: string) {
+async function blockInv(invitationId: string, inviterUserId: string) {
+  invitationBusy.value[invitationId] = true;
   try {
     await doBlock({ data: { user_id: inviterUserId } });
     await refetchInvitations();
   } catch {
     // silently fail
+  } finally {
+    invitationBusy.value[invitationId] = false;
   }
 }
 

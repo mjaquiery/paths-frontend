@@ -149,11 +149,11 @@ async function unblock(blockedUserId: string) {
 }
 
 function formatDate(dateStr: string): string {
-  try {
-    return new Date(dateStr).toLocaleDateString();
-  } catch {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
     return dateStr;
   }
+  return date.toLocaleDateString();
 }
 </script>
 
