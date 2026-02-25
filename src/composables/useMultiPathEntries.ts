@@ -24,6 +24,16 @@ interface ContentState {
 export function useMultiPathEntries(pathIds: Ref<string[]>) {
   const contentCache = ref<Record<string, ContentState>>({});
 
+  /**
+   * Stable map from pathId → raw entry list, updated synchronously
+   * inside the `watch(results, …)` callback.  Using a keyed map (rather
+   * than positional index into `results`) means that a path-priority
+   * reorder — which changes `pathIds.value` order but not the underlying
+   * data — never causes one path to accidentally read another path's
+   * entries while TanStack Query's internal result array catches up.
+   */
+  const rawEntriesMap = ref<Record<string, EntryResponse[]>>({});
+
   const results = useQueries({
     queries: computed(() =>
       pathIds.value.map((pathId) => ({
@@ -38,6 +48,19 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
   watch(
     results,
     async (queryResults) => {
+      // Synchronously update the pathId → entries map so that the return
+      // computed always has correctly-keyed data even if this watcher runs
+      // before or after a path-order change.
+      const newMap: Record<string, EntryResponse[]> = {};
+      for (let i = 0; i < pathIds.value.length; i++) {
+        const pathId = pathIds.value[i];
+        if (!pathId) continue;
+        newMap[pathId] =
+          (queryResults[i]?.data as { data?: EntryResponse[] } | undefined)
+            ?.data ?? [];
+      }
+      rawEntriesMap.value = newMap;
+
       for (let i = 0; i < pathIds.value.length; i++) {
         const pathId = pathIds.value[i];
         if (!pathId) continue;
@@ -100,16 +123,13 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
   );
 
   return computed<PathEntries[]>(() =>
-    pathIds.value.map((pathId, i) => ({
+    pathIds.value.map((pathId) => ({
       pathId,
-      entries:
-        (
-          results.value[i]?.data as { data?: EntryResponse[] } | undefined
-        )?.data?.map((entry) => ({
-          ...entry,
-          content: contentCache.value[entry.id]?.content,
-          image_filenames: contentCache.value[entry.id]?.image_filenames,
-        })) ?? [],
+      entries: (rawEntriesMap.value[pathId] ?? []).map((entry) => ({
+        ...entry,
+        content: contentCache.value[entry.id]?.content,
+        image_filenames: contentCache.value[entry.id]?.image_filenames,
+      })),
     })),
   );
 }
