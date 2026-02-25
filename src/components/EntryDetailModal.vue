@@ -17,8 +17,13 @@
         ></span>
         {{ currentEntry.pathTitle }} &mdash; {{ currentEntry.day }}
       </p>
-      <p class="entry-detail-content">{{ currentEntry.content || '(no text)' }}</p>
-      <div v-if="currentEntry.images && currentEntry.images.length > 0" class="entry-detail-images">
+      <p class="entry-detail-content">
+        {{ currentEntry.content || '(no text)' }}
+      </p>
+      <div
+        v-if="currentEntry.images && currentEntry.images.length > 0"
+        class="entry-detail-images"
+      >
         <EntryImage
           v-for="img in currentEntry.images"
           :key="img.id"
@@ -38,7 +43,9 @@
             ‹ Prev
           </ion-button>
         </ion-buttons>
-        <p class="entry-detail-counter">{{ currentIndex + 1 }} / {{ entries.length }}</p>
+        <p class="entry-detail-counter">
+          {{ currentIndex + 1 }} / {{ entries.length }}
+        </p>
         <ion-buttons slot="end">
           <ion-button
             :disabled="currentIndex === entries.length - 1"

@@ -50,8 +50,12 @@
             tabindex="0"
             :aria-label="`View entry from ${pe.pathTitle}`"
             @click="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
-            @keydown.enter="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
-            @keydown.space.prevent="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
+            @keydown.enter="
+              openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)
+            "
+            @keydown.space.prevent="
+              openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)
+            "
           >
             <span
               class="day-entry-path-dot"
@@ -66,7 +70,8 @@
               class="day-entry-image-indicator"
               title="Has images"
               aria-label="Has images"
-            >📷</span>
+              >📷</span
+            >
           </div>
         </div>
         <div v-else class="day-empty"></div>
@@ -220,7 +225,11 @@ function openCreate(dateStr: string) {
   showCreateModal.value = true;
 }
 
-function openDetail(pe: DayPathEntry, dayEntries: DayPathEntry[], dateStr: string) {
+function openDetail(
+  pe: DayPathEntry,
+  dayEntries: DayPathEntry[],
+  dateStr: string,
+) {
   detailDayEntries.value = dayEntries.map((e) => ({
     pathId: e.pathId,
     entryId: e.entryId,

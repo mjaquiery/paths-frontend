@@ -262,7 +262,11 @@ describe('useMultiPathEntries', () => {
     vi.mocked(customFetch).mockImplementation((url: string) => {
       // Images endpoint: /v1/paths/{id}/entries/{entryId}/images
       if (url.match(/\/v1\/paths\/[^/]+\/entries\/[^/]+\/images$/)) {
-        return Promise.resolve({ data: [], status: 200, headers: new Headers() });
+        return Promise.resolve({
+          data: [],
+          status: 200,
+          headers: new Headers(),
+        });
       }
       // Match specific content fetch: /v1/paths/{id}/entries/{entryId} (no trailing segment)
       const contentMatch = url.match(/\/v1\/paths\/([^/]+)\/entries\/([^/]+)$/);
@@ -361,11 +365,19 @@ describe('useMultiPathEntries', () => {
     vi.mocked(customFetch).mockImplementation((url: string) => {
       // Images endpoint: /v1/paths/{id}/entries/{entryId}/images
       if (url.match(/\/v1\/paths\/[^/]+\/entries\/[^/]+\/images$/)) {
-        return Promise.resolve({ data: [], status: 200, headers: new Headers() });
+        return Promise.resolve({
+          data: [],
+          status: 200,
+          headers: new Headers(),
+        });
       }
       // Content fetch: /v1/paths/{pathId}/entries/{entryId}
       const contentMatch = url.match(/\/v1\/paths\/([^/]+)\/entries\/([^/]+)$/);
-      if (contentMatch && !url.endsWith('/entries/p1') && !url.endsWith('/entries/p2')) {
+      if (
+        contentMatch &&
+        !url.endsWith('/entries/p1') &&
+        !url.endsWith('/entries/p2')
+      ) {
         const [, pathId, entryId] = contentMatch;
         return Promise.resolve({
           data: {
@@ -381,14 +393,18 @@ describe('useMultiPathEntries', () => {
       }
       if (url.includes('/v1/paths/p1/entries')) {
         return Promise.resolve({
-          data: [{ id: 'e1', path_id: 'p1', day: '2024-06-01', edit_id: 'ed1' }],
+          data: [
+            { id: 'e1', path_id: 'p1', day: '2024-06-01', edit_id: 'ed1' },
+          ],
           status: 200,
           headers: new Headers(),
         });
       }
       if (url.includes('/v1/paths/p2/entries')) {
         return Promise.resolve({
-          data: [{ id: 'e2', path_id: 'p2', day: '2024-06-01', edit_id: 'ed1' }],
+          data: [
+            { id: 'e2', path_id: 'p2', day: '2024-06-01', edit_id: 'ed1' },
+          ],
           status: 200,
           headers: new Headers(),
         });

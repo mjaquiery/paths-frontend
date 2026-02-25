@@ -9,7 +9,15 @@
  * timing issues with useQuery scheduling in the test environment.
  * POST requests to create subscriptions are tested via MSW as genuine HTTP.
  */
-import { describe, it, expect, vi, beforeAll, afterEach, afterAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  afterEach,
+  afterAll,
+} from 'vitest';
 import { nextTick } from 'vue';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount, flushPromises } from '@vue/test-utils';
@@ -81,7 +89,11 @@ const ownedPath: PathResponse = {
 };
 
 // Simulated raw API response (as customFetch wraps it)
-const pathsApiResponse = { data: [ownedPath], status: 200, headers: new Headers() };
+const pathsApiResponse = {
+  data: [ownedPath],
+  status: 200,
+  headers: new Headers(),
+};
 
 // ---------------------------------------------------------------------------
 // MSW server — only for mutation endpoints
@@ -122,7 +134,9 @@ async function mountAndExpand() {
   await nextTick();
 
   // Open expanded view
-  const moreBtn = wrapper.findAll('button').find((b) => b.text().includes('More'));
+  const moreBtn = wrapper
+    .findAll('button')
+    .find((b) => b.text().includes('More'));
   expect(moreBtn).toBeDefined();
   await moreBtn!.trigger('click');
   await nextTick();
