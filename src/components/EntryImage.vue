@@ -13,8 +13,13 @@
       class="entry-image-thumb"
       loading="lazy"
     />
-    <span v-else-if="isLoading" class="entry-image-placeholder">⏳</span>
-    <span v-else class="entry-image-placeholder entry-image-placeholder--error">⚠️</span>
+    <span v-else-if="isLoading" class="entry-image-placeholder" aria-label="Loading image">⏳</span>
+    <span
+      v-else
+      class="entry-image-placeholder entry-image-placeholder--error"
+      :title="errorMessage || 'Failed to load image'"
+      :aria-label="errorMessage || 'Failed to load image'"
+    >⚠️</span>
   </a>
 </template>
 
@@ -22,13 +27,14 @@
 import { computed } from 'vue';
 import { useGetImageDownloadUrl } from '../generated/apiClient';
 import type { ImageDownloadResponse } from '../generated/types';
+import { extractErrorMessage } from '../lib/errors';
 
 const props = defineProps<{
   imageId: string;
   alt?: string;
 }>();
 
-const { data, isLoading } = useGetImageDownloadUrl(computed(() => props.imageId));
+const { data, isLoading, error } = useGetImageDownloadUrl(computed(() => props.imageId));
 
 const imageUrl = computed(
   () => (data.value?.data as ImageDownloadResponse | undefined)?.image_url ?? null,
@@ -36,6 +42,7 @@ const imageUrl = computed(
 const thumbnailUrl = computed(
   () => (data.value?.data as ImageDownloadResponse | undefined)?.thumbnail_url ?? null,
 );
+const errorMessage = computed(() => extractErrorMessage(error.value));
 </script>
 
 <style scoped>

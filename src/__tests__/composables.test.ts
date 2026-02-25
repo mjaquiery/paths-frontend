@@ -19,6 +19,15 @@ vi.mock('../lib/db', () => ({
       get: vi.fn().mockResolvedValue(undefined),
       put: vi.fn().mockResolvedValue(undefined),
     },
+    entryImages: {
+      where: vi.fn().mockReturnValue({
+        equals: vi.fn().mockReturnValue({
+          toArray: vi.fn().mockResolvedValue([]),
+          delete: vi.fn().mockResolvedValue(0),
+        }),
+      }),
+      bulkPut: vi.fn().mockResolvedValue(undefined),
+    },
     pathPreferences: {},
     queryCache: {},
   },
@@ -251,6 +260,10 @@ describe('useMultiPathEntries', () => {
 
   it('fetches entries for each provided pathId', async () => {
     vi.mocked(customFetch).mockImplementation((url: string) => {
+      // Images endpoint: /v1/paths/{id}/entries/{entryId}/images
+      if (url.match(/\/v1\/paths\/[^/]+\/entries\/[^/]+\/images$/)) {
+        return Promise.resolve({ data: [], status: 200, headers: new Headers() });
+      }
       // Match specific content fetch: /v1/paths/{id}/entries/{entryId} (no trailing segment)
       const contentMatch = url.match(/\/v1\/paths\/([^/]+)\/entries\/([^/]+)$/);
       if (
@@ -346,6 +359,10 @@ describe('useMultiPathEntries', () => {
 
   it('keeps each pathId associated with its own entries when pathIds are reordered', async () => {
     vi.mocked(customFetch).mockImplementation((url: string) => {
+      // Images endpoint: /v1/paths/{id}/entries/{entryId}/images
+      if (url.match(/\/v1\/paths\/[^/]+\/entries\/[^/]+\/images$/)) {
+        return Promise.resolve({ data: [], status: 200, headers: new Headers() });
+      }
       // Content fetch: /v1/paths/{pathId}/entries/{entryId}
       const contentMatch = url.match(/\/v1\/paths\/([^/]+)\/entries\/([^/]+)$/);
       if (contentMatch && !url.endsWith('/entries/p1') && !url.endsWith('/entries/p2')) {

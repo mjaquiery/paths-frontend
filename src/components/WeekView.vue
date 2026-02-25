@@ -109,7 +109,7 @@
 import { IonButton } from '@ionic/vue';
 import { computed, ref } from 'vue';
 
-import type { PathResponse } from '../generated/types';
+import type { PathResponse, ImageResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
 import EntryCreateModal from './EntryCreateModal.vue';
 import EntryDetailModal from './EntryDetailModal.vue';
@@ -157,6 +157,7 @@ interface DayPathEntry {
   color: string;
   preview: string;
   hasImages: boolean;
+  images?: ImageResponse[];
 }
 
 interface DayInfo {
@@ -190,6 +191,7 @@ const weekDays = computed<DayInfo[]>(() => {
           color: path.color,
           preview: entry.content ?? '',
           hasImages: (entry.image_filenames?.length ?? 0) > 0,
+          images: entry.images,
         });
       }
     }
@@ -227,6 +229,7 @@ function openDetail(pe: DayPathEntry, dayEntries: DayPathEntry[], dateStr: strin
     day: dateStr,
     content: e.preview,
     hasImages: e.hasImages,
+    images: e.images,
   }));
   detailStartIndex.value = dayEntries.indexOf(pe);
   showDetailModal.value = true;

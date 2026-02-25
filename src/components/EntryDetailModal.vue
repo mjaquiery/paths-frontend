@@ -18,17 +18,14 @@
         {{ currentEntry.pathTitle }} &mdash; {{ currentEntry.day }}
       </p>
       <p class="entry-detail-content">{{ currentEntry.content || '(no text)' }}</p>
-      <div v-if="images.length > 0" class="entry-detail-images">
+      <div v-if="currentEntry.images && currentEntry.images.length > 0" class="entry-detail-images">
         <EntryImage
-          v-for="img in images"
+          v-for="img in currentEntry.images"
           :key="img.id"
           :image-id="img.id"
           :alt="img.filename"
         />
       </div>
-      <p v-else-if="currentEntry.hasImages && imagesLoading" class="entry-detail-images-status">
-        Loading images…
-      </p>
     </ion-content>
     <ion-footer v-if="entries.length > 1">
       <ion-toolbar>
@@ -68,7 +65,6 @@ import {
   IonContent,
 } from '@ionic/vue';
 import { computed, ref, watch } from 'vue';
-import { useListEntryImages } from '../generated/apiClient';
 import type { ImageResponse } from '../generated/types';
 import EntryImage from './EntryImage.vue';
 
@@ -80,6 +76,7 @@ export interface EntryDetailData {
   day: string;
   content: string;
   hasImages: boolean;
+  images?: ImageResponse[];
 }
 
 const props = defineProps<{
@@ -112,16 +109,8 @@ const currentEntry = computed<EntryDetailData>(
       day: '',
       content: '',
       hasImages: false,
+      images: [],
     },
-);
-
-const { data: imagesData, isLoading: imagesLoading } = useListEntryImages(
-  computed(() => currentEntry.value.pathId),
-  computed(() => currentEntry.value.entryId),
-);
-
-const images = computed<ImageResponse[]>(
-  () => (imagesData.value?.data as ImageResponse[] | undefined) ?? [],
 );
 </script>
 
@@ -156,13 +145,6 @@ const images = computed<ImageResponse[]>(
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 16px;
-  padding: 0 4px;
-}
-
-.entry-detail-images-status {
-  font-size: 0.85rem;
-  color: var(--ion-color-medium, #888);
-  margin-top: 12px;
   padding: 0 4px;
 }
 
