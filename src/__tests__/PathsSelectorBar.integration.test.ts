@@ -278,6 +278,56 @@ describe('PathsSelectorBar – create path (MSW integration)', () => {
     expect(wrapper.text()).toContain('Failed to create path');
   });
 
+  it('invalidates the paths query after successful creation so the list refreshes', async () => {
+    const queryClient = createQueryClient();
+    // Seed the query cache with the initial path list
+    queryClient.setQueryData(['v1', 'paths'], {
+      data: [existingPath],
+      status: 200,
+      headers: new Headers(),
+    });
+
+    const wrapper = mount(PathsSelectorBar, {
+      props: { currentUser },
+      global: {
+        plugins: [[VueQueryPlugin, { queryClient }]],
+        stubs: ionicStubs,
+      },
+    });
+
+    await flushPromises();
+
+    // Verify the existing path is rendered first
+    expect(wrapper.text()).toContain('Existing Path');
+
+    // Open the create form and enter a title
+    const newPathBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('New Path'));
+    await newPathBtn!.trigger('click');
+    await nextTick();
+
+    const inputs = wrapper
+      .findAll('input')
+      .filter((i) => i.attributes('type') !== 'checkbox');
+    await inputs[0].setValue('New Integration Path');
+    await nextTick();
+
+    // After POST succeeds the query should be marked stale (invalidated)
+    const spyInvalidate = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const createBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().trim() === 'Create');
+    await createBtn!.trigger('click');
+    await flushPromises();
+
+    // invalidateQueries must have been called with the paths query key
+    expect(spyInvalidate).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ['v1', 'paths'] }),
+    );
+  });
+
   it('Cancel button closes the form without creating a path', async () => {
     const createRequests: Request[] = [];
     server.use(
