@@ -404,7 +404,7 @@ async function createPath() {
       },
     });
     cancelCreate();
-    await refetch();
+    await queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
   } catch (err: unknown) {
     const detail = extractErrorMessage(err);
     createError.value = detail

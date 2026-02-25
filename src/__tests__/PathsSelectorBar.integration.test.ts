@@ -278,6 +278,37 @@ describe('PathsSelectorBar – create path (MSW integration)', () => {
     expect(wrapper.text()).toContain('Failed to create path');
   });
 
+  it('shows the new path in the list after successful creation', async () => {
+    // First GET returns only existing path; subsequent GETs return both paths
+    let getCallCount = 0;
+    server.use(
+      http.get('*/v1/paths', () => {
+        getCallCount++;
+        if (getCallCount <= 1) {
+          return HttpResponse.json([existingPath], { status: 200 });
+        }
+        return HttpResponse.json([existingPath, createdPath], { status: 200 });
+      }),
+    );
+
+    const wrapper = await mountAndOpenForm();
+
+    const inputs = wrapper
+      .findAll('input')
+      .filter((i) => i.attributes('type') !== 'checkbox');
+    await inputs[0].setValue('New Integration Path');
+    await nextTick();
+
+    const createBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().trim() === 'Create');
+    await createBtn!.trigger('click');
+    await flushPromises();
+
+    // The new path should appear in the rendered output (chip list or path list)
+    expect(wrapper.text()).toContain('New Integration Path');
+  });
+
   it('Cancel button closes the form without creating a path', async () => {
     const createRequests: Request[] = [];
     server.use(
