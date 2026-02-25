@@ -9,6 +9,12 @@
         </ion-thumbnail>
         <ion-title>Paths</ion-title>
         <ion-buttons slot="end">
+          <ion-button
+            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+            @click="toggleDarkMode"
+          >
+            {{ isDark ? '☀️' : '🌙' }}
+          </ion-button>
           <template v-if="currentUser">
             <ion-label class="ion-padding-end">{{
               currentUser.display_name || currentUser.user_id
@@ -140,6 +146,9 @@ import type {
 } from '../generated/types';
 import { authLogin } from '../generated/apiClient';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
+import { useDarkMode } from '../composables/useDarkMode';
+
+const { isDark, toggle: toggleDarkMode } = useDarkMode();
 
 const loggingIn = ref(false);
 const loginError = ref('');
