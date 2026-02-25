@@ -406,11 +406,19 @@ describe('useMultiPathEntries', () => {
     // Reorder: promote p2 to first position
     pathIds.value = ['p2', 'p1'];
     await nextTick();
+
+    // Immediately after reorder (before async queries settle), each pathId must still map to its own entries
+    let p2Slot = result?.value.find((pe) => pe.pathId === 'p2');
+    let p1Slot = result?.value.find((pe) => pe.pathId === 'p1');
+
+    expect(p2Slot?.entries[0]?.path_id).toBe('p2');
+    expect(p1Slot?.entries[0]?.path_id).toBe('p1');
+
+    // After async queries settle, the association must still be correct
     await flushPromises();
 
-    // After reorder each pathId must still map to its own entries
-    const p2Slot = result?.value.find((pe) => pe.pathId === 'p2');
-    const p1Slot = result?.value.find((pe) => pe.pathId === 'p1');
+    p2Slot = result?.value.find((pe) => pe.pathId === 'p2');
+    p1Slot = result?.value.find((pe) => pe.pathId === 'p1');
 
     expect(p2Slot?.entries[0]?.path_id).toBe('p2');
     expect(p1Slot?.entries[0]?.path_id).toBe('p1');
