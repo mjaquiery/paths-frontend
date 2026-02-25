@@ -343,4 +343,84 @@ describe('useMultiPathEntries', () => {
 
     expect(result?.value[0]?.entries).toEqual([]);
   });
+
+  it('keeps each pathId associated with its own entries when pathIds are reordered', async () => {
+    vi.mocked(customFetch).mockImplementation((url: string) => {
+      // Content fetch: /v1/paths/{pathId}/entries/{entryId}
+      const contentMatch = url.match(/\/v1\/paths\/([^/]+)\/entries\/([^/]+)$/);
+      if (contentMatch && !url.endsWith('/entries/p1') && !url.endsWith('/entries/p2')) {
+        const [, pathId, entryId] = contentMatch;
+        return Promise.resolve({
+          data: {
+            id: entryId,
+            path_id: pathId,
+            day: '2024-06-01',
+            edit_id: 'ed1',
+            content: `Content for ${pathId}`,
+          },
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      if (url.includes('/v1/paths/p1/entries')) {
+        return Promise.resolve({
+          data: [{ id: 'e1', path_id: 'p1', day: '2024-06-01', edit_id: 'ed1' }],
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      if (url.includes('/v1/paths/p2/entries')) {
+        return Promise.resolve({
+          data: [{ id: 'e2', path_id: 'p2', day: '2024-06-01', edit_id: 'ed1' }],
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      return Promise.resolve({ data: [], status: 200, headers: new Headers() });
+    });
+
+    const pathIds = ref(['p1', 'p2']);
+    const queryClient = createQueryClient();
+    let result: ReturnType<typeof useMultiPathEntries> | undefined;
+
+    const TestComponent = defineComponent({
+      setup() {
+        result = useMultiPathEntries(pathIds);
+        return {};
+      },
+      template: '<div></div>',
+    });
+
+    mount(TestComponent, {
+      global: { plugins: [[VueQueryPlugin, { queryClient }]] },
+    });
+    await flushPromises();
+    await flushPromises();
+
+    // Verify baseline before reorder
+    expect(result?.value[0]?.pathId).toBe('p1');
+    expect(result?.value[0]?.entries[0]?.path_id).toBe('p1');
+    expect(result?.value[1]?.pathId).toBe('p2');
+    expect(result?.value[1]?.entries[0]?.path_id).toBe('p2');
+
+    // Reorder: promote p2 to first position
+    pathIds.value = ['p2', 'p1'];
+    await nextTick();
+
+    // Immediately after reorder (before async queries settle), each pathId must still map to its own entries
+    let p2Slot = result?.value.find((pe) => pe.pathId === 'p2');
+    let p1Slot = result?.value.find((pe) => pe.pathId === 'p1');
+
+    expect(p2Slot?.entries[0]?.path_id).toBe('p2');
+    expect(p1Slot?.entries[0]?.path_id).toBe('p1');
+
+    // After async queries settle, the association must still be correct
+    await flushPromises();
+
+    p2Slot = result?.value.find((pe) => pe.pathId === 'p2');
+    p1Slot = result?.value.find((pe) => pe.pathId === 'p1');
+
+    expect(p2Slot?.entries[0]?.path_id).toBe('p2');
+    expect(p1Slot?.entries[0]?.path_id).toBe('p1');
+  });
 });
