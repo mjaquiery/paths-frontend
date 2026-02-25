@@ -220,6 +220,8 @@ function openCreate(dateStr: string) {
 
 function openDetail(pe: DayPathEntry, dayEntries: DayPathEntry[], dateStr: string) {
   detailDayEntries.value = dayEntries.map((e) => ({
+    pathId: e.pathId,
+    entryId: e.entryId,
     pathTitle: e.pathTitle,
     color: e.color,
     day: dateStr,

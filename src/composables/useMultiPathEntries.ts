@@ -1,7 +1,7 @@
 import { computed, ref, watch, type Ref } from 'vue';
 import { useQueries } from '@tanstack/vue-query';
-import { listEntries, getEntry } from '../generated/apiClient';
-import type { EntryContentResponse, EntryResponse } from '../generated/types';
+import { listEntries, getEntry, listEntryImages } from '../generated/apiClient';
+import type { EntryContentResponse, EntryResponse, ImageResponse } from '../generated/types';
 import { db } from '../lib/db';
 
 export interface EntryWithContent extends EntryResponse {
@@ -85,16 +85,16 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
 
           // Fetch from API and store in Dexie.
           try {
-            const resp = await getEntry(pathId, entry.id);
+            const [entryResp, imagesResp] = await Promise.all([
+              getEntry(pathId, entry.id),
+              listEntryImages(pathId, entry.id),
+            ]);
             const content =
-              (resp.data as EntryContentResponse | undefined)?.content ?? '';
-            // image_filenames are stored locally (not returned by API).
-            // Prefer stale Dexie row first (survives page reload), then
-            // in-memory cache, then default to empty.
+              (entryResp.data as EntryContentResponse | undefined)?.content ?? '';
             const image_filenames =
-              cached?.image_filenames ??
-              contentCache.value[entry.id]?.image_filenames ??
-              [];
+              (imagesResp.data as ImageResponse[] | undefined)?.map(
+                (img) => img.filename,
+              ) ?? [];
             await db.entryContent.put({
               id: entry.id,
               path_id: entry.path_id,
