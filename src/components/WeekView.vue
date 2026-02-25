@@ -46,6 +46,12 @@
             :key="pe.pathId + '-' + pe.entryId"
             class="day-entry"
             :style="{ borderLeftColor: pe.color }"
+            role="button"
+            tabindex="0"
+            :aria-label="`View entry from ${pe.pathTitle}`"
+            @click="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
+            @keydown.enter="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
+            @keydown.space.prevent="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
           >
             <span
               class="day-entry-path-dot"
@@ -89,6 +95,14 @@
     @dismiss="showCreateModal = false"
     @created="onEntryCreated"
   />
+
+  <!-- Entry detail modal -->
+  <EntryDetailModal
+    :is-open="showDetailModal"
+    :entries="detailDayEntries"
+    :start-index="detailStartIndex"
+    @dismiss="closeDetail"
+  />
 </template>
 
 <script setup lang="ts">
@@ -98,6 +112,8 @@ import { computed, ref } from 'vue';
 import type { PathResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
 import EntryCreateModal from './EntryCreateModal.vue';
+import EntryDetailModal from './EntryDetailModal.vue';
+import type { EntryDetailData } from './EntryDetailModal.vue';
 
 const props = defineProps<{
   visiblePaths: PathResponse[];
@@ -113,6 +129,9 @@ const emit = defineEmits<{
 const weekOffset = ref(0); // 0 = current week, -1 = last week, etc.
 const showCreateModal = ref(false);
 const createModalDay = ref('');
+const showDetailModal = ref(false);
+const detailDayEntries = ref<EntryDetailData[]>([]);
+const detailStartIndex = ref(0);
 
 /** Build ISO date string for a day offset from today */
 function isoDate(offsetDays: number): string {
@@ -197,6 +216,23 @@ const hasPreviousEntries = computed(() => {
 function openCreate(dateStr: string) {
   createModalDay.value = dateStr;
   showCreateModal.value = true;
+}
+
+function openDetail(pe: DayPathEntry, dayEntries: DayPathEntry[], dateStr: string) {
+  detailDayEntries.value = dayEntries.map((e) => ({
+    pathTitle: e.pathTitle,
+    color: e.color,
+    day: dateStr,
+    content: e.preview,
+    hasImages: e.hasImages,
+  }));
+  detailStartIndex.value = dayEntries.indexOf(pe);
+  showDetailModal.value = true;
+}
+
+function closeDetail() {
+  showDetailModal.value = false;
+  detailDayEntries.value = [];
 }
 
 function onEntryCreated() {
@@ -284,6 +320,16 @@ function onEntryCreated() {
   padding: 6px 8px;
   border-left: 3px solid transparent;
   overflow: hidden;
+  cursor: pointer;
+}
+
+.day-entry:hover {
+  background: var(--ion-color-light, #f4f4f4);
+}
+
+.day-entry:focus-visible {
+  outline: 2px solid var(--ion-color-primary, #3949ab);
+  outline-offset: -2px;
 }
 
 .day-entry-path-dot {

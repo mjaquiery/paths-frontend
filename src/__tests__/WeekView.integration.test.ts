@@ -37,6 +37,16 @@ vi.mock('../components/EntryCreateModal.vue', () => ({
   },
 }));
 
+// Stub EntryDetailModal so we can test open/close without Ionic
+vi.mock('../components/EntryDetailModal.vue', () => ({
+  default: {
+    template:
+      '<div data-testid="entry-detail-modal" :data-open="isOpen" :data-start-index="startIndex" :data-entries-count="entries.length"></div>',
+    props: ['isOpen', 'entries', 'startIndex'],
+    emits: ['dismiss'],
+  },
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -270,5 +280,112 @@ describe('WeekView – image thumbnail indicator', () => {
 
     const indicators = wrapper.findAll('.day-entry-image-indicator');
     expect(indicators).toHaveLength(1);
+  });
+});
+
+describe('WeekView – entry detail modal', () => {
+  function makeDetailPathEntries(todayStr: string): PathEntries[] {
+    return [
+      {
+        pathId: 'p1',
+        entries: [
+          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'Detailed entry content' },
+        ],
+      },
+    ];
+  }
+
+  it('opens the detail modal when a day-entry is clicked', async () => {
+    const path = makePathResponse({ path_id: 'p1', title: 'My Path', color: '#3949ab' });
+    const todayStr = today();
+    const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
+    await nextTick();
+
+    // Modal is always rendered but closed
+    const modalBefore = wrapper.find('[data-testid="entry-detail-modal"]');
+    expect(modalBefore.attributes('data-open')).toBe('false');
+
+    await wrapper.find('.day-entry').trigger('click');
+    await nextTick();
+
+    const modal = wrapper.find('[data-testid="entry-detail-modal"]');
+    expect(modal.attributes('data-open')).toBe('true');
+    expect(modal.attributes('data-start-index')).toBe('0');
+  });
+
+  it('opens the detail modal when Enter is pressed on a day-entry', async () => {
+    const path = makePathResponse({ path_id: 'p1', title: 'My Path', color: '#3949ab' });
+    const todayStr = today();
+    const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="entry-detail-modal"]').attributes('data-open')).toBe('false');
+
+    await wrapper.find('.day-entry').trigger('keydown.enter');
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="entry-detail-modal"]').attributes('data-open')).toBe('true');
+  });
+
+  it('opens the detail modal when Space is pressed on a day-entry', async () => {
+    const path = makePathResponse({ path_id: 'p1', title: 'My Path', color: '#3949ab' });
+    const todayStr = today();
+    const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="entry-detail-modal"]').attributes('data-open')).toBe('false');
+
+    await wrapper.find('.day-entry').trigger('keydown.space');
+    await nextTick();
+
+    expect(wrapper.find('[data-testid="entry-detail-modal"]').attributes('data-open')).toBe('true');
+  });
+
+  it('passes all same-day entries to the modal', async () => {
+    const path = makePathResponse({ path_id: 'p1', title: 'My Path', color: '#3949ab' });
+    const todayStr = today();
+
+    const pathEntries: PathEntries[] = [
+      {
+        pathId: 'p1',
+        entries: [
+          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'First' },
+          { id: 'e2', path_id: 'p1', day: todayStr, edit_id: 'ed2', content: 'Second' },
+        ],
+      },
+    ];
+
+    const wrapper = mountWeekView([path], pathEntries);
+    await nextTick();
+
+    await wrapper.find('.day-entry').trigger('click');
+    await nextTick();
+
+    const modal = wrapper.find('[data-testid="entry-detail-modal"]');
+    expect(modal.attributes('data-open')).toBe('true');
+    expect(modal.attributes('data-entries-count')).toBe('2');
+    // First entry was clicked, so startIndex should be 0
+    expect(modal.attributes('data-start-index')).toBe('0');
+  });
+
+  it('entries are keyboard-accessible (role=button, tabindex=0)', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const todayStr = today();
+
+    const pathEntries: PathEntries[] = [
+      {
+        pathId: 'p1',
+        entries: [
+          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'Accessible entry' },
+        ],
+      },
+    ];
+
+    const wrapper = mountWeekView([path], pathEntries);
+    await nextTick();
+
+    const entry = wrapper.find('.day-entry');
+    expect(entry.attributes('role')).toBe('button');
+    expect(entry.attributes('tabindex')).toBe('0');
   });
 });
