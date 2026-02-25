@@ -461,7 +461,11 @@ describe('useMultiPathEntries', () => {
     // Both paths have an entry with the same id ('same-slug') but different content.
     vi.mocked(customFetch).mockImplementation((url: string) => {
       if (url.match(/\/v1\/paths\/[^/]+\/entries\/[^/]+\/images$/)) {
-        return Promise.resolve({ data: [], status: 200, headers: new Headers() });
+        return Promise.resolve({
+          data: [],
+          status: 200,
+          headers: new Headers(),
+        });
       }
       if (url === '/v1/paths/p1/entries/same-slug') {
         return Promise.resolve({
@@ -491,14 +495,28 @@ describe('useMultiPathEntries', () => {
       }
       if (url === '/v1/paths/p1/entries') {
         return Promise.resolve({
-          data: [{ id: 'same-slug', path_id: 'p1', day: '2024-03-01', edit_id: 'ed-p1' }],
+          data: [
+            {
+              id: 'same-slug',
+              path_id: 'p1',
+              day: '2024-03-01',
+              edit_id: 'ed-p1',
+            },
+          ],
           status: 200,
           headers: new Headers(),
         });
       }
       if (url === '/v1/paths/p2/entries') {
         return Promise.resolve({
-          data: [{ id: 'same-slug', path_id: 'p2', day: '2024-03-01', edit_id: 'ed-p2' }],
+          data: [
+            {
+              id: 'same-slug',
+              path_id: 'p2',
+              day: '2024-03-01',
+              edit_id: 'ed-p2',
+            },
+          ],
           status: 200,
           headers: new Headers(),
         });
