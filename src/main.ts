@@ -13,6 +13,10 @@ import './assets/theme.css';
 import App from './App.vue';
 import router from './router';
 import { dexiePersister } from './lib/queryPersister';
+import { useDarkMode } from './composables/useDarkMode';
+
+// Initialise dark mode before mounting to prevent flash of wrong theme
+useDarkMode();
 
 const queryClient = new QueryClient({
   defaultOptions: {

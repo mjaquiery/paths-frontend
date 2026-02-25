@@ -85,28 +85,67 @@ describe('useDarkMode', () => {
     expect(isDark.value).toBe(false);
   });
 
-  it('toggle from system (dark OS) switches to light', async () => {
-    mockMatches.value = true;
-    // No localStorage set -> preference is 'system', isDark is true
+  it('toggle from system (light OS) goes to light explicit preference', async () => {
+    mockMatches.value = false;
     const { useDarkMode } = await import('../composables/useDarkMode');
-    const { isDark, toggle } = useDarkMode();
-    expect(isDark.value).toBe(true);
+    const { isDark, preference, toggle } = useDarkMode();
+    expect(preference.value).toBe('system');
+    expect(isDark.value).toBe(false);
     toggle();
     await new Promise((r) => setTimeout(r, 0));
+    // system → light (first step in the cycle: light → dark → system → light)
+    expect(preference.value).toBe('light');
     expect(isDark.value).toBe(false);
     expect(localStorageStore['darkModePreference']).toBe('light');
   });
 
-  it('toggle switches from dark to light', async () => {
-    localStorageStore['darkModePreference'] = 'dark';
+  it('toggle from system (dark OS) goes to light (not dark)', async () => {
+    mockMatches.value = true;
     const { useDarkMode } = await import('../composables/useDarkMode');
-    const { isDark, toggle } = useDarkMode();
+    const { isDark, preference, toggle } = useDarkMode();
+    expect(preference.value).toBe('system');
     expect(isDark.value).toBe(true);
     toggle();
-    // Wait for watcher
     await new Promise((r) => setTimeout(r, 0));
+    // system (dark OS) → light (next state after 'system' is 'light')
+    expect(preference.value).toBe('light');
     expect(isDark.value).toBe(false);
     expect(localStorageStore['darkModePreference']).toBe('light');
+  });
+
+  it('toggle cycles: light → dark → system → light', async () => {
+    localStorageStore['darkModePreference'] = 'light';
+    const { useDarkMode } = await import('../composables/useDarkMode');
+    const { preference, toggle } = useDarkMode();
+
+    expect(preference.value).toBe('light');
+
+    toggle();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(preference.value).toBe('dark');
+    expect(localStorageStore['darkModePreference']).toBe('dark');
+
+    toggle();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(preference.value).toBe('system');
+    // 'system' must NOT be written to localStorage — key should be absent
+    expect(localStorageStore['darkModePreference']).toBeUndefined();
+
+    toggle();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(preference.value).toBe('light');
+    expect(localStorageStore['darkModePreference']).toBe('light');
+  });
+
+  it('toggle switches from dark to system (removes localStorage)', async () => {
+    localStorageStore['darkModePreference'] = 'dark';
+    const { useDarkMode } = await import('../composables/useDarkMode');
+    const { preference, toggle } = useDarkMode();
+    expect(preference.value).toBe('dark');
+    toggle();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(preference.value).toBe('system');
+    expect(localStorageStore['darkModePreference']).toBeUndefined();
   });
 
   it('toggle switches from light to dark', async () => {
@@ -118,5 +157,41 @@ describe('useDarkMode', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(isDark.value).toBe(true);
     expect(localStorageStore['darkModePreference']).toBe('dark');
+  });
+
+  it('responds to OS preference changes when in system mode', async () => {
+    mockMatches.value = false;
+    const { useDarkMode } = await import('../composables/useDarkMode');
+    const { isDark, preference } = useDarkMode();
+    expect(preference.value).toBe('system');
+    expect(isDark.value).toBe(false);
+
+    // Simulate OS switching to dark mode
+    mockMatches.value = true;
+    mockListeners[0]({ matches: true } as MediaQueryListEvent);
+
+    expect(isDark.value).toBe(true);
+    expect(classListToggleSpy).toHaveBeenCalledWith('ion-palette-dark', true);
+  });
+
+  it('ignores OS changes when preference is not system', async () => {
+    localStorageStore['darkModePreference'] = 'light';
+    const { useDarkMode } = await import('../composables/useDarkMode');
+    const { isDark } = useDarkMode();
+    expect(isDark.value).toBe(false);
+
+    // Simulate OS switching to dark mode — should be ignored
+    mockMatches.value = true;
+    mockListeners[0]?.({ matches: true } as MediaQueryListEvent);
+
+    // isDark stays false because preference overrides system
+    expect(isDark.value).toBe(false);
+  });
+
+  it('defaults to system when localStorage contains invalid value', async () => {
+    localStorageStore['darkModePreference'] = 'invalid-mode';
+    const { useDarkMode } = await import('../composables/useDarkMode');
+    const { preference } = useDarkMode();
+    expect(preference.value).toBe('system');
   });
 });

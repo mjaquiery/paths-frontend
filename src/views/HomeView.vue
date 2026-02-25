@@ -10,10 +10,11 @@
         <ion-title>Paths</ion-title>
         <ion-buttons slot="end">
           <ion-button
-            :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+            :title="darkModeLabel"
+            :aria-label="darkModeLabel"
             @click="toggleDarkMode"
           >
-            {{ isDark ? '☀️' : '🌙' }}
+            {{ darkPreference === 'system' ? '🖥️' : isDark ? '☀️' : '🌙' }}
           </ion-button>
           <template v-if="currentUser">
             <ion-label class="ion-padding-end">{{
@@ -148,7 +149,17 @@ import { authLogin } from '../generated/apiClient';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { useDarkMode } from '../composables/useDarkMode';
 
-const { isDark, toggle: toggleDarkMode } = useDarkMode();
+const {
+  isDark,
+  preference: darkPreference,
+  toggle: toggleDarkMode,
+} = useDarkMode();
+
+const darkModeLabel = computed(() => {
+  if (darkPreference.value === 'light') return 'Light mode – switch to dark';
+  if (darkPreference.value === 'dark') return 'Dark mode – switch to system';
+  return 'System mode – switch to light';
+});
 
 const loggingIn = ref(false);
 const loginError = ref('');

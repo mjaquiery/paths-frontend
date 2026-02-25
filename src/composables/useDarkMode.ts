@@ -46,7 +46,11 @@ if (typeof window !== 'undefined' && window.matchMedia) {
 
 watch(preference, (pref) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, pref);
+    if (pref === 'system') {
+      localStorage.removeItem(STORAGE_KEY);
+    } else {
+      localStorage.setItem(STORAGE_KEY, pref);
+    }
   }
   isDark.value = resolvePreference(pref);
   applyDark(isDark.value);
@@ -57,11 +61,15 @@ export function useDarkMode() {
     preference.value = pref;
   }
 
+  // Cycles: light → dark → system → light …
+  // Returning to 'system' removes the stored preference so the OS signal takes over.
   function toggle() {
-    if (isDark.value) {
-      setPreference('light');
-    } else {
+    if (preference.value === 'light') {
       setPreference('dark');
+    } else if (preference.value === 'dark') {
+      setPreference('system');
+    } else {
+      setPreference('light');
     }
   }
 
