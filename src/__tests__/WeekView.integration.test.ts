@@ -97,19 +97,44 @@ function mountWeekView(
 // ---------------------------------------------------------------------------
 describe('WeekView – multi-path entries on the same day', () => {
   it('shows entries from two different paths on the same day', async () => {
-    const pathA = makePathResponse({ path_id: 'p1', title: 'Path A', color: '#f00' });
-    const pathB = makePathResponse({ path_id: 'p2', title: 'Path B', color: '#00f', owner_user_id: 'user-2' });
+    const pathA = makePathResponse({
+      path_id: 'p1',
+      title: 'Path A',
+      color: '#f00',
+    });
+    const pathB = makePathResponse({
+      path_id: 'p2',
+      title: 'Path B',
+      color: '#00f',
+      owner_user_id: 'user-2',
+    });
 
     const todayStr = today();
 
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
-        entries: [{ id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'Entry from Path A' }],
+        entries: [
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed1',
+            content: 'Entry from Path A',
+          },
+        ],
       },
       {
         pathId: 'p2',
-        entries: [{ id: 'e2', path_id: 'p2', day: todayStr, edit_id: 'ed2', content: 'Entry from Path B' }],
+        entries: [
+          {
+            id: 'e2',
+            path_id: 'p2',
+            day: todayStr,
+            edit_id: 'ed2',
+            content: 'Entry from Path B',
+          },
+        ],
       },
     ];
 
@@ -122,19 +147,44 @@ describe('WeekView – multi-path entries on the same day', () => {
   });
 
   it('displays both entries in the same day box when from different paths', async () => {
-    const pathA = makePathResponse({ path_id: 'p1', title: 'Path A', color: '#f00' });
-    const pathB = makePathResponse({ path_id: 'p2', title: 'Path B', color: '#00f', owner_user_id: 'user-2' });
+    const pathA = makePathResponse({
+      path_id: 'p1',
+      title: 'Path A',
+      color: '#f00',
+    });
+    const pathB = makePathResponse({
+      path_id: 'p2',
+      title: 'Path B',
+      color: '#00f',
+      owner_user_id: 'user-2',
+    });
 
     const todayStr = today();
 
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
-        entries: [{ id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'Alpha content' }],
+        entries: [
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed1',
+            content: 'Alpha content',
+          },
+        ],
       },
       {
         pathId: 'p2',
-        entries: [{ id: 'e2', path_id: 'p2', day: todayStr, edit_id: 'ed2', content: 'Beta content' }],
+        entries: [
+          {
+            id: 'e2',
+            path_id: 'p2',
+            day: todayStr,
+            edit_id: 'ed2',
+            content: 'Beta content',
+          },
+        ],
       },
     ];
 
@@ -151,15 +201,31 @@ describe('WeekView – multi-path entries on the same day', () => {
 
 describe('WeekView – multiple entries from the same path on the same day', () => {
   it('shows all entries from the same path on the same day', async () => {
-    const path = makePathResponse({ path_id: 'p1', title: 'My Path', color: '#3949ab' });
+    const path = makePathResponse({
+      path_id: 'p1',
+      title: 'My Path',
+      color: '#3949ab',
+    });
     const todayStr = today();
 
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
         entries: [
-          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'First entry today' },
-          { id: 'e2', path_id: 'p1', day: todayStr, edit_id: 'ed2', content: 'Second entry today' },
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed1',
+            content: 'First entry today',
+          },
+          {
+            id: 'e2',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed2',
+            content: 'Second entry today',
+          },
         ],
       },
     ];
@@ -179,9 +245,27 @@ describe('WeekView – multiple entries from the same path on the same day', () 
       {
         pathId: 'p1',
         entries: [
-          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'Entry One' },
-          { id: 'e2', path_id: 'p1', day: todayStr, edit_id: 'ed2', content: 'Entry Two' },
-          { id: 'e3', path_id: 'p1', day: todayStr, edit_id: 'ed3', content: 'Entry Three' },
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed1',
+            content: 'Entry One',
+          },
+          {
+            id: 'e2',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed2',
+            content: 'Entry Two',
+          },
+          {
+            id: 'e3',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed3',
+            content: 'Entry Three',
+          },
         ],
       },
     ];
@@ -289,14 +373,24 @@ describe('WeekView – entry detail modal', () => {
       {
         pathId: 'p1',
         entries: [
-          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'Detailed entry content' },
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed1',
+            content: 'Detailed entry content',
+          },
         ],
       },
     ];
   }
 
   it('opens the detail modal when a day-entry is clicked', async () => {
-    const path = makePathResponse({ path_id: 'p1', title: 'My Path', color: '#3949ab' });
+    const path = makePathResponse({
+      path_id: 'p1',
+      title: 'My Path',
+      color: '#3949ab',
+    });
     const todayStr = today();
     const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
@@ -314,43 +408,83 @@ describe('WeekView – entry detail modal', () => {
   });
 
   it('opens the detail modal when Enter is pressed on a day-entry', async () => {
-    const path = makePathResponse({ path_id: 'p1', title: 'My Path', color: '#3949ab' });
+    const path = makePathResponse({
+      path_id: 'p1',
+      title: 'My Path',
+      color: '#3949ab',
+    });
     const todayStr = today();
     const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
 
-    expect(wrapper.find('[data-testid="entry-detail-modal"]').attributes('data-open')).toBe('false');
+    expect(
+      wrapper
+        .find('[data-testid="entry-detail-modal"]')
+        .attributes('data-open'),
+    ).toBe('false');
 
     await wrapper.find('.day-entry').trigger('keydown.enter');
     await nextTick();
 
-    expect(wrapper.find('[data-testid="entry-detail-modal"]').attributes('data-open')).toBe('true');
+    expect(
+      wrapper
+        .find('[data-testid="entry-detail-modal"]')
+        .attributes('data-open'),
+    ).toBe('true');
   });
 
   it('opens the detail modal when Space is pressed on a day-entry', async () => {
-    const path = makePathResponse({ path_id: 'p1', title: 'My Path', color: '#3949ab' });
+    const path = makePathResponse({
+      path_id: 'p1',
+      title: 'My Path',
+      color: '#3949ab',
+    });
     const todayStr = today();
     const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
 
-    expect(wrapper.find('[data-testid="entry-detail-modal"]').attributes('data-open')).toBe('false');
+    expect(
+      wrapper
+        .find('[data-testid="entry-detail-modal"]')
+        .attributes('data-open'),
+    ).toBe('false');
 
     await wrapper.find('.day-entry').trigger('keydown.space');
     await nextTick();
 
-    expect(wrapper.find('[data-testid="entry-detail-modal"]').attributes('data-open')).toBe('true');
+    expect(
+      wrapper
+        .find('[data-testid="entry-detail-modal"]')
+        .attributes('data-open'),
+    ).toBe('true');
   });
 
   it('passes all same-day entries to the modal', async () => {
-    const path = makePathResponse({ path_id: 'p1', title: 'My Path', color: '#3949ab' });
+    const path = makePathResponse({
+      path_id: 'p1',
+      title: 'My Path',
+      color: '#3949ab',
+    });
     const todayStr = today();
 
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
         entries: [
-          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'First' },
-          { id: 'e2', path_id: 'p1', day: todayStr, edit_id: 'ed2', content: 'Second' },
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed1',
+            content: 'First',
+          },
+          {
+            id: 'e2',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed2',
+            content: 'Second',
+          },
         ],
       },
     ];
@@ -376,7 +510,13 @@ describe('WeekView – entry detail modal', () => {
       {
         pathId: 'p1',
         entries: [
-          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 'ed1', content: 'Accessible entry' },
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed1',
+            content: 'Accessible entry',
+          },
         ],
       },
     ];

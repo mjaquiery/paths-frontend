@@ -5,7 +5,15 @@
  * API client (POST /v1/paths/:pathCode/entries, POST upload-url, PUT to
  * presigned URL, POST /v1/images/:imageId/complete).
  */
-import { describe, it, expect, vi, beforeAll, afterEach, afterAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  afterEach,
+  afterAll,
+} from 'vitest';
 import { nextTick } from 'vue';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount, flushPromises } from '@vue/test-utils';
@@ -271,10 +279,13 @@ describe('EntryCreateModal – image upload (MSW integration)', () => {
     const presignedPuts: Request[] = [];
 
     server.use(
-      http.post('*/v1/paths/:pathCode/entries/:entrySlug/images/upload-url', async ({ request }) => {
-        uploadUrlRequests.push(request.clone());
-        return HttpResponse.json(uploadUrlResponse, { status: 200 });
-      }),
+      http.post(
+        '*/v1/paths/:pathCode/entries/:entrySlug/images/upload-url',
+        async ({ request }) => {
+          uploadUrlRequests.push(request.clone());
+          return HttpResponse.json(uploadUrlResponse, { status: 200 });
+        },
+      ),
       http.put('https://storage.example.com/put-here', async ({ request }) => {
         presignedPuts.push(request.clone());
         return new HttpResponse(null, { status: 200 });
@@ -289,7 +300,9 @@ describe('EntryCreateModal – image upload (MSW integration)', () => {
     await nextTick();
 
     // Simulate selecting a file
-    const file = new File(['image content'], 'photo.jpg', { type: 'image/jpeg' });
+    const file = new File(['image content'], 'photo.jpg', {
+      type: 'image/jpeg',
+    });
     const fileInput = wrapper.find('input[type="file"]');
     Object.defineProperty(fileInput.element, 'files', {
       value: [file],
@@ -344,7 +357,9 @@ describe('EntryCreateModal – image upload (MSW integration)', () => {
     const wrapper = await mountModal();
     await nextTick();
 
-    const file = new File(['not an image'], 'document.pdf', { type: 'application/pdf' });
+    const file = new File(['not an image'], 'document.pdf', {
+      type: 'application/pdf',
+    });
     const fileInput = wrapper.find('input[type="file"]');
     Object.defineProperty(fileInput.element, 'files', {
       value: [file],

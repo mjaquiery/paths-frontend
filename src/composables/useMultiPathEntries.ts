@@ -1,7 +1,11 @@
 import { computed, ref, watch, type Ref } from 'vue';
 import { useQueries } from '@tanstack/vue-query';
 import { listEntries, getEntry, listEntryImages } from '../generated/apiClient';
-import type { EntryContentResponse, EntryResponse, ImageResponse } from '../generated/types';
+import type {
+  EntryContentResponse,
+  EntryResponse,
+  ImageResponse,
+} from '../generated/types';
 import type { EntryImageCache } from '../lib/db';
 import { db } from '../lib/db';
 
@@ -121,10 +125,7 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
             image_filenames,
           });
           if (imagesResult.status === 'fulfilled') {
-            await db.entryImages
-              .where('entry_id')
-              .equals(entry.id)
-              .delete();
+            await db.entryImages.where('entry_id').equals(entry.id).delete();
             if (images.length > 0) {
               await db.entryImages.bulkPut(
                 images.map(

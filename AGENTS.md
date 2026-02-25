@@ -4,7 +4,7 @@ This file defines strict guidance for LLM-based coding agents (Codex) contributi
 
 This repository is the **frontend**.
 
-You **must never change `schemas/openapi.json`**. If changes are necessary in this file, stop what you are doing and DO NOT CONTINUE until the file is in a proper state for continuation. 
+You **must never change `schemas/openapi.json`**. If changes are necessary in this file, stop what you are doing and DO NOT CONTINUE until the file is in a proper state for continuation.
 
 This file comes from the backend and represents the backend's ground truth; changing it will result in desynching the front and back ends.
 

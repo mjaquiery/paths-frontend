@@ -5,7 +5,15 @@
  * by the generated API client, ensuring the full request/response cycle is
  * exercised rather than mocking customFetch directly.
  */
-import { describe, it, expect, vi, beforeAll, afterEach, afterAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  afterEach,
+  afterAll,
+} from 'vitest';
 import { nextTick } from 'vue';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount, flushPromises } from '@vue/test-utils';
@@ -159,7 +167,9 @@ describe('PathsSelectorBar – create path (MSW integration)', () => {
     const wrapper = await mountAndOpenForm();
 
     // Find the title input (first ion-input stub = first <input> inside the form)
-    const inputs = wrapper.findAll('input').filter((i) => i.attributes('type') !== 'checkbox');
+    const inputs = wrapper
+      .findAll('input')
+      .filter((i) => i.attributes('type') !== 'checkbox');
     expect(inputs.length).toBeGreaterThan(0);
     await inputs[0].setValue('My New Path');
     await nextTick();
@@ -174,7 +184,9 @@ describe('PathsSelectorBar – create path (MSW integration)', () => {
   it('Create button is re-disabled when the title is cleared', async () => {
     const wrapper = await mountAndOpenForm();
 
-    const inputs = wrapper.findAll('input').filter((i) => i.attributes('type') !== 'checkbox');
+    const inputs = wrapper
+      .findAll('input')
+      .filter((i) => i.attributes('type') !== 'checkbox');
     await inputs[0].setValue('Some title');
     await nextTick();
 
@@ -201,7 +213,9 @@ describe('PathsSelectorBar – create path (MSW integration)', () => {
 
     const wrapper = await mountAndOpenForm();
 
-    const inputs = wrapper.findAll('input').filter((i) => i.attributes('type') !== 'checkbox');
+    const inputs = wrapper
+      .findAll('input')
+      .filter((i) => i.attributes('type') !== 'checkbox');
     await inputs[0].setValue('My New Path');
     await nextTick();
 
@@ -219,7 +233,9 @@ describe('PathsSelectorBar – create path (MSW integration)', () => {
   it('closes the form and resets fields after successful creation', async () => {
     const wrapper = await mountAndOpenForm();
 
-    const inputs = wrapper.findAll('input').filter((i) => i.attributes('type') !== 'checkbox');
+    const inputs = wrapper
+      .findAll('input')
+      .filter((i) => i.attributes('type') !== 'checkbox');
     await inputs[0].setValue('My New Path');
     await nextTick();
 
@@ -244,7 +260,9 @@ describe('PathsSelectorBar – create path (MSW integration)', () => {
 
     const wrapper = await mountAndOpenForm();
 
-    const inputs = wrapper.findAll('input').filter((i) => i.attributes('type') !== 'checkbox');
+    const inputs = wrapper
+      .findAll('input')
+      .filter((i) => i.attributes('type') !== 'checkbox');
     await inputs[0].setValue('My New Path');
     await nextTick();
 
@@ -271,7 +289,9 @@ describe('PathsSelectorBar – create path (MSW integration)', () => {
 
     const wrapper = await mountAndOpenForm();
 
-    const inputs = wrapper.findAll('input').filter((i) => i.attributes('type') !== 'checkbox');
+    const inputs = wrapper
+      .findAll('input')
+      .filter((i) => i.attributes('type') !== 'checkbox');
     await inputs[0].setValue('Some title');
     await nextTick();
 

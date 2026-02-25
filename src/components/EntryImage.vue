@@ -13,13 +13,19 @@
       class="entry-image-thumb"
       loading="lazy"
     />
-    <span v-else-if="isLoading" class="entry-image-placeholder" aria-label="Loading image">⏳</span>
+    <span
+      v-else-if="isLoading"
+      class="entry-image-placeholder"
+      aria-label="Loading image"
+      >⏳</span
+    >
     <span
       v-else
       class="entry-image-placeholder entry-image-placeholder--error"
       :title="errorMessage || 'Failed to load image'"
       :aria-label="errorMessage || 'Failed to load image'"
-    >⚠️</span>
+      >⚠️</span
+    >
   </a>
 </template>
 
@@ -34,13 +40,18 @@ const props = defineProps<{
   alt?: string;
 }>();
 
-const { data, isLoading, error } = useGetImageDownloadUrl(computed(() => props.imageId));
+const { data, isLoading, error } = useGetImageDownloadUrl(
+  computed(() => props.imageId),
+);
 
 const imageUrl = computed(
-  () => (data.value?.data as ImageDownloadResponse | undefined)?.image_url ?? null,
+  () =>
+    (data.value?.data as ImageDownloadResponse | undefined)?.image_url ?? null,
 );
 const thumbnailUrl = computed(
-  () => (data.value?.data as ImageDownloadResponse | undefined)?.thumbnail_url ?? null,
+  () =>
+    (data.value?.data as ImageDownloadResponse | undefined)?.thumbnail_url ??
+    null,
 );
 const errorMessage = computed(() => extractErrorMessage(error.value));
 </script>

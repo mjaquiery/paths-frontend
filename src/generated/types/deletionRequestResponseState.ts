@@ -5,8 +5,8 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export type DeletionRequestResponseState = typeof DeletionRequestResponseState[keyof typeof DeletionRequestResponseState];
-
+export type DeletionRequestResponseState =
+  (typeof DeletionRequestResponseState)[keyof typeof DeletionRequestResponseState];
 
 export const DeletionRequestResponseState = {
   requested: 'requested',

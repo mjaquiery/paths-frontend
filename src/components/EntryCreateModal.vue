@@ -176,9 +176,7 @@ function onFilesSelected(event: Event) {
       messages.push(`Not an image: ${wrongType.map((f) => f.name).join(', ')}`);
     }
     if (tooLarge.length > 0) {
-      messages.push(
-        `Exceeds 10 MB: ${tooLarge.map((f) => f.name).join(', ')}`,
-      );
+      messages.push(`Exceeds 10 MB: ${tooLarge.map((f) => f.name).join(', ')}`);
     }
     error.value = `Some files were rejected. ${messages.join('; ')}`;
     input.value = '';
@@ -189,7 +187,10 @@ function onFilesSelected(event: Event) {
   pendingImages.value = files;
 }
 
-async function uploadImages(pathCode: string, entrySlug: string): Promise<string[]> {
+async function uploadImages(
+  pathCode: string,
+  entrySlug: string,
+): Promise<string[]> {
   const filenames: string[] = [];
   for (const file of pendingImages.value) {
     const contentType = file.type || DEFAULT_IMAGE_CONTENT_TYPE;
