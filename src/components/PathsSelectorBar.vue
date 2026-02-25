@@ -39,6 +39,17 @@
       </div>
 
       <div class="paths-bar-actions">
+        <ion-button
+          v-if="pendingInvitations.length > 0"
+          size="small"
+          fill="solid"
+          color="warning"
+          @click="expanded = true"
+        >
+          {{ pendingInvitations.length }} invitation{{
+            pendingInvitations.length === 1 ? '' : 's'
+          }}
+        </ion-button>
         <ion-button size="small" fill="clear" @click="expanded = !expanded">
           {{ expanded ? 'Less' : 'More' }}
         </ion-button>
@@ -54,6 +65,43 @@
 
     <!-- Expanded management view -->
     <div v-if="expanded" class="paths-expanded">
+      <!-- Pending invitations -->
+      <div v-if="pendingInvitations.length > 0" class="invitations-section">
+        <p class="invitations-heading">Pending invitations</p>
+        <div
+          v-for="inv in pendingInvitations"
+          :key="inv.id"
+          class="invitation-card"
+        >
+          <span class="invitation-path">Path: {{ inv.path_code }}</span>
+          <div class="invitation-actions">
+            <ion-button
+              size="small"
+              color="success"
+              :disabled="invitationBusy[inv.id]"
+              @click="acceptInv(inv.id)"
+              >Accept</ion-button
+            >
+            <ion-button
+              size="small"
+              color="medium"
+              fill="outline"
+              :disabled="invitationBusy[inv.id]"
+              @click="ignoreInv(inv.id)"
+              >Ignore</ion-button
+            >
+            <ion-button
+              size="small"
+              color="danger"
+              fill="outline"
+              :disabled="invitationBusy[inv.id]"
+              @click="blockInv(inv.id, inv.inviter_user_id)"
+              >Block sender</ion-button
+            >
+          </div>
+        </div>
+      </div>
+
       <!-- New path form -->
       <ion-card v-if="showCreateForm" class="paths-create-card">
         <ion-card-content>
@@ -147,40 +195,29 @@
           >
             {{ path.is_public ? 'Public' : 'Private' }}
           </ion-chip>
+
+          <!-- Unsubscribe (for non-owned paths) -->
+          <ion-button
+            v-if="path.owner_user_id !== currentUser.user_id"
+            slot="end"
+            size="small"
+            fill="outline"
+            color="danger"
+            :disabled="unsubscribing[path.path_id]"
+            @click="unsubscribe(path.path_id)"
+          >
+            {{ unsubscribing[path.path_id] ? 'Leaving…' : 'Unsubscribe' }}
+          </ion-button>
         </ion-item>
       </ion-list>
 
       <!-- Subscription management (owned paths only) -->
-      <div
+      <PathSubscriptionManager
         v-for="path in ownedPaths"
         :key="'sub-' + path.path_id"
-        class="paths-invite-section"
-      >
-        <p class="paths-invite-label">
-          Invite to <strong>{{ path.title }}</strong>
-        </p>
-        <div class="paths-invite-row">
-          <ion-input
-            :model-value="inviteUserId[path.path_id]"
-            placeholder="User ID to invite"
-            class="paths-invite-input"
-            @update:model-value="onInviteInput(path.path_id, $event as string)"
-          />
-          <ion-button
-            size="small"
-            :disabled="!inviteUserId[path.path_id] || subscribing[path.path_id]"
-            @click="inviteUser(path.path_id)"
-          >
-            {{ subscribing[path.path_id] ? 'Inviting…' : 'Invite' }}
-          </ion-button>
-        </div>
-        <p v-if="inviteError[path.path_id]" class="paths-error">
-          {{ inviteError[path.path_id] }}
-        </p>
-        <p v-if="inviteSuccess[path.path_id]" class="paths-invite-success">
-          {{ inviteSuccess[path.path_id] }}
-        </p>
-      </div>
+        :path-code="path.path_id"
+        :path-title="path.title"
+      />
     </div>
   </div>
 </template>
@@ -199,6 +236,7 @@ import {
   type ToggleCustomEvent,
 } from '@ionic/vue';
 import { computed, ref, watch } from 'vue';
+import { useQueryClient } from '@tanstack/vue-query';
 
 import type { OAuthCallbackResponse, PathResponse } from '../generated/types';
 import {
@@ -208,8 +246,16 @@ import {
   setPathOrder,
 } from '../lib/db';
 import { extractErrorMessage } from '../lib/errors';
-import { useCreatePath, useCreateSubscription } from '../generated/apiClient';
+import {
+  useCreatePath,
+  useListInvitations,
+  useAcceptInvitation,
+  useIgnoreInvitation,
+  useBlockInviter,
+  useDeleteSubscription,
+} from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
+import PathSubscriptionManager from './PathSubscriptionManager.vue';
 
 const props = defineProps<{
   currentUser: OAuthCallbackResponse | null;
@@ -219,10 +265,27 @@ const emit = defineEmits<{
   pathsChanged: [paths: PathResponse[]];
 }>();
 
+const queryClient = useQueryClient();
+
 const { data: allPaths, refetch } = usePaths();
 const { mutateAsync: createPathMutation, isPending: creating } =
   useCreatePath();
-const { mutateAsync: createSubscription } = useCreateSubscription();
+
+// Invitations
+const { data: invitationsData, refetch: refetchInvitations } =
+  useListInvitations();
+const { mutateAsync: doAccept } = useAcceptInvitation();
+const { mutateAsync: doIgnore } = useIgnoreInvitation();
+const { mutateAsync: doBlock } = useBlockInviter();
+
+const pendingInvitations = computed(
+  () =>
+    invitationsData.value?.data?.filter((i) => i.status === 'invited') ?? [],
+);
+
+// Unsubscribe
+const { mutateAsync: doDeleteSubscription } = useDeleteSubscription();
+const unsubscribing = ref<Record<string, boolean>>({});
 
 const expanded = ref(false);
 const showCreateForm = ref(false);
@@ -232,6 +295,16 @@ const pathOrder = ref<string[]>([]);
 
 const DEFAULT_COLOR = '#3949ab';
 const newPath = ref({ title: '', description: '', color: DEFAULT_COLOR });
+
+// Invitation action busy state
+const invitationBusy = ref<Record<string, boolean>>({});
+
+// Auto-expand when there are pending invitations
+watch(pendingInvitations, (invitations) => {
+  if (invitations.length > 0) {
+    expanded.value = true;
+  }
+});
 
 // Build ordered + hidden state when paths load
 watch(
@@ -270,12 +343,6 @@ const ownedPaths = computed<PathResponse[]>(() =>
     (p) => p.owner_user_id === props.currentUser?.user_id,
   ),
 );
-
-// Per-path invite form state
-const inviteUserId = ref<Record<string, string>>({});
-const subscribing = ref<Record<string, boolean>>({});
-const inviteError = ref<Record<string, string>>({});
-const inviteSuccess = ref<Record<string, string>>({});
 
 const visibleCount = computed(
   () => orderedPaths.value.filter((p) => !hiddenByPath.value[p.path_id]).length,
@@ -357,30 +424,58 @@ function cancelCreate() {
   createError.value = '';
 }
 
-async function inviteUser(pathId: string) {
-  const userId = inviteUserId.value[pathId];
-  if (!userId) return;
-  subscribing.value[pathId] = true;
-  inviteError.value[pathId] = '';
-  inviteSuccess.value[pathId] = '';
+async function acceptInv(invitationId: string) {
+  invitationBusy.value[invitationId] = true;
   try {
-    await createSubscription({ pathCode: pathId, data: { user_id: userId } });
-    inviteSuccess.value[pathId] = `User invited successfully.`;
-    inviteUserId.value[pathId] = '';
-  } catch (err: unknown) {
-    const detail = extractErrorMessage(err);
-    inviteError.value[pathId] = detail
-      ? `Failed to invite: ${detail}`
-      : 'Failed to invite user. Please try again.';
+    await doAccept({ invitationId });
+    await Promise.all([refetchInvitations(), refetch()]);
+    void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+  } catch {
+    // silently fail
   } finally {
-    subscribing.value[pathId] = false;
+    invitationBusy.value[invitationId] = false;
   }
 }
 
-function onInviteInput(pathId: string, value: string) {
-  inviteUserId.value[pathId] = value;
-  inviteSuccess.value[pathId] = '';
-  inviteError.value[pathId] = '';
+async function ignoreInv(invitationId: string) {
+  invitationBusy.value[invitationId] = true;
+  try {
+    await doIgnore({ invitationId });
+    await refetchInvitations();
+  } catch {
+    // silently fail
+  } finally {
+    invitationBusy.value[invitationId] = false;
+  }
+}
+
+async function blockInv(invitationId: string, inviterUserId: string) {
+  invitationBusy.value[invitationId] = true;
+  try {
+    await doBlock({ data: { user_id: inviterUserId } });
+    await refetchInvitations();
+  } catch {
+    // silently fail
+  } finally {
+    invitationBusy.value[invitationId] = false;
+  }
+}
+
+async function unsubscribe(pathId: string) {
+  if (!props.currentUser) return;
+  unsubscribing.value[pathId] = true;
+  try {
+    await doDeleteSubscription({
+      pathCode: pathId,
+      targetUserId: props.currentUser.user_id,
+    });
+    await refetch();
+    void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+  } catch {
+    // silently fail
+  } finally {
+    unsubscribing.value[pathId] = false;
+  }
 }
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -546,31 +641,38 @@ function hexToRgba(hex: string, alpha: number): string {
   font-family: monospace;
 }
 
-.paths-invite-section {
+/* Invitations */
+.invitations-section {
   padding: 8px 0;
-  border-top: 1px solid var(--ion-color-light-shade, #e0e0e0);
-  margin-top: 4px;
+  border-bottom: 1px solid var(--ion-color-light-shade, #e0e0e0);
+  margin-bottom: 8px;
 }
 
-.paths-invite-label {
-  font-size: 0.85rem;
+.invitations-heading {
+  font-size: 0.9rem;
+  font-weight: 600;
   margin: 0 0 6px;
   color: var(--ion-color-dark, #333);
 }
 
-.paths-invite-row {
+.invitation-card {
   display: flex;
-  gap: 8px;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ion-color-light, #f4f4f4);
 }
 
-.paths-invite-input {
-  flex: 1;
-}
-
-.paths-invite-success {
-  color: var(--ion-color-success, green);
+.invitation-path {
   font-size: 0.85rem;
-  margin-top: 4px;
+  color: var(--ion-color-dark, #333);
+}
+
+.invitation-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 </style>

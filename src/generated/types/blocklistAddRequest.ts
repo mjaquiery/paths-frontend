@@ -5,7 +5,6 @@
  * OpenAPI spec version: 0.3.0
  */
 
-export interface PathCreationApprovalResponse {
+export interface BlocklistAddRequest {
   user_id: string;
-  allowed: boolean;
 }

@@ -74,6 +74,14 @@
           <ion-button
             fill="clear"
             size="small"
+            router-link="/invitations"
+            router-direction="forward"
+          >
+            Manage invitations
+          </ion-button>
+          <ion-button
+            fill="clear"
+            size="small"
             router-link="/export"
             router-direction="forward"
           >

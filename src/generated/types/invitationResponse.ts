@@ -5,14 +5,14 @@
  * OpenAPI spec version: 0.3.0
  */
 
-export interface PathResponse {
+export interface InvitationResponse {
+  id: string;
   path_id: string;
-  uuid: string;
-  owner_user_id: string;
-  title: string;
-  description: string | null;
-  color: string;
-  is_public: boolean;
+  path_code: string;
+  inviter_user_id: string;
+  invited_email: string;
+  invited_user_id: string | null;
+  status: string;
   created_at: string;
   updated_at: string;
 }
