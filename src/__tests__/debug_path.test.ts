@@ -1,11 +1,4 @@
-import {
-  describe,
-  it,
-  vi,
-  beforeAll,
-  afterEach,
-  afterAll,
-} from 'vitest';
+import { describe, it, vi, beforeAll, afterEach, afterAll } from 'vitest';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount, flushPromises } from '@vue/test-utils';
 import { setupServer } from 'msw/node';
@@ -23,7 +16,8 @@ vi.mock('../lib/db', () => ({
 
 const ionicStubs = {
   IonButton: {
-    template: '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
+    template:
+      '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
     props: ['disabled', 'size', 'fill'],
     emits: ['click'],
   },
@@ -31,30 +25,48 @@ const ionicStubs = {
   IonCardContent: { template: '<div><slot /></div>' },
   IonChip: { template: '<span><slot /></span>' },
   IonInput: {
-    template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+    template:
+      '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
     props: ['modelValue', 'placeholder'],
     emits: ['update:modelValue'],
   },
   IonItem: { template: '<div><slot /></div>' },
   IonLabel: { template: '<label><slot /></label>' },
   IonList: { template: '<div><slot /></div>' },
-  IonToggle: { template: '<input type="checkbox" :checked="checked" />', props: ['checked'] },
+  IonToggle: {
+    template: '<input type="checkbox" :checked="checked" />',
+    props: ['checked'],
+  },
 };
 
 const existingPath: PathResponse = {
-  path_id: 'path-1', uuid: 'uuid-1', owner_user_id: 'user-1',
-  title: 'Existing Path', description: null, color: '#ff0000',
-  is_public: false, created_at: '2024-01-01T00:00:00Z', updated_at: '2024-01-01T00:00:00Z',
+  path_id: 'path-1',
+  uuid: 'uuid-1',
+  owner_user_id: 'user-1',
+  title: 'Existing Path',
+  description: null,
+  color: '#ff0000',
+  is_public: false,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
 };
 
 const createdPath: PathResponse = {
-  path_id: 'path-2', uuid: 'uuid-2', owner_user_id: 'user-1',
-  title: 'New Integration Path', description: null, color: '#3949ab',
-  is_public: false, created_at: '2024-01-02T00:00:00Z', updated_at: '2024-01-02T00:00:00Z',
+  path_id: 'path-2',
+  uuid: 'uuid-2',
+  owner_user_id: 'user-1',
+  title: 'New Integration Path',
+  description: null,
+  color: '#3949ab',
+  is_public: false,
+  created_at: '2024-01-02T00:00:00Z',
+  updated_at: '2024-01-02T00:00:00Z',
 };
 
 const currentUser: OAuthCallbackResponse = {
-  user_id: 'user-1', email: 'test@example.com', display_name: 'Test User',
+  user_id: 'user-1',
+  email: 'test@example.com',
+  display_name: 'Test User',
 };
 
 function createQueryClient() {
@@ -92,12 +104,18 @@ describe('Debug path visibility', () => {
     const queryClient = createQueryClient();
     const wrapper = mount(PathsSelectorBar, {
       props: { currentUser },
-      global: { plugins: [[VueQueryPlugin, { queryClient }]], stubs: ionicStubs },
+      global: {
+        plugins: [[VueQueryPlugin, { queryClient }]],
+        stubs: ionicStubs,
+      },
     });
 
     await flushPromises();
     console.log('After mount, text:', JSON.stringify(wrapper.text()));
     console.log('getCallCount:', getCallCount);
-    console.log('queryData:', JSON.stringify(queryClient.getQueryData(['v1', 'paths'])));
+    console.log(
+      'queryData:',
+      JSON.stringify(queryClient.getQueryData(['v1', 'paths'])),
+    );
   });
 });
