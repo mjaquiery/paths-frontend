@@ -67,10 +67,7 @@ import {
 import { computed, ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 
-import {
-  useCreateEntry,
-  getListEntriesQueryKey,
-} from '../generated/apiClient';
+import { useCreateEntry, getListEntriesQueryKey } from '../generated/apiClient';
 import { useEntries } from '../composables/useEntries';
 
 const props = withDefaults(
