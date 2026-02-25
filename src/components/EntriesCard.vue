@@ -65,8 +65,12 @@ import {
   IonTextarea,
 } from '@ionic/vue';
 import { computed, ref } from 'vue';
+import { useQueryClient } from '@tanstack/vue-query';
 
-import { useCreateEntry } from '../generated/apiClient';
+import {
+  useCreateEntry,
+  getListEntriesQueryKey,
+} from '../generated/apiClient';
 import { useEntries } from '../composables/useEntries';
 
 const props = withDefaults(
@@ -77,9 +81,10 @@ const props = withDefaults(
   { canCreateEntries: false },
 );
 
-const { data: entries, refetch } = useEntries(computed(() => props.pathId));
+const { data: entries } = useEntries(computed(() => props.pathId));
 const { mutateAsync: createEntryMutation, isPending: creating } =
   useCreateEntry();
+const queryClient = useQueryClient();
 
 const showCreateForm = ref(false);
 const createError = ref('');
@@ -97,7 +102,9 @@ async function createEntry() {
       },
     });
     cancelCreate();
-    await refetch();
+    await queryClient.invalidateQueries({
+      queryKey: getListEntriesQueryKey(props.pathId),
+    });
   } catch {
     createError.value = 'Failed to create entry. Please try again.';
   }
