@@ -19,10 +19,21 @@ export interface EntryContentCache {
   image_filenames?: string[];
 }
 
+export interface EntryImageCache {
+  id: string;
+  entry_id: string;
+  filename: string;
+  status: string;
+  strip_metadata: boolean;
+  content_type: string | null;
+  byte_size: number | null;
+}
+
 const db = new Dexie('pathsFrontend') as Dexie & {
   pathPreferences: EntityTable<PathPreference, 'pathId'>;
   queryCache: EntityTable<QueryCacheEntry, 'key'>;
   entryContent: EntityTable<EntryContentCache, 'id'>;
+  entryImages: EntityTable<EntryImageCache, 'id'>;
 };
 
 export { db };
@@ -40,6 +51,13 @@ db.version(3).stores({
   pathPreferences: '&pathId,hidden',
   queryCache: '&key',
   entryContent: '&id,edit_id,path_id',
+});
+
+db.version(4).stores({
+  pathPreferences: '&pathId,hidden',
+  queryCache: '&key',
+  entryContent: '&id,edit_id,path_id',
+  entryImages: '&id,entry_id',
 });
 
 export async function isPathHidden(pathId: string) {

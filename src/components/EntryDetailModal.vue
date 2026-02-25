@@ -18,7 +18,14 @@
         {{ currentEntry.pathTitle }} &mdash; {{ currentEntry.day }}
       </p>
       <p class="entry-detail-content">{{ currentEntry.content || '(no text)' }}</p>
-      <p v-if="currentEntry.hasImages" class="entry-detail-images">📷 Has images</p>
+      <div v-if="currentEntry.images && currentEntry.images.length > 0" class="entry-detail-images">
+        <EntryImage
+          v-for="img in currentEntry.images"
+          :key="img.id"
+          :image-id="img.id"
+          :alt="img.filename"
+        />
+      </div>
     </ion-content>
     <ion-footer v-if="entries.length > 1">
       <ion-toolbar>
@@ -58,13 +65,18 @@ import {
   IonContent,
 } from '@ionic/vue';
 import { computed, ref, watch } from 'vue';
+import type { ImageResponse } from '../generated/types';
+import EntryImage from './EntryImage.vue';
 
 export interface EntryDetailData {
+  pathId: string;
+  entryId: string;
   pathTitle: string;
   color: string;
   day: string;
   content: string;
   hasImages: boolean;
+  images?: ImageResponse[];
 }
 
 const props = defineProps<{
@@ -90,11 +102,14 @@ watch(
 const currentEntry = computed<EntryDetailData>(
   () =>
     props.entries[currentIndex.value] ?? {
+      pathId: '',
+      entryId: '',
       pathTitle: '',
       color: '',
       day: '',
       content: '',
       hasImages: false,
+      images: [],
     },
 );
 </script>
@@ -122,12 +137,15 @@ const currentEntry = computed<EntryDetailData>(
   font-size: 1rem;
   line-height: 1.6;
   color: var(--ion-color-dark, #333);
+  padding: 0 4px;
 }
 
 .entry-detail-images {
-  font-size: 0.85rem;
-  color: var(--ion-color-medium, #888);
-  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 0 4px;
 }
 
 .entry-detail-counter {
