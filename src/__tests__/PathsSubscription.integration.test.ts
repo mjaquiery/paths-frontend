@@ -1,9 +1,10 @@
 /**
  * Integration tests for PathsSelectorBar subscription management.
  *
- * Tests the "Invite user" flow: user fills in a user ID for one of their
- * owned paths, clicks "Invite", and the POST /v1/paths/:pathCode/subscriptions
- * request is made via the MSW-intercepted API.
+ * Tests the "Invite user" flow: user fills in an email address for one of
+ * their owned paths, clicks "Invite", and the POST
+ * /v1/paths/:pathCode/subscriptions request is made via the MSW-intercepted
+ * API.
  *
  * Note: GET /v1/paths is pre-populated in the TanStack Query cache to avoid
  * timing issues with useQuery scheduling in the test environment.
@@ -24,7 +25,7 @@ import { mount, flushPromises } from '@vue/test-utils';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 
-import PathsSelectorBar from '../components/PathsSelectorBar.vue';
+import PathSubscriptionManager from '../components/PathSubscriptionManager.vue';
 import type { PathResponse, OAuthCallbackResponse } from '../generated/types';
 
 // ---------------------------------------------------------------------------
@@ -44,26 +45,14 @@ const ionicStubs = {
   IonButton: {
     template:
       '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
-    props: ['disabled', 'size', 'fill'],
+    props: ['disabled', 'size', 'fill', 'color'],
     emits: ['click'],
   },
-  IonCard: { template: '<div><slot /></div>' },
-  IonCardContent: { template: '<div><slot /></div>' },
-  IonChip: { template: '<span><slot /></span>' },
   IonInput: {
     template:
       '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />',
-    props: ['modelValue', 'placeholder'],
+    props: ['modelValue', 'placeholder', 'type'],
     emits: ['update:modelValue'],
-  },
-  IonItem: { template: '<div><slot /></div>' },
-  IonLabel: { template: '<label><slot /></label>' },
-  IonList: { template: '<ul><slot /></ul>' },
-  IonToggle: {
-    template:
-      '<input type="checkbox" :checked="checked" @change="$emit(\'ionChange\', { detail: { checked: $event.target.checked } })" />',
-    props: ['checked'],
-    emits: ['ionChange'],
   },
 };
 
@@ -88,19 +77,18 @@ const ownedPath: PathResponse = {
   updated_at: '2024-01-01T00:00:00Z',
 };
 
-// Simulated raw API response (as customFetch wraps it)
-const pathsApiResponse = {
-  data: [ownedPath],
-  status: 200,
-  headers: new Headers(),
-};
-
 // ---------------------------------------------------------------------------
 // MSW server — only for mutation endpoints
 // ---------------------------------------------------------------------------
 const server = setupServer(
+  http.get('*/v1/paths/:pathCode/subscriptions', () => {
+    return HttpResponse.json([], { status: 200 });
+  }),
   http.post('*/v1/paths/:pathCode/subscriptions', () => {
-    return new HttpResponse(null, { status: 204 });
+    return HttpResponse.json(
+      { invitation_id: 'inv-1', status: 'invited' },
+      { status: 201 },
+    );
   }),
 );
 
@@ -112,35 +100,21 @@ afterAll(() => server.close());
 // Helpers
 // ---------------------------------------------------------------------------
 function createQueryClient() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  // Pre-populate the cache with paths data so ownedPaths computed works
-  // without needing the query to fetch (avoids TanStack Query scheduling issues in tests)
-  qc.setQueryData(['v1', 'paths'], pathsApiResponse);
-  return qc;
+  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
-async function mountAndExpand() {
+async function mountManager() {
   const queryClient = createQueryClient();
-  const wrapper = mount(PathsSelectorBar, {
-    props: { currentUser },
+  const wrapper = mount(PathSubscriptionManager, {
+    props: { pathCode: ownedPath.path_id, pathTitle: ownedPath.title },
     global: {
       plugins: [[VueQueryPlugin, { queryClient }]],
       stubs: ionicStubs,
     },
   });
 
-  // Allow watch(allPaths) to run and update pathOrder
   await flushPromises();
   await nextTick();
-
-  // Open expanded view
-  const moreBtn = wrapper
-    .findAll('button')
-    .find((b) => b.text().includes('More'));
-  expect(moreBtn).toBeDefined();
-  await moreBtn!.trigger('click');
-  await nextTick();
-  await flushPromises();
 
   return wrapper;
 }
@@ -148,15 +122,15 @@ async function mountAndExpand() {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
-describe('PathsSelectorBar – subscription management (MSW integration)', () => {
-  it('shows an invite section for each owned path in the expanded view', async () => {
-    const wrapper = await mountAndExpand();
-    expect(wrapper.html()).toContain('Invite');
+describe('PathSubscriptionManager – subscription management (MSW integration)', () => {
+  it('shows the subscriber management section for a path', async () => {
+    const wrapper = await mountManager();
     expect(wrapper.html()).toContain('My Path');
+    expect(wrapper.html()).toContain('Invite');
   });
 
-  it('Invite button is disabled when user ID field is empty', async () => {
-    const wrapper = await mountAndExpand();
+  it('Invite button is disabled when email field is empty', async () => {
+    const wrapper = await mountManager();
 
     const inviteBtn = wrapper
       .findAll('button')
@@ -165,15 +139,12 @@ describe('PathsSelectorBar – subscription management (MSW integration)', () =>
     expect(inviteBtn!.attributes('disabled')).toBeDefined();
   });
 
-  it('Invite button becomes enabled when a user ID is entered', async () => {
-    const wrapper = await mountAndExpand();
+  it('Invite button becomes enabled when an email is entered', async () => {
+    const wrapper = await mountManager();
 
-    // Find the invite input (not the checkboxes)
-    const textInputs = wrapper
-      .findAll('input')
-      .filter((i) => i.attributes('type') !== 'checkbox');
-    expect(textInputs.length).toBeGreaterThan(0);
-    await textInputs[textInputs.length - 1].setValue('target-user-id');
+    const inputs = wrapper.findAll('input');
+    expect(inputs.length).toBeGreaterThan(0);
+    await inputs[inputs.length - 1]!.setValue('user@example.com');
     await nextTick();
 
     const inviteBtn = wrapper
@@ -182,21 +153,22 @@ describe('PathsSelectorBar – subscription management (MSW integration)', () =>
     expect(inviteBtn!.attributes('disabled')).toBeUndefined();
   });
 
-  it('calls POST /v1/paths/:pathCode/subscriptions with the correct user_id', async () => {
+  it('calls POST /v1/paths/:pathCode/subscriptions with the correct email', async () => {
     const subscriptionRequests: Request[] = [];
     server.use(
       http.post('*/v1/paths/:pathCode/subscriptions', async ({ request }) => {
         subscriptionRequests.push(request.clone());
-        return new HttpResponse(null, { status: 204 });
+        return HttpResponse.json(
+          { invitation_id: 'inv-1', status: 'invited' },
+          { status: 201 },
+        );
       }),
     );
 
-    const wrapper = await mountAndExpand();
+    const wrapper = await mountManager();
 
-    const textInputs = wrapper
-      .findAll('input')
-      .filter((i) => i.attributes('type') !== 'checkbox');
-    await textInputs[textInputs.length - 1].setValue('invited-user-id');
+    const inputs = wrapper.findAll('input');
+    await inputs[inputs.length - 1]!.setValue('invited@example.com');
     await nextTick();
 
     const inviteBtn = wrapper
@@ -207,16 +179,14 @@ describe('PathsSelectorBar – subscription management (MSW integration)', () =>
 
     expect(subscriptionRequests).toHaveLength(1);
     const body = await subscriptionRequests[0]!.json();
-    expect(body.user_id).toBe('invited-user-id');
+    expect(body.email).toBe('invited@example.com');
   });
 
   it('shows a success message after successful invitation', async () => {
-    const wrapper = await mountAndExpand();
+    const wrapper = await mountManager();
 
-    const textInputs = wrapper
-      .findAll('input')
-      .filter((i) => i.attributes('type') !== 'checkbox');
-    await textInputs[textInputs.length - 1].setValue('some-user');
+    const inputs = wrapper.findAll('input');
+    await inputs[inputs.length - 1]!.setValue('user@example.com');
     await nextTick();
 
     const inviteBtn = wrapper
@@ -225,17 +195,15 @@ describe('PathsSelectorBar – subscription management (MSW integration)', () =>
     await inviteBtn!.trigger('click');
     await flushPromises();
 
-    expect(wrapper.html()).toContain('User invited successfully');
+    expect(wrapper.html()).toContain('Invitation sent successfully');
   });
 
-  it('clears the user ID field after a successful invitation', async () => {
-    const wrapper = await mountAndExpand();
+  it('clears the email field after a successful invitation', async () => {
+    const wrapper = await mountManager();
 
-    const textInputs = wrapper
-      .findAll('input')
-      .filter((i) => i.attributes('type') !== 'checkbox');
-    const inviteInput = textInputs[textInputs.length - 1];
-    await inviteInput.setValue('some-user');
+    const inputs = wrapper.findAll('input');
+    const inviteInput = inputs[inputs.length - 1]!;
+    await inviteInput.setValue('user@example.com');
     await nextTick();
 
     const inviteBtn = wrapper
@@ -244,7 +212,6 @@ describe('PathsSelectorBar – subscription management (MSW integration)', () =>
     await inviteBtn!.trigger('click');
     await flushPromises();
 
-    // Input should be cleared (v-model resets inviteUserId[pathId] to '')
     expect((inviteInput.element as HTMLInputElement).value).toBe('');
   });
 
@@ -255,12 +222,10 @@ describe('PathsSelectorBar – subscription management (MSW integration)', () =>
       }),
     );
 
-    const wrapper = await mountAndExpand();
+    const wrapper = await mountManager();
 
-    const textInputs = wrapper
-      .findAll('input')
-      .filter((i) => i.attributes('type') !== 'checkbox');
-    await textInputs[textInputs.length - 1].setValue('nonexistent-user');
+    const inputs = wrapper.findAll('input');
+    await inputs[inputs.length - 1]!.setValue('bad@example.com');
     await nextTick();
 
     const inviteBtn = wrapper
@@ -272,15 +237,12 @@ describe('PathsSelectorBar – subscription management (MSW integration)', () =>
     expect(wrapper.html()).toContain('Failed to invite');
   });
 
-  it('clears the success message when the user starts typing a new user ID', async () => {
-    const wrapper = await mountAndExpand();
+  it('clears the success message when the user starts typing a new email', async () => {
+    const wrapper = await mountManager();
 
-    // First successful invite
-    const textInputs = wrapper
-      .findAll('input')
-      .filter((i) => i.attributes('type') !== 'checkbox');
-    const inviteInput = textInputs[textInputs.length - 1];
-    await inviteInput.setValue('first-user');
+    const inputs = wrapper.findAll('input');
+    const inviteInput = inputs[inputs.length - 1]!;
+    await inviteInput.setValue('first@example.com');
     await nextTick();
 
     const inviteBtn = wrapper
@@ -289,12 +251,11 @@ describe('PathsSelectorBar – subscription management (MSW integration)', () =>
     await inviteBtn!.trigger('click');
     await flushPromises();
 
-    expect(wrapper.html()).toContain('User invited successfully');
+    expect(wrapper.html()).toContain('Invitation sent successfully');
 
-    // User starts typing a second invite — success message should clear
-    await inviteInput.setValue('second-user');
+    await inviteInput.setValue('second@example.com');
     await nextTick();
 
-    expect(wrapper.html()).not.toContain('User invited successfully');
+    expect(wrapper.html()).not.toContain('Invitation sent successfully');
   });
 });

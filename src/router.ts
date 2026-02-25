@@ -4,6 +4,7 @@ import HomeView from './views/HomeView.vue';
 import OAuthCallback from './views/OAuthCallback.vue';
 import ExportView from './views/ExportView.vue';
 import DeleteView from './views/DeleteView.vue';
+import InvitationsView from './views/InvitationsView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,6 +13,7 @@ const router = createRouter({
     { path: '/auth/callback', component: OAuthCallback },
     { path: '/export', component: ExportView },
     { path: '/delete', component: DeleteView },
+    { path: '/invitations', component: InvitationsView },
   ],
 });
 
