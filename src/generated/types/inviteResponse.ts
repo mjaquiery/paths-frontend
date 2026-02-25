@@ -5,7 +5,7 @@
  * OpenAPI spec version: 0.3.0
  */
 
-export interface PathCreationApprovalResponse {
-  user_id: string;
-  allowed: boolean;
+export interface InviteResponse {
+  invitation_id: string;
+  status: string;
 }
