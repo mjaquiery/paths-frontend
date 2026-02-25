@@ -5,8 +5,8 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface ImageUploadResponse {
-  image_id: string;
-  upload_url: string;
+export interface ImageDownloadResponse {
+  image_url: string;
+  thumbnail_url: string | null;
   expires_in_seconds: number;
 }
