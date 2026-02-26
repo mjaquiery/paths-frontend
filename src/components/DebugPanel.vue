@@ -15,6 +15,29 @@
       <template v-if="isOpen">
         <p v-if="loadError" class="debug-error">⚠ {{ loadError }}</p>
 
+        <details class="debug-panel__section" open>
+          <summary>Auth State</summary>
+          <template v-if="currentUser">
+            <div class="debug-auth-row">
+              <span class="debug-auth-label">user_id:</span>
+              <code>{{ currentUser.user_id }}</code>
+            </div>
+            <div class="debug-auth-row">
+              <span class="debug-auth-label">display_name:</span>
+              <code>{{ currentUser.display_name ?? '(none)' }}</code>
+            </div>
+            <div class="debug-auth-row">
+              <span class="debug-auth-label">token:</span>
+              <code class="debug-token">{{
+                currentUser.token ? '✓ present' : '✗ missing'
+              }}</code>
+            </div>
+          </template>
+          <p v-else class="debug-empty">
+            Not logged in (no user in localStorage).
+          </p>
+        </details>
+
         <details class="debug-panel__section">
           <summary>Vue Query Cache ({{ queryEntries.length }} queries)</summary>
           <div v-for="q in queryEntries" :key="q.queryHash" class="debug-entry">
@@ -32,6 +55,28 @@
           </div>
           <p v-if="queryEntries.length === 0" class="debug-empty">
             No queries in cache.
+          </p>
+        </details>
+
+        <details class="debug-panel__section">
+          <summary>
+            Mutation Cache ({{ mutationEntries.length }} mutations)
+          </summary>
+          <div v-for="(m, i) in mutationEntries" :key="i" class="debug-entry">
+            <details>
+              <summary>
+                <code>{{ JSON.stringify(m.options.mutationKey ?? []) }}</code>
+                <span
+                  class="debug-badge"
+                  :class="`debug-badge--${m.state.status}`"
+                  >{{ m.state.status }}</span
+                >
+              </summary>
+              <pre>{{ JSON.stringify(m.state, null, 2) }}</pre>
+            </details>
+          </div>
+          <p v-if="mutationEntries.length === 0" class="debug-empty">
+            No mutations recorded.
           </p>
         </details>
 
@@ -82,9 +127,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { db as dexieDb } from '../lib/db';
+import type { OAuthCallbackResponse } from '../generated/types';
 
 const queryClient = useQueryClient();
 
@@ -98,7 +144,12 @@ interface DbSnapshot {
 interface QueryEntry {
   queryKey: unknown;
   queryHash: string;
-  state: unknown;
+  state: { status: string; [key: string]: unknown };
+}
+
+interface MutationEntry {
+  options: { mutationKey?: unknown[] };
+  state: { status: string; [key: string]: unknown };
 }
 
 const isOpen = ref(false);
@@ -113,6 +164,22 @@ const db = ref<DbSnapshot>({
 
 const localStorageEntries = ref<{ key: string; value: unknown }[]>([]);
 const queryEntries = ref<QueryEntry[]>([]);
+const mutationEntries = ref<MutationEntry[]>([]);
+
+const currentUser = computed<OAuthCallbackResponse | null>(() => {
+  const entry = localStorageEntries.value.find((e) => e.key === 'user');
+  if (!entry) return null;
+  const val = entry.value;
+  if (
+    val &&
+    typeof val === 'object' &&
+    'user_id' in val &&
+    typeof (val as Record<string, unknown>).user_id === 'string'
+  ) {
+    return val as OAuthCallbackResponse;
+  }
+  return null;
+});
 
 function syncQueryEntries() {
   queryEntries.value = queryClient
@@ -121,11 +188,24 @@ function syncQueryEntries() {
     .map((q) => ({
       queryKey: q.queryKey,
       queryHash: q.queryHash,
-      state: q.state,
+      state: q.state as { status: string; [key: string]: unknown },
     }));
 }
 
-let unsubscribe: (() => void) | null = null;
+function syncMutationEntries() {
+  mutationEntries.value = queryClient
+    .getMutationCache()
+    .getAll()
+    .map((m) => ({
+      options: {
+        mutationKey: m.options.mutationKey as unknown[] | undefined,
+      },
+      state: m.state as { status: string; [key: string]: unknown },
+    }));
+}
+
+let unsubscribeQuery: (() => void) | null = null;
+let unsubscribeMutation: (() => void) | null = null;
 
 async function loadDb() {
   const [pathPreferences, entryContent, entryImages, queryCache] =
@@ -160,6 +240,7 @@ async function refresh() {
     await loadDb();
     loadLocalStorage();
     syncQueryEntries();
+    syncMutationEntries();
   } catch (err) {
     loadError.value = err instanceof Error ? err.message : String(err);
   }
@@ -168,22 +249,31 @@ async function refresh() {
 function onOuterToggle(event: Event) {
   isOpen.value = (event.currentTarget as HTMLDetailsElement).open;
   if (isOpen.value) {
-    unsubscribe = queryClient.getQueryCache().subscribe(() => {
+    unsubscribeQuery = queryClient.getQueryCache().subscribe(() => {
       syncQueryEntries();
+    });
+    unsubscribeMutation = queryClient.getMutationCache().subscribe(() => {
+      syncMutationEntries();
+      loadLocalStorage();
     });
     void refresh();
   } else {
-    unsubscribe?.();
-    unsubscribe = null;
+    unsubscribeQuery?.();
+    unsubscribeQuery = null;
+    unsubscribeMutation?.();
+    unsubscribeMutation = null;
   }
 }
 
 onMounted(() => {
   syncQueryEntries();
+  syncMutationEntries();
+  loadLocalStorage();
 });
 
 onUnmounted(() => {
-  unsubscribe?.();
+  unsubscribeQuery?.();
+  unsubscribeMutation?.();
 });
 </script>
 
@@ -281,5 +371,21 @@ pre {
   color: #b71c1c;
   font-weight: bold;
   padding: 4px 12px;
+}
+
+.debug-auth-row {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+  align-items: baseline;
+}
+
+.debug-auth-label {
+  color: #666;
+  min-width: 100px;
+}
+
+.debug-token {
+  color: #4caf50;
 }
 </style>

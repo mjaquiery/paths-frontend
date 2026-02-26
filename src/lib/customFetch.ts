@@ -5,10 +5,32 @@ export const customFetch = async <T>(
   const baseUrl = (
     import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
   ).replace(/\/$/, '');
+
+  // Primary auth: session_token cookie set by the server (credentials: 'include').
+  // Fallback: Bearer token from localStorage for environments where cookies are
+  // unavailable (e.g. cross-origin dev setups with CORS issues). The token is the
+  // same value the server places in the session_token cookie, so it carries the
+  // same privileges and the same XSS risk as any localStorage-stored token.
+  // Do not ship localStorage token storage to production without evaluating
+  // whether httpOnly cookies are sufficient for your threat model.
+  const authHeaders: Record<string, string> = {};
+  try {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      const user = JSON.parse(stored) as { token?: string };
+      if (user?.token) {
+        authHeaders['Authorization'] = `Bearer ${user.token}`;
+      }
+    }
+  } catch {
+    // ignore localStorage errors
+  }
+
   const response = await fetch(`${baseUrl}${url}`, {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...(options?.headers ?? {}),
     },
     ...options,
