@@ -3,6 +3,7 @@ import Dexie, { type EntityTable } from 'dexie';
 export interface PathPreference {
   pathId: string;
   hidden: boolean;
+  deleted?: boolean;
 }
 
 export interface QueryCacheEntry {
@@ -61,7 +62,15 @@ db.version(4).stores({
   entryImages: '&id,entry_id',
 });
 
+// Version 5: drop entryContent to allow primary key change from &id to &cache_key
 db.version(5).stores({
+  pathPreferences: '&pathId,hidden',
+  queryCache: '&key',
+  entryContent: null,
+  entryImages: '&id,entry_id',
+});
+
+db.version(6).stores({
   pathPreferences: '&pathId,hidden',
   queryCache: '&key',
   entryContent: '&cache_key,edit_id,path_id,id',
@@ -75,6 +84,20 @@ export async function isPathHidden(pathId: string) {
 
 export async function setPathHidden(pathId: string, hidden: boolean) {
   await db.pathPreferences.put({ pathId, hidden });
+}
+
+export async function isPathDeleted(pathId: string) {
+  const pref = await db.pathPreferences.get(pathId);
+  return pref?.deleted ?? false;
+}
+
+export async function setPathDeleted(pathId: string, deleted: boolean) {
+  const existing = await db.pathPreferences.get(pathId);
+  await db.pathPreferences.put({
+    pathId,
+    hidden: existing?.hidden ?? false,
+    deleted,
+  });
 }
 
 const PATH_ORDER_KEY = 'pathOrder';

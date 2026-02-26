@@ -208,8 +208,57 @@
           >
             {{ unsubscribing[path.path_id] ? 'Leaving…' : 'Unsubscribe' }}
           </ion-button>
+
+          <!-- Delete (for owned paths only) -->
+          <ion-button
+            v-if="path.owner_user_id === currentUser.user_id"
+            slot="end"
+            size="small"
+            fill="outline"
+            color="danger"
+            :disabled="deleting[path.path_id]"
+            @click="promptDeletePath(path)"
+          >
+            Delete
+          </ion-button>
         </ion-item>
       </ion-list>
+
+      <!-- Delete confirmation modal -->
+      <ion-card v-if="deleteTarget" class="paths-delete-card">
+        <ion-card-content>
+          <p class="paths-delete-warning">
+            ⚠️ This will permanently remove
+            <strong>{{ deleteTarget.title }}</strong> from your view. Type the
+            path name to confirm.
+          </p>
+          <ion-item>
+            <ion-label position="stacked">Path name</ion-label>
+            <ion-input
+              v-model="deleteConfirmText"
+              :placeholder="deleteTarget.title"
+              aria-label="Type path name to confirm deletion"
+            />
+          </ion-item>
+          <div class="paths-form-actions">
+            <ion-button
+              size="small"
+              color="danger"
+              :disabled="
+                deleteConfirmText !== deleteTarget.title ||
+                deleting[deleteTarget.path_id]
+              "
+              @click="confirmDeletePath"
+              >{{
+                deleting[deleteTarget.path_id] ? 'Deleting…' : 'Delete Path'
+              }}</ion-button
+            >
+            <ion-button size="small" fill="outline" @click="cancelDeletePath"
+              >Cancel</ion-button
+            >
+          </div>
+        </ion-card-content>
+      </ion-card>
 
       <!-- Subscription management (owned paths only) -->
       <PathSubscriptionManager
@@ -242,6 +291,8 @@ import type { OAuthCallbackResponse, PathResponse } from '../generated/types';
 import {
   isPathHidden,
   setPathHidden,
+  isPathDeleted,
+  setPathDeleted,
   getPathOrder,
   setPathOrder,
 } from '../lib/db';
@@ -287,6 +338,12 @@ const pendingInvitations = computed(
 const { mutateAsync: doDeleteSubscription } = useDeleteSubscription();
 const unsubscribing = ref<Record<string, boolean>>({});
 
+// Delete path (local only)
+const deleting = ref<Record<string, boolean>>({});
+const deletedByPath = ref<Record<string, boolean>>({});
+const deleteTarget = ref<PathResponse | null>(null);
+const deleteConfirmText = ref('');
+
 const expanded = ref(false);
 const showCreateForm = ref(false);
 const createError = ref('');
@@ -319,6 +376,14 @@ watch(
     );
     hiddenByPath.value = Object.fromEntries(hidden);
 
+    const deleted = await Promise.all(
+      paths.map(
+        async (p: PathResponse) =>
+          [p.path_id, await isPathDeleted(p.path_id)] as const,
+      ),
+    );
+    deletedByPath.value = Object.fromEntries(deleted);
+
     // Merge stored order with current paths
     const stored = getPathOrder();
     const ids = paths.map((p: PathResponse) => p.path_id);
@@ -335,7 +400,7 @@ const orderedPaths = computed<PathResponse[]>(() => {
   if (!allPaths.value) return [];
   return pathOrder.value
     .map((id) => allPaths.value!.find((p: PathResponse) => p.path_id === id))
-    .filter((p): p is PathResponse => !!p);
+    .filter((p): p is PathResponse => !!p && !deletedByPath.value[p.path_id]);
 });
 
 const ownedPaths = computed<PathResponse[]>(() =>
@@ -475,6 +540,30 @@ async function unsubscribe(pathId: string) {
     // silently fail
   } finally {
     unsubscribing.value[pathId] = false;
+  }
+}
+
+function promptDeletePath(path: PathResponse) {
+  deleteTarget.value = path;
+  deleteConfirmText.value = '';
+}
+
+function cancelDeletePath() {
+  deleteTarget.value = null;
+  deleteConfirmText.value = '';
+}
+
+async function confirmDeletePath() {
+  if (!deleteTarget.value) return;
+  if (deleteConfirmText.value !== deleteTarget.value.title) return;
+  const pathId = deleteTarget.value.path_id;
+  deleting.value[pathId] = true;
+  try {
+    await setPathDeleted(pathId, true);
+    deletedByPath.value[pathId] = true;
+    cancelDeletePath();
+  } finally {
+    deleting.value[pathId] = false;
   }
 }
 
@@ -674,5 +763,17 @@ function hexToRgba(hex: string, alpha: number): string {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
+}
+
+/* Delete path */
+.paths-delete-card {
+  margin: 8px 0;
+  border: 1px solid var(--ion-color-danger, #eb445a);
+}
+
+.paths-delete-warning {
+  color: var(--ion-color-danger, #eb445a);
+  font-size: 0.875rem;
+  margin: 0 0 8px;
 }
 </style>
