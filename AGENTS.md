@@ -28,6 +28,7 @@ If code introduces alternative container concepts, it is incorrect.
 2. Respect formatting:
    - Python: ruff
    - Vue/TypeScript: prettier
+   - **Before opening or updating a PR, run `npm run format` (or `prettier --write .`) on all files to avoid large formatting-only diffs.**
 
 3. Generate tests alongside features.
 4. Keep OpenAPI and backend models in sync.

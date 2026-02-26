@@ -7,11 +7,16 @@ import '@ionic/vue/css/core.css';
 import '@ionic/vue/css/normalize.css';
 import '@ionic/vue/css/structure.css';
 import '@ionic/vue/css/typography.css';
+import '@ionic/vue/css/palettes/dark.class.css';
 import './assets/theme.css';
 
 import App from './App.vue';
 import router from './router';
 import { dexiePersister } from './lib/queryPersister';
+import { useDarkMode } from './composables/useDarkMode';
+
+// Initialise dark mode before mounting to prevent flash of wrong theme
+useDarkMode();
 
 const queryClient = new QueryClient({
   defaultOptions: {
