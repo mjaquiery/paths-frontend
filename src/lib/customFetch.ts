@@ -26,14 +26,15 @@ export const customFetch = async <T>(
     // ignore localStorage errors
   }
 
+  const { headers: optionHeaders, ...restOptions } = options ?? {};
   const response = await fetch(`${baseUrl}${url}`, {
     credentials: 'include',
+    ...restOptions,
     headers: {
       'Content-Type': 'application/json',
       ...authHeaders,
-      ...(options?.headers ?? {}),
+      ...(optionHeaders ?? {}),
     },
-    ...options,
   });
   if (!response.ok) throw new Error(`Request failed: ${response.status}`);
   const data = response.status === 204 ? undefined : await response.json();
