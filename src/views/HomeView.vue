@@ -72,6 +72,9 @@
           </ion-card-content>
         </ion-card>
       </div>
+
+      <!-- Debug panel: IndexedDB + Vue Query cache inspection -->
+      <DebugPanel />
     </ion-content>
 
     <!-- ── Footer ── -->
@@ -140,6 +143,7 @@ import PathsSelectorBar from '../components/PathsSelectorBar.vue';
 import OnThisDaySpotlight from '../components/OnThisDaySpotlight.vue';
 import WeekView from '../components/WeekView.vue';
 import EntryCreateModal from '../components/EntryCreateModal.vue';
+import DebugPanel from '../components/DebugPanel.vue';
 import type {
   PathResponse,
   OAuthCallbackResponse,
