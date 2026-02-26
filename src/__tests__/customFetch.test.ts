@@ -99,6 +99,25 @@ describe('customFetch', () => {
     expect(capturedHeaders['authorization']).toBe('Bearer test-token-123');
   });
 
+  it('includes Authorization header in DELETE requests', async () => {
+    const capturedHeaders: Record<string, string> = {};
+
+    server.use(
+      http.delete('*/v1/paths/path-1', ({ request }) => {
+        request.headers.forEach((value, key) => {
+          capturedHeaders[key] = value;
+        });
+        return HttpResponse.json({}, { status: 200 });
+      }),
+    );
+
+    await customFetch('/v1/paths/path-1', {
+      method: 'DELETE',
+    });
+
+    expect(capturedHeaders['authorization']).toBe('Bearer test-token-123');
+  });
+
   it('does not include Authorization header when no user is in localStorage', async () => {
     localStorage.clear();
     const capturedHeaders: Record<string, string> = {};
