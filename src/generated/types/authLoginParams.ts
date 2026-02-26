@@ -6,8 +6,8 @@
  */
 
 export type AuthLoginParams = {
-/**
- * URI that Google will redirect to after login
- */
-callback_uri: string;
+  /**
+   * URI that Google will redirect to after login
+   */
+  callback_uri: string;
 };
