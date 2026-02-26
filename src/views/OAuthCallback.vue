@@ -25,7 +25,6 @@ import { onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
 import { useAuthCallback } from '../generated/apiClient';
-import type { OAuthCallbackResponse } from '../generated/types';
 
 const router = useRouter();
 const route = useRoute();
@@ -51,9 +50,7 @@ onMounted(async () => {
       data: { code, state, callback_uri: callbackUri },
     });
     if (result.data) {
-      const { token: _token, ...safeData } =
-        result.data as OAuthCallbackResponse;
-      localStorage.setItem('user', JSON.stringify(safeData));
+      localStorage.setItem('user', JSON.stringify(result.data));
     }
   } catch {
     error.value = 'Login failed. Please try again.';
