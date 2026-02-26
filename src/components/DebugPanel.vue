@@ -1,76 +1,88 @@
 <template>
   <div class="debug-panel">
-    <details>
+    <details @toggle="onOuterToggle">
       <summary class="debug-panel__title">
         🛠 Debug Panel
-        <button class="debug-panel__refresh" @click.stop="refresh">
+        <button
+          type="button"
+          class="debug-panel__refresh"
+          @click.stop="refresh"
+        >
           Refresh
         </button>
       </summary>
 
-      <details class="debug-panel__section">
-        <summary>Vue Query Cache ({{ queryEntries.length }} queries)</summary>
-        <div v-for="q in queryEntries" :key="q.queryHash" class="debug-entry">
-          <details>
-            <summary>
-              <code>{{ JSON.stringify(q.queryKey) }}</code>
-              <span
-                class="debug-badge"
-                :class="`debug-badge--${q.state.status}`"
-                >{{ q.state.status }}</span
-              >
-            </summary>
-            <pre>{{ JSON.stringify(q.state, null, 2) }}</pre>
-          </details>
-        </div>
-        <p v-if="queryEntries.length === 0" class="debug-empty">
-          No queries in cache.
-        </p>
-      </details>
+      <template v-if="isOpen">
+        <p v-if="loadError" class="debug-error">⚠ {{ loadError }}</p>
 
-      <details class="debug-panel__section">
-        <summary>
-          IndexedDB – pathPreferences ({{ db.pathPreferences.length }})
-        </summary>
-        <pre>{{ JSON.stringify(db.pathPreferences, null, 2) }}</pre>
-        <p v-if="db.pathPreferences.length === 0" class="debug-empty">Empty.</p>
-      </details>
+        <details class="debug-panel__section">
+          <summary>Vue Query Cache ({{ queryEntries.length }} queries)</summary>
+          <div v-for="q in queryEntries" :key="q.queryHash" class="debug-entry">
+            <details>
+              <summary>
+                <code>{{ JSON.stringify(q.queryKey) }}</code>
+                <span
+                  class="debug-badge"
+                  :class="`debug-badge--${q.state.status}`"
+                  >{{ q.state.status }}</span
+                >
+              </summary>
+              <pre>{{ JSON.stringify(q.state, null, 2) }}</pre>
+            </details>
+          </div>
+          <p v-if="queryEntries.length === 0" class="debug-empty">
+            No queries in cache.
+          </p>
+        </details>
 
-      <details class="debug-panel__section">
-        <summary>
-          IndexedDB – entryContent ({{ db.entryContent.length }})
-        </summary>
-        <pre>{{ JSON.stringify(db.entryContent, null, 2) }}</pre>
-        <p v-if="db.entryContent.length === 0" class="debug-empty">Empty.</p>
-      </details>
+        <details class="debug-panel__section">
+          <summary>
+            IndexedDB – pathPreferences ({{ db.pathPreferences.length }})
+          </summary>
+          <pre>{{ JSON.stringify(db.pathPreferences, null, 2) }}</pre>
+          <p v-if="db.pathPreferences.length === 0" class="debug-empty">
+            Empty.
+          </p>
+        </details>
 
-      <details class="debug-panel__section">
-        <summary>IndexedDB – entryImages ({{ db.entryImages.length }})</summary>
-        <pre>{{ JSON.stringify(db.entryImages, null, 2) }}</pre>
-        <p v-if="db.entryImages.length === 0" class="debug-empty">Empty.</p>
-      </details>
+        <details class="debug-panel__section">
+          <summary>
+            IndexedDB – entryContent ({{ db.entryContent.length }})
+          </summary>
+          <pre>{{ JSON.stringify(db.entryContent, null, 2) }}</pre>
+          <p v-if="db.entryContent.length === 0" class="debug-empty">Empty.</p>
+        </details>
 
-      <details class="debug-panel__section">
-        <summary>
-          IndexedDB – queryCache (raw, {{ db.queryCache.length }} rows)
-        </summary>
-        <pre>{{ JSON.stringify(db.queryCache, null, 2) }}</pre>
-        <p v-if="db.queryCache.length === 0" class="debug-empty">Empty.</p>
-      </details>
+        <details class="debug-panel__section">
+          <summary>
+            IndexedDB – entryImages ({{ db.entryImages.length }})
+          </summary>
+          <pre>{{ JSON.stringify(db.entryImages, null, 2) }}</pre>
+          <p v-if="db.entryImages.length === 0" class="debug-empty">Empty.</p>
+        </details>
 
-      <details class="debug-panel__section">
-        <summary>localStorage</summary>
-        <pre>{{ JSON.stringify(localStorageEntries, null, 2) }}</pre>
-        <p v-if="localStorageEntries.length === 0" class="debug-empty">
-          Empty.
-        </p>
-      </details>
+        <details class="debug-panel__section">
+          <summary>
+            IndexedDB – queryCache (raw, {{ db.queryCache.length }} rows)
+          </summary>
+          <pre>{{ JSON.stringify(db.queryCache, null, 2) }}</pre>
+          <p v-if="db.queryCache.length === 0" class="debug-empty">Empty.</p>
+        </details>
+
+        <details class="debug-panel__section">
+          <summary>localStorage</summary>
+          <pre>{{ JSON.stringify(localStorageEntries, null, 2) }}</pre>
+          <p v-if="localStorageEntries.length === 0" class="debug-empty">
+            Empty.
+          </p>
+        </details>
+      </template>
     </details>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { db as dexieDb } from '../lib/db';
 
@@ -83,6 +95,15 @@ interface DbSnapshot {
   queryCache: unknown[];
 }
 
+interface QueryEntry {
+  queryKey: unknown;
+  queryHash: string;
+  state: unknown;
+}
+
+const isOpen = ref(false);
+const loadError = ref<string | null>(null);
+
 const db = ref<DbSnapshot>({
   pathPreferences: [],
   entryContent: [],
@@ -91,17 +112,20 @@ const db = ref<DbSnapshot>({
 });
 
 const localStorageEntries = ref<{ key: string; value: unknown }[]>([]);
+const queryEntries = ref<QueryEntry[]>([]);
 
-const queryEntries = computed(() =>
-  queryClient
+function syncQueryEntries() {
+  queryEntries.value = queryClient
     .getQueryCache()
     .getAll()
     .map((q) => ({
       queryKey: q.queryKey,
       queryHash: q.queryHash,
       state: q.state,
-    })),
-);
+    }));
+}
+
+let unsubscribe: (() => void) | null = null;
 
 async function loadDb() {
   const [pathPreferences, entryContent, entryImages, queryCache] =
@@ -131,11 +155,36 @@ function loadLocalStorage() {
 }
 
 async function refresh() {
-  await loadDb();
-  loadLocalStorage();
+  loadError.value = null;
+  try {
+    await loadDb();
+    loadLocalStorage();
+    syncQueryEntries();
+  } catch (err) {
+    loadError.value = err instanceof Error ? err.message : String(err);
+  }
 }
 
-onMounted(refresh);
+function onOuterToggle(event: Event) {
+  isOpen.value = (event.currentTarget as HTMLDetailsElement).open;
+  if (isOpen.value) {
+    unsubscribe = queryClient.getQueryCache().subscribe(() => {
+      syncQueryEntries();
+    });
+    void refresh();
+  } else {
+    unsubscribe?.();
+    unsubscribe = null;
+  }
+}
+
+onMounted(() => {
+  syncQueryEntries();
+});
+
+onUnmounted(() => {
+  unsubscribe?.();
+});
 </script>
 
 <style scoped>
@@ -226,5 +275,11 @@ pre {
 .debug-empty {
   color: #999;
   font-style: italic;
+}
+
+.debug-error {
+  color: #b71c1c;
+  font-weight: bold;
+  padding: 4px 12px;
 }
 </style>
