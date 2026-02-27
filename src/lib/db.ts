@@ -61,7 +61,15 @@ db.version(4).stores({
   entryImages: '&id,entry_id',
 });
 
+// Version 5: drop entryContent to allow primary key change from &id to &cache_key
 db.version(5).stores({
+  pathPreferences: '&pathId,hidden',
+  queryCache: '&key',
+  entryContent: null,
+  entryImages: '&id,entry_id',
+});
+
+db.version(6).stores({
   pathPreferences: '&pathId,hidden',
   queryCache: '&key',
   entryContent: '&cache_key,edit_id,path_id,id',
