@@ -3,7 +3,7 @@
   "info": {
     "title": "paths backend API",
     "summary": "Path-centric backend API for Shared Journal PWA",
-    "version": "0.3.0"
+    "version": "0.3.1"
   },
   "paths": {
     "/health": {
@@ -99,6 +99,101 @@
             "APIKeyCookie": []
           }
         ]
+      }
+    },
+    "/v1/paths/{path_code}": {
+      "patch": {
+        "tags": [
+          "paths"
+        ],
+        "summary": "Update Path",
+        "operationId": "update_path",
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path Code"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "paths"
+        ],
+        "summary": "Delete Path",
+        "operationId": "delete_path",
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path Code"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/paths/{path_code}/visibility": {
@@ -860,6 +955,52 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UserDisplayNameUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          }
+        ]
+      }
+    },
+    "/v1/account/settings": {
+      "patch": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Update Settings",
+        "operationId": "update_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserSettingsUpdateRequest"
               }
             }
           },
@@ -2710,6 +2851,54 @@
           "uuid": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
         }
       },
+      "PathUpdateRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1024
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "title": "PathUpdateRequest",
+        "example": {
+          "color": "#10B981",
+          "description": "Revised description.",
+          "title": "Updated Journal"
+        }
+      },
       "PathVisibilityUpdateRequest": {
         "properties": {
           "is_public": {
@@ -2825,17 +3014,50 @@
               }
             ],
             "title": "Display Name"
+          },
+          "settings_json": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Json"
           }
         },
         "type": "object",
         "required": [
           "user_id",
-          "display_name"
+          "display_name",
+          "settings_json"
         ],
         "title": "UserProfileResponse",
         "example": {
           "display_name": "Alex Smith",
           "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        }
+      },
+      "UserSettingsUpdateRequest": {
+        "properties": {
+          "settings_json": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1024
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings Json"
+          }
+        },
+        "type": "object",
+        "title": "UserSettingsUpdateRequest",
+        "example": {
+          "settings_json": "{\"theme\":\"dark\"}"
         }
       },
       "ValidationError": {
