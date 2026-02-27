@@ -3,7 +3,6 @@ import Dexie, { type EntityTable } from 'dexie';
 export interface PathPreference {
   pathId: string;
   hidden: boolean;
-  deleted?: boolean;
 }
 
 export interface QueryCacheEntry {
@@ -84,20 +83,6 @@ export async function isPathHidden(pathId: string) {
 
 export async function setPathHidden(pathId: string, hidden: boolean) {
   await db.pathPreferences.put({ pathId, hidden });
-}
-
-export async function isPathDeleted(pathId: string) {
-  const pref = await db.pathPreferences.get(pathId);
-  return pref?.deleted ?? false;
-}
-
-export async function setPathDeleted(pathId: string, deleted: boolean) {
-  const existing = await db.pathPreferences.get(pathId);
-  await db.pathPreferences.put({
-    pathId,
-    hidden: existing?.hidden ?? false,
-    deleted,
-  });
 }
 
 const PATH_ORDER_KEY = 'pathOrder';

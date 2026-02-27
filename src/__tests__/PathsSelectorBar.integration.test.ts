@@ -29,8 +29,6 @@ import type { PathResponse, OAuthCallbackResponse } from '../generated/types';
 vi.mock('../lib/db', () => ({
   isPathHidden: vi.fn().mockResolvedValue(false),
   setPathHidden: vi.fn().mockResolvedValue(undefined),
-  isPathDeleted: vi.fn().mockResolvedValue(false),
-  setPathDeleted: vi.fn().mockResolvedValue(undefined),
   getPathOrder: vi.fn().mockReturnValue([]),
   setPathOrder: vi.fn(),
 }));
