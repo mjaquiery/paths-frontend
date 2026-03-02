@@ -208,6 +208,36 @@
           >
             {{ unsubscribing[path.path_id] ? 'Leaving…' : 'Unsubscribe' }}
           </ion-button>
+
+          <!-- Edit / Delete (owned paths only) -->
+          <template v-if="path.owner_user_id === currentUser.user_id">
+            <ion-button
+              slot="end"
+              size="small"
+              fill="outline"
+              color="primary"
+              @click="openShare(path)"
+            >
+              Share
+            </ion-button>
+            <ion-button
+              slot="end"
+              size="small"
+              fill="outline"
+              @click="openEdit(path)"
+            >
+              Edit
+            </ion-button>
+            <ion-button
+              slot="end"
+              size="small"
+              fill="outline"
+              color="danger"
+              @click="openDelete(path)"
+            >
+              Delete
+            </ion-button>
+          </template>
         </ion-item>
       </ion-list>
 
@@ -220,6 +250,32 @@
       />
     </div>
   </div>
+
+  <!-- Path edit modal -->
+  <PathEditModal
+    v-if="editingPath"
+    :is-open="showEditModal"
+    :path="editingPath"
+    @dismiss="showEditModal = false"
+    @updated="onPathUpdated"
+  />
+
+  <!-- Path delete modal -->
+  <PathDeleteModal
+    v-if="deletingPath"
+    :is-open="showDeleteModal"
+    :path="deletingPath"
+    @dismiss="showDeleteModal = false"
+    @deleted="onPathDeleted"
+  />
+
+  <!-- Path share modal -->
+  <PathShareModal
+    v-if="sharingPath"
+    :is-open="showShareModal"
+    :path="sharingPath"
+    @dismiss="showShareModal = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -256,6 +312,9 @@ import {
 } from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
 import PathSubscriptionManager from './PathSubscriptionManager.vue';
+import PathEditModal from './PathEditModal.vue';
+import PathDeleteModal from './PathDeleteModal.vue';
+import PathShareModal from './PathShareModal.vue';
 
 const props = defineProps<{
   currentUser: OAuthCallbackResponse | null;
@@ -286,6 +345,16 @@ const pendingInvitations = computed(
 // Unsubscribe
 const { mutateAsync: doDeleteSubscription } = useDeleteSubscription();
 const unsubscribing = ref<Record<string, boolean>>({});
+
+// Edit / delete path
+const showEditModal = ref(false);
+const editingPath = ref<PathResponse | null>(null);
+const showDeleteModal = ref(false);
+const deletingPath = ref<PathResponse | null>(null);
+
+// Share path
+const showShareModal = ref(false);
+const sharingPath = ref<PathResponse | null>(null);
 
 const expanded = ref(false);
 const showCreateForm = ref(false);
@@ -476,6 +545,34 @@ async function unsubscribe(pathId: string) {
   } finally {
     unsubscribing.value[pathId] = false;
   }
+}
+
+function openEdit(path: PathResponse) {
+  editingPath.value = path;
+  showEditModal.value = true;
+}
+
+function openShare(path: PathResponse) {
+  sharingPath.value = path;
+  showShareModal.value = true;
+}
+
+function onPathUpdated(_updated: PathResponse) {
+  editingPath.value = null;
+  void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+  // Refetch so the chip bar reflects the new title/colour immediately
+  void refetch();
+}
+
+function openDelete(path: PathResponse) {
+  deletingPath.value = path;
+  showDeleteModal.value = true;
+}
+
+function onPathDeleted() {
+  deletingPath.value = null;
+  void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+  void refetch();
 }
 
 function hexToRgba(hex: string, alpha: number): string {
