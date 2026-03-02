@@ -215,6 +215,15 @@
               slot="end"
               size="small"
               fill="outline"
+              color="primary"
+              @click="openShare(path)"
+            >
+              Share
+            </ion-button>
+            <ion-button
+              slot="end"
+              size="small"
+              fill="outline"
               @click="openEdit(path)"
             >
               Edit
@@ -259,6 +268,14 @@
     @dismiss="showDeleteModal = false"
     @deleted="onPathDeleted"
   />
+
+  <!-- Path share modal -->
+  <PathShareModal
+    v-if="sharingPath"
+    :is-open="showShareModal"
+    :path="sharingPath"
+    @dismiss="showShareModal = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -297,6 +314,7 @@ import { usePaths } from '../composables/usePaths';
 import PathSubscriptionManager from './PathSubscriptionManager.vue';
 import PathEditModal from './PathEditModal.vue';
 import PathDeleteModal from './PathDeleteModal.vue';
+import PathShareModal from './PathShareModal.vue';
 
 const props = defineProps<{
   currentUser: OAuthCallbackResponse | null;
@@ -333,6 +351,10 @@ const showEditModal = ref(false);
 const editingPath = ref<PathResponse | null>(null);
 const showDeleteModal = ref(false);
 const deletingPath = ref<PathResponse | null>(null);
+
+// Share path
+const showShareModal = ref(false);
+const sharingPath = ref<PathResponse | null>(null);
 
 const expanded = ref(false);
 const showCreateForm = ref(false);
@@ -528,6 +550,11 @@ async function unsubscribe(pathId: string) {
 function openEdit(path: PathResponse) {
   editingPath.value = path;
   showEditModal.value = true;
+}
+
+function openShare(path: PathResponse) {
+  sharingPath.value = path;
+  showShareModal.value = true;
 }
 
 function onPathUpdated(_updated: PathResponse) {
