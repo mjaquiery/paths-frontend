@@ -18,7 +18,11 @@
         {{ currentEntry.pathTitle }} &mdash; {{ currentEntry.day }}
       </p>
       <p class="entry-detail-content">
-        {{ currentEntry.content || '(no text)' }}
+        {{
+          currentEntry.content === undefined
+            ? 'Fetching...'
+            : currentEntry.content || '(no text)'
+        }}
       </p>
       <div
         v-if="currentEntry.images && currentEntry.images.length > 0"
@@ -81,7 +85,7 @@ export interface EntryDetailData {
   pathTitle: string;
   color: string;
   day: string;
-  content: string;
+  content: string | undefined;
   hasImages: boolean;
   images?: ImageResponse[];
 }
@@ -114,7 +118,7 @@ const currentEntry = computed<EntryDetailData>(
       pathTitle: '',
       color: '',
       day: '',
-      content: '',
+      content: undefined,
       hasImages: false,
       images: [],
     },

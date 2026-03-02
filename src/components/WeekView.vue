@@ -63,7 +63,9 @@
               :title="pe.pathTitle"
             ></span>
             <span class="day-entry-preview">{{
-              pe.preview || '(no text)'
+              pe.preview === undefined
+                ? 'Fetching...'
+                : pe.preview || '(no text)'
             }}</span>
             <span
               v-if="pe.hasImages"
@@ -160,7 +162,7 @@ interface DayPathEntry {
   pathId: string;
   pathTitle: string;
   color: string;
-  preview: string;
+  preview: string | undefined;
   hasImages: boolean;
   images?: ImageResponse[];
 }
@@ -194,7 +196,7 @@ const weekDays = computed<DayInfo[]>(() => {
           pathId,
           pathTitle: path.title,
           color: path.color,
-          preview: entry.content ?? '',
+          preview: entry.content,
           hasImages: (entry.image_filenames?.length ?? 0) > 0,
           images: entry.images,
         });
