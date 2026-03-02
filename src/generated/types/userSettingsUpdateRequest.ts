@@ -5,8 +5,6 @@
  * OpenAPI spec version: 0.3.1
  */
 
-export interface OAuthCallbackResponse {
-  token: string;
-  user_id: string;
-  display_name: string | null;
+export interface UserSettingsUpdateRequest {
+  settings_json?: string | null;
 }
