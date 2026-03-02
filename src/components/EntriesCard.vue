@@ -24,6 +24,9 @@
                 v-model="newEntry.content"
                 placeholder="Entry content"
                 :rows="4"
+                autocapitalize="sentences"
+                autocorrect="on"
+                spellcheck="true"
               />
             </ion-item>
             <ion-button
