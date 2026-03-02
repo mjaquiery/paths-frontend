@@ -234,18 +234,28 @@ async function submit() {
 
     // Persist image filenames locally so WeekView can show thumbnails
     if (image_filenames.length > 0 && entry?.id) {
-      const cached = await db.entryContent.get(entry.id);
-      if (cached) {
-        await db.entryContent.put({ ...cached, image_filenames });
-      } else {
-        await db.entryContent.put({
-          id: entry.id,
-          path_id: selectedPathId.value,
-          day: day.value,
-          edit_id: entry.edit_id ?? '',
-          content: content.value,
-          image_filenames,
-        });
+      try {
+        const cacheKey = `${selectedPathId.value}:${entry.id}`;
+        const cached = await db.entryContent.get(cacheKey);
+        if (cached) {
+          await db.entryContent.put({
+            ...cached,
+            cache_key: cacheKey,
+            image_filenames,
+          });
+        } else {
+          await db.entryContent.put({
+            cache_key: cacheKey,
+            id: entry.id,
+            path_id: selectedPathId.value,
+            day: day.value,
+            edit_id: entry.edit_id ?? '',
+            content: content.value,
+            image_filenames,
+          });
+        }
+      } catch {
+        // IndexedDB may be unavailable; image filenames will not be cached locally.
       }
     }
 
