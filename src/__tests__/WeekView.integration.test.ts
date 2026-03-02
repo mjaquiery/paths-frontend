@@ -367,6 +367,60 @@ describe('WeekView – image thumbnail indicator', () => {
   });
 });
 
+describe('WeekView – content placeholder text', () => {
+  it('shows "Fetching..." when entry content is undefined (not yet loaded)', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const todayStr = today();
+
+    const pathEntries: PathEntries[] = [
+      {
+        pathId: 'p1',
+        entries: [
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed1',
+            content: undefined,
+          },
+        ],
+      },
+    ];
+
+    const wrapper = mountWeekView([path], pathEntries);
+    await nextTick();
+
+    expect(wrapper.html()).toContain('Fetching...');
+    expect(wrapper.html()).not.toContain('(no text)');
+  });
+
+  it('shows "(no text)" when entry content is an empty string (fetched but empty)', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const todayStr = today();
+
+    const pathEntries: PathEntries[] = [
+      {
+        pathId: 'p1',
+        entries: [
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 'ed1',
+            content: '',
+          },
+        ],
+      },
+    ];
+
+    const wrapper = mountWeekView([path], pathEntries);
+    await nextTick();
+
+    expect(wrapper.html()).toContain('(no text)');
+    expect(wrapper.html()).not.toContain('Fetching...');
+  });
+});
+
 describe('WeekView – entry detail modal', () => {
   function makeDetailPathEntries(todayStr: string): PathEntries[] {
     return [

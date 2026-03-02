@@ -16,6 +16,11 @@
           <span v-if="primaryEntry.content" class="spotlight-preview">{{
             primaryEntry.content
           }}</span>
+          <span
+            v-else-if="primaryEntry.content === undefined"
+            class="spotlight-preview spotlight-preview--empty"
+            >Fetching...</span
+          >
           <span v-else class="spotlight-preview spotlight-preview--empty"
             >(no text)</span
           >
@@ -83,7 +88,7 @@ const spotlightYears = computed<YearEntry[]>(() => {
         entry.day.slice(5) === todayMonthDay &&
         Number(entry.day.slice(0, 4)) < todayYear
       ) {
-        const content = props.entryContent?.[entry.id]?.content;
+        const content = entry.content;
         results.push({
           year: Number(entry.day.slice(0, 4)),
           entryId: entry.id,
