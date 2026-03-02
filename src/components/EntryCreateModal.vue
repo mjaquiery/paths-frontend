@@ -41,6 +41,9 @@
           placeholder="Write your entry…"
           :rows="6"
           auto-grow
+          autocapitalize="sentences"
+          autocorrect="on"
+          spellcheck="true"
         />
       </ion-item>
 
