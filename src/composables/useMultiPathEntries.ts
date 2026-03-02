@@ -81,19 +81,23 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
           if (contentCache.value[cacheKey]?.editId === entry.edit_id) continue;
 
           // Try Dexie cache first.
-          const cached = await db.entryContent.get(cacheKey);
-          if (cached && cached.edit_id === entry.edit_id) {
-            const cachedImages = await db.entryImages
-              .where('entry_id')
-              .equals(entry.id)
-              .toArray();
-            contentCache.value[cacheKey] = {
-              editId: entry.edit_id,
-              content: cached.content,
-              image_filenames: cached.image_filenames,
-              images: cachedImages,
-            };
-            continue;
+          try {
+            const cached = await db.entryContent.get(cacheKey);
+            if (cached && cached.edit_id === entry.edit_id) {
+              const cachedImages = await db.entryImages
+                .where('entry_id')
+                .equals(entry.id)
+                .toArray();
+              contentCache.value[cacheKey] = {
+                editId: entry.edit_id,
+                content: cached.content,
+                image_filenames: cached.image_filenames,
+                images: cachedImages,
+              };
+              continue;
+            }
+          } catch {
+            // IndexedDB may be unavailable; fall through to fetch from API.
           }
 
           // Fetch from API (content and images independently so a partial
@@ -117,32 +121,36 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
           const image_filenames = images.map((img) => img.filename);
 
           // Persist to Dexie.
-          await db.entryContent.put({
-            cache_key: cacheKey,
-            id: entry.id,
-            path_id: entry.path_id,
-            day: entry.day,
-            edit_id: entry.edit_id,
-            content,
-            image_filenames,
-          });
-          if (imagesResult.status === 'fulfilled') {
-            await db.entryImages.where('entry_id').equals(entry.id).delete();
-            if (images.length > 0) {
-              await db.entryImages.bulkPut(
-                images.map(
-                  (img): EntryImageCache => ({
-                    id: img.id,
-                    entry_id: img.entry_id,
-                    filename: img.filename,
-                    status: img.status,
-                    strip_metadata: img.strip_metadata,
-                    content_type: img.content_type,
-                    byte_size: img.byte_size,
-                  }),
-                ),
-              );
+          try {
+            await db.entryContent.put({
+              cache_key: cacheKey,
+              id: entry.id,
+              path_id: entry.path_id,
+              day: entry.day,
+              edit_id: entry.edit_id,
+              content,
+              image_filenames,
+            });
+            if (imagesResult.status === 'fulfilled') {
+              await db.entryImages.where('entry_id').equals(entry.id).delete();
+              if (images.length > 0) {
+                await db.entryImages.bulkPut(
+                  images.map(
+                    (img): EntryImageCache => ({
+                      id: img.id,
+                      entry_id: img.entry_id,
+                      filename: img.filename,
+                      status: img.status,
+                      strip_metadata: img.strip_metadata,
+                      content_type: img.content_type,
+                      byte_size: img.byte_size,
+                    }),
+                  ),
+                );
+              }
             }
+          } catch {
+            // IndexedDB may be unavailable; content will not be cached locally.
           }
 
           contentCache.value[cacheKey] = {

@@ -77,12 +77,20 @@ db.version(6).stores({
 });
 
 export async function isPathHidden(pathId: string) {
-  const pref = await db.pathPreferences.get(pathId);
-  return pref?.hidden ?? false;
+  try {
+    const pref = await db.pathPreferences.get(pathId);
+    return pref?.hidden ?? false;
+  } catch {
+    return false;
+  }
 }
 
 export async function setPathHidden(pathId: string, hidden: boolean) {
-  await db.pathPreferences.put({ pathId, hidden });
+  try {
+    await db.pathPreferences.put({ pathId, hidden });
+  } catch {
+    // IndexedDB may be unavailable; preference change is not persisted.
+  }
 }
 
 const PATH_ORDER_KEY = 'pathOrder';
