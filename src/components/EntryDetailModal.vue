@@ -17,13 +17,13 @@
         ></span>
         {{ currentEntry.pathTitle }} &mdash; {{ currentEntry.day }}
       </p>
-      <p class="entry-detail-content">
-        {{
-          currentEntry.content === undefined
-            ? 'Fetching...'
-            : currentEntry.content || '(no text)'
-        }}
+      <p v-if="currentEntry.content === undefined" class="entry-detail-content">
+        Fetching...
       </p>
+      <p v-else-if="!currentEntry.content" class="entry-detail-content">
+        (no text)
+      </p>
+      <MarkdownContent v-else :content="currentEntry.content" />
       <div
         v-if="currentEntry.images && currentEntry.images.length > 0"
         class="entry-detail-images"
@@ -78,6 +78,7 @@ import {
 import { computed, ref, watch } from 'vue';
 import type { ImageResponse } from '../generated/types';
 import EntryImage from './EntryImage.vue';
+import MarkdownContent from './MarkdownContent.vue';
 
 export interface EntryDetailData {
   pathId: string;
