@@ -36,15 +36,38 @@
       <!-- Text content -->
       <ion-item>
         <ion-label position="stacked">Content *</ion-label>
+        <div class="content-tabs">
+          <button
+            class="content-tab"
+            :class="{ active: contentTab === 'write' }"
+            type="button"
+            @click="contentTab = 'write'"
+          >
+            Write
+          </button>
+          <button
+            class="content-tab"
+            :class="{ active: contentTab === 'preview' }"
+            type="button"
+            @click="contentTab = 'preview'"
+          >
+            Preview
+          </button>
+        </div>
         <ion-textarea
+          v-if="contentTab === 'write'"
           v-model="content"
-          placeholder="Write your entry…"
+          placeholder="Write your entry… (markdown supported)"
           :rows="6"
           auto-grow
           autocapitalize="sentences"
           autocorrect="on"
           spellcheck="true"
         />
+        <div v-else class="content-preview">
+          <MarkdownContent v-if="content" :content="content" />
+          <p v-else class="content-preview-empty">(nothing to preview)</p>
+        </div>
       </ion-item>
 
       <!-- Image upload -->
@@ -109,6 +132,7 @@ import {
 } from '../generated/apiClient';
 import { extractErrorMessage } from '../lib/errors';
 import { db } from '../lib/db';
+import MarkdownContent from './MarkdownContent.vue';
 
 const DEFAULT_IMAGE_CONTENT_TYPE = 'image/jpeg';
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -146,6 +170,7 @@ const day = ref('');
 const content = ref('');
 const error = ref('');
 const pendingImages = ref<File[]>([]);
+const contentTab = ref<'write' | 'preview'>('write');
 
 const ownedPaths = computed(() =>
   props.paths.filter((p) => p.owner_user_id === props.currentUserId),
@@ -162,6 +187,7 @@ watch(
       content.value = '';
       error.value = '';
       pendingImages.value = [];
+      contentTab.value = 'write';
     }
   },
 );
@@ -301,5 +327,39 @@ async function submit() {
   background: var(--ion-color-light, #f4f4f4);
   border-radius: 4px;
   padding: 2px 6px;
+}
+
+.content-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 8px;
+  width: 100%;
+}
+
+.content-tab {
+  background: none;
+  border: 1px solid var(--ion-color-medium, #888);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 12px;
+}
+
+.content-tab.active {
+  background: var(--ion-color-primary, #3880ff);
+  border-color: var(--ion-color-primary, #3880ff);
+  color: #fff;
+}
+
+.content-preview {
+  min-height: 6em;
+  padding: 4px 0;
+  width: 100%;
+}
+
+.content-preview-empty {
+  color: var(--ion-color-medium, #888);
+  font-size: 0.9rem;
+  margin: 0;
 }
 </style>
