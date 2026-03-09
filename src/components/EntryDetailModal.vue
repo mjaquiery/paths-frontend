@@ -4,6 +4,22 @@
       <ion-toolbar>
         <ion-title>{{ currentEntry.day || 'Entry' }}</ion-title>
         <ion-buttons slot="end">
+          <ion-button
+            v-if="currentEntry.canEdit"
+            color="primary"
+            aria-label="Edit entry"
+            @click="$emit('edit', currentEntry)"
+          >
+            Edit
+          </ion-button>
+          <ion-button
+            v-if="currentEntry.canEdit"
+            color="danger"
+            aria-label="Delete entry"
+            @click="$emit('delete', currentEntry)"
+          >
+            Delete
+          </ion-button>
           <ion-button @click="$emit('dismiss')">Close</ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -89,6 +105,10 @@ export interface EntryDetailData {
   content: string | undefined;
   hasImages: boolean;
   images?: ImageResponse[];
+  /** Current edit revision for optimistic locking. Required when canEdit is true. */
+  edit_id?: number;
+  /** Whether the current user may edit or delete this entry. */
+  canEdit?: boolean;
 }
 
 const props = defineProps<{
@@ -99,6 +119,8 @@ const props = defineProps<{
 
 defineEmits<{
   dismiss: [];
+  edit: [entry: EntryDetailData];
+  delete: [entry: EntryDetailData];
 }>();
 
 const currentIndex = ref(props.startIndex);
@@ -122,6 +144,8 @@ const currentEntry = computed<EntryDetailData>(
       content: undefined,
       hasImages: false,
       images: [],
+      edit_id: undefined,
+      canEdit: false,
     },
 );
 </script>

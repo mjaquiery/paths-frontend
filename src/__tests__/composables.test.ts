@@ -107,7 +107,7 @@ describe('useEntries', () => {
 
   it('fetches entries when pathId is set', async () => {
     vi.mocked(customFetch).mockResolvedValue({
-      data: [{ id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 'edit-1' }],
+      data: [{ id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 1 }],
       status: 200,
       headers: new Headers(),
     });
@@ -143,7 +143,7 @@ describe('useEntryContent', () => {
         id: 'e1',
         path_id: 'p1',
         day: '2024-01-01',
-        edit_id: 'edit-1',
+        edit_id: 1,
         content: 'hello',
       },
       status: 200,
@@ -281,7 +281,7 @@ describe('useMultiPathEntries', () => {
             id: entryId,
             path_id: pathId,
             day: '2024-01-01',
-            edit_id: 'ed1',
+            edit_id: 1,
             content: `Content for ${entryId}`,
           },
           status: 200,
@@ -290,18 +290,14 @@ describe('useMultiPathEntries', () => {
       }
       if (url.includes('/v1/paths/p1/entries')) {
         return Promise.resolve({
-          data: [
-            { id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 'ed1' },
-          ],
+          data: [{ id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 1 }],
           status: 200,
           headers: new Headers(),
         });
       }
       if (url.includes('/v1/paths/p2/entries')) {
         return Promise.resolve({
-          data: [
-            { id: 'e2', path_id: 'p2', day: '2024-01-02', edit_id: 'ed2' },
-          ],
+          data: [{ id: 'e2', path_id: 'p2', day: '2024-01-02', edit_id: 2 }],
           status: 200,
           headers: new Headers(),
         });
@@ -384,7 +380,7 @@ describe('useMultiPathEntries', () => {
             id: entryId,
             path_id: pathId,
             day: '2024-06-01',
-            edit_id: 'ed1',
+            edit_id: 1,
             content: `Content for ${pathId}`,
           },
           status: 200,
@@ -393,18 +389,14 @@ describe('useMultiPathEntries', () => {
       }
       if (url.includes('/v1/paths/p1/entries')) {
         return Promise.resolve({
-          data: [
-            { id: 'e1', path_id: 'p1', day: '2024-06-01', edit_id: 'ed1' },
-          ],
+          data: [{ id: 'e1', path_id: 'p1', day: '2024-06-01', edit_id: 1 }],
           status: 200,
           headers: new Headers(),
         });
       }
       if (url.includes('/v1/paths/p2/entries')) {
         return Promise.resolve({
-          data: [
-            { id: 'e2', path_id: 'p2', day: '2024-06-01', edit_id: 'ed1' },
-          ],
+          data: [{ id: 'e2', path_id: 'p2', day: '2024-06-01', edit_id: 1 }],
           status: 200,
           headers: new Headers(),
         });
@@ -473,7 +465,7 @@ describe('useMultiPathEntries', () => {
             id: 'same-slug',
             path_id: 'p1',
             day: '2024-03-01',
-            edit_id: 'ed-p1',
+            edit_id: 1,
             content: 'Content from p1',
           },
           status: 200,
@@ -486,7 +478,7 @@ describe('useMultiPathEntries', () => {
             id: 'same-slug',
             path_id: 'p2',
             day: '2024-03-01',
-            edit_id: 'ed-p2',
+            edit_id: 2,
             content: 'Content from p2',
           },
           status: 200,
@@ -500,7 +492,7 @@ describe('useMultiPathEntries', () => {
               id: 'same-slug',
               path_id: 'p1',
               day: '2024-03-01',
-              edit_id: 'ed-p1',
+              edit_id: 1,
             },
           ],
           status: 200,
@@ -514,7 +506,7 @@ describe('useMultiPathEntries', () => {
               id: 'same-slug',
               path_id: 'p2',
               day: '2024-03-01',
-              edit_id: 'ed-p2',
+              edit_id: 2,
             },
           ],
           status: 200,
