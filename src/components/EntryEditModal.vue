@@ -426,6 +426,7 @@ function onDismiss() {
   background: none;
   border: 1px solid var(--ion-color-medium, #888);
   border-radius: 4px;
+  color: var(--ion-text-color, inherit);
   cursor: pointer;
   font-size: 0.85rem;
   padding: 2px 12px;
