@@ -3,7 +3,7 @@
   "info": {
     "title": "paths backend API",
     "summary": "Path-centric backend API for Shared Journal PWA",
-    "version": "0.3.1"
+    "version": "0.3.2"
   },
   "paths": {
     "/health": {
@@ -1956,7 +1956,7 @@
             "title": "Day"
           },
           "edit_id": {
-            "type": "string",
+            "type": "integer",
             "title": "Edit Id"
           },
           "content": {
@@ -1983,7 +1983,7 @@
         "example": {
           "content": "Feeling stronger today. Managed a 20-minute walk.",
           "day": "2024-03-15",
-          "edit_id": "a3f7b2c1d4e5f6789012345678901234abcdef1234567890123456789012abcd",
+          "edit_id": 1,
           "id": "2026_02_20_0",
           "image_filenames": [
             "morning-walk.jpg"
@@ -2041,7 +2041,7 @@
             "title": "Day"
           },
           "edit_id": {
-            "type": "string",
+            "type": "integer",
             "title": "Edit Id"
           }
         },
@@ -2055,7 +2055,7 @@
         "title": "EntryResponse",
         "example": {
           "day": "2024-03-15",
-          "edit_id": "a3f7b2c1d4e5f6789012345678901234abcdef1234567890123456789012abcd",
+          "edit_id": 1,
           "id": "2026_02_20_0",
           "path_id": "AB3X7K"
         }
@@ -2063,10 +2063,8 @@
       "EntryUpdateRequest": {
         "properties": {
           "expected_edit_id": {
-            "type": "string",
-            "maxLength": 64,
-            "minLength": 64,
-            "pattern": "^[a-f0-9]{64}$",
+            "type": "integer",
+            "minimum": 1.0,
             "title": "Expected Edit Id"
           },
           "content": {
@@ -2090,7 +2088,7 @@
         "title": "EntryUpdateRequest",
         "example": {
           "content": "Feeling stronger today. Managed a 20-minute walk and felt great.",
-          "expected_edit_id": "a3f7b2c1d4e5f6789012345678901234abcdef1234567890123456789012abcd",
+          "expected_edit_id": 1,
           "image_filenames": [
             "morning-walk.jpg"
           ]
@@ -2653,11 +2651,11 @@
             "$ref": "#/components/schemas/ErrorDetail"
           },
           "expected_edit_id": {
-            "type": "string",
+            "type": "integer",
             "title": "Expected Edit Id"
           },
           "current_edit_id": {
-            "type": "string",
+            "type": "integer",
             "title": "Current Edit Id"
           }
         },
@@ -2669,12 +2667,12 @@
         ],
         "title": "OptimisticLockErrorResponse",
         "example": {
-          "current_edit_id": "d4e5f6a7b8c90123def023456789012334bcdef01234567890123456789012ab",
+          "current_edit_id": 2,
           "error": {
             "code": "optimistic_lock_conflict",
             "message": "Entry was modified by another request."
           },
-          "expected_edit_id": "a3f7b2c1d4e5f6789012345678901234abcdef1234567890123456789012abcd"
+          "expected_edit_id": 1
         }
       },
       "OptimisticLockHTTPErrorResponse": {
@@ -2690,12 +2688,12 @@
         "title": "OptimisticLockHTTPErrorResponse",
         "example": {
           "detail": {
-            "current_edit_id": "d4e5f6a7b8c90123def023456789012334bcdef01234567890123456789012ab",
+            "current_edit_id": 2,
             "error": {
               "code": "optimistic_lock_conflict",
               "message": "Entry was modified by another request."
             },
-            "expected_edit_id": "a3f7b2c1d4e5f6789012345678901234abcdef1234567890123456789012abcd"
+            "expected_edit_id": 1
           }
         }
       },
