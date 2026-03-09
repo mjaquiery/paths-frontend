@@ -213,7 +213,9 @@ describe('EntryEditModal – image management', () => {
     const wrapper = await mountEditModal();
 
     // Click the ✕ button for the first image
-    const removeBtn = wrapper.find('button[aria-label="Remove image morning-walk.jpg"]');
+    const removeBtn = wrapper.find(
+      'button[aria-label="Remove image morning-walk.jpg"]',
+    );
     expect(removeBtn.exists()).toBe(true);
     await removeBtn.trigger('click');
     await nextTick();
@@ -232,7 +234,9 @@ describe('EntryEditModal – image management', () => {
     await nextTick();
 
     // Now restore it
-    const restoreBtn = wrapper.find('button[aria-label="Restore image morning-walk.jpg"]');
+    const restoreBtn = wrapper.find(
+      'button[aria-label="Restore image morning-walk.jpg"]',
+    );
     expect(restoreBtn.exists()).toBe(true);
     await restoreBtn.trigger('click');
     await nextTick();
@@ -246,10 +250,13 @@ describe('EntryEditModal – submit behaviour', () => {
   it('calls PUT with expected_edit_id and updated content', async () => {
     const requests: Request[] = [];
     server.use(
-      http.put('*/v1/paths/:pathCode/entries/:entrySlug', async ({ request }) => {
-        requests.push(request.clone());
-        return HttpResponse.json(updatedEntry, { status: 200 });
-      }),
+      http.put(
+        '*/v1/paths/:pathCode/entries/:entrySlug',
+        async ({ request }) => {
+          requests.push(request.clone());
+          return HttpResponse.json(updatedEntry, { status: 200 });
+        },
+      ),
     );
 
     const wrapper = await mountEditModal(entryNoImage);
@@ -276,10 +283,13 @@ describe('EntryEditModal – submit behaviour', () => {
   it('sends only the remaining image filenames after removal', async () => {
     const requests: Request[] = [];
     server.use(
-      http.put('*/v1/paths/:pathCode/entries/:entrySlug', async ({ request }) => {
-        requests.push(request.clone());
-        return HttpResponse.json(updatedEntry, { status: 200 });
-      }),
+      http.put(
+        '*/v1/paths/:pathCode/entries/:entrySlug',
+        async ({ request }) => {
+          requests.push(request.clone());
+          return HttpResponse.json(updatedEntry, { status: 200 });
+        },
+      ),
     );
 
     const wrapper = await mountEditModal(entryWithImage);
