@@ -28,17 +28,18 @@
       <p v-if="exportJob?.state === 'expired'">
         Export has expired. Trigger a new one.
       </p>
+      <p v-if="downloadError" style="color: var(--ion-color-danger)">
+        Download failed: {{ downloadError }}
+      </p>
       <div v-if="jsonDownloadUrl || imagesDownloadUrl">
         <ion-button
           v-if="jsonDownloadUrl"
-          :href="jsonDownloadUrl"
-          target="_blank"
+          @click="handleDownload(jsonDownloadUrl, 'json')"
           >Download JSON</ion-button
         >
         <ion-button
           v-if="imagesDownloadUrl"
-          :href="imagesDownloadUrl"
-          target="_blank"
+          @click="handleDownload(imagesDownloadUrl, 'zip')"
           >Download images</ion-button
         >
       </div>
@@ -72,7 +73,11 @@ import {
   downloadExportJson,
   downloadExportImages,
 } from '../generated/apiClient';
-import { isExportReady, isExportTerminal } from '../utils/export';
+import {
+  isExportReady,
+  isExportTerminal,
+  downloadFileFromUrl,
+} from '../utils/export';
 
 defineProps<{ paths: PathResponse[] }>();
 
@@ -80,7 +85,24 @@ const selectedForExport = ref(new Set<string>());
 const exportJob = ref<ExportJobResponse | null>(null);
 const jsonDownloadUrl = ref('');
 const imagesDownloadUrl = ref('');
+const downloadError = ref('');
 const { mutateAsync: createExportMutation } = useCreateExport();
+
+function todayYYYYMMDD(): string {
+  return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+async function handleDownload(url: string, extension: string) {
+  downloadError.value = '';
+  try {
+    await downloadFileFromUrl(
+      url,
+      `paths_backup_${todayYYYYMMDD()}.${extension}`,
+    );
+  } catch (e) {
+    downloadError.value = e instanceof Error ? e.message : String(e);
+  }
+}
 
 function setExportPath(pathId: string, event: CheckboxCustomEvent) {
   if (event.detail.checked) selectedForExport.value.add(pathId);
