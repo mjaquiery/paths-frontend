@@ -112,7 +112,7 @@ const createdEntry = {
   id: 'entry-1',
   path_id: 'path-1',
   day: '2024-06-01',
-  edit_id: 'edit-1',
+  edit_id: 1,
 };
 
 const uploadUrlResponse = {

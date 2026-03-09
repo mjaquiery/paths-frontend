@@ -130,7 +130,7 @@ describe('EntriesCard', () => {
               id: 'e1',
               path_id: 'p1',
               day: '2024-01-01',
-              edit_id: 'ed1',
+              edit_id: 1,
             },
             status: 201,
             headers: new Headers(),

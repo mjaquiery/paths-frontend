@@ -15,7 +15,7 @@ export interface EntryContentCache {
   id: string;
   path_id: string;
   day: string;
-  edit_id: string;
+  edit_id: number;
   content: string;
   image_filenames?: string[];
 }

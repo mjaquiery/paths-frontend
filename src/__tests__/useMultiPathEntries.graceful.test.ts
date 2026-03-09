@@ -58,9 +58,7 @@ describe('useMultiPathEntries – Dexie unavailable', () => {
       }
       if (url === '/v1/paths/p1/entries') {
         return Promise.resolve({
-          data: [
-            { id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 'ed1' },
-          ],
+          data: [{ id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 1 }],
           status: 200,
           headers: new Headers(),
         });
@@ -71,7 +69,7 @@ describe('useMultiPathEntries – Dexie unavailable', () => {
             id: 'e1',
             path_id: 'p1',
             day: '2024-01-01',
-            edit_id: 'ed1',
+            edit_id: 1,
             content: 'Remote content',
           },
           status: 200,

@@ -255,7 +255,7 @@ async function submit() {
       data: { day: day.value, content: content.value },
     });
 
-    const entry = entryResp.data as { id: string; edit_id: string } | undefined;
+    const entry = entryResp.data as { id: string; edit_id: number } | undefined;
     let image_filenames: string[] = [];
     if (pendingImages.value.length > 0 && entry?.id) {
       image_filenames = await uploadImages(selectedPathId.value, entry.id);
@@ -272,13 +272,13 @@ async function submit() {
             cache_key: cacheKey,
             image_filenames,
           });
-        } else {
+        } else if (entry.edit_id != null) {
           await db.entryContent.put({
             cache_key: cacheKey,
             id: entry.id,
             path_id: selectedPathId.value,
             day: day.value,
-            edit_id: entry.edit_id ?? '',
+            edit_id: entry.edit_id,
             content: content.value,
             image_filenames,
           });

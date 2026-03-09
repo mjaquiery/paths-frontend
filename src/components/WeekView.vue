@@ -109,18 +109,43 @@
     :entries="detailDayEntries"
     :start-index="detailStartIndex"
     @dismiss="closeDetail"
+    @edit="openEdit"
+    @delete="confirmDelete"
+  />
+
+  <!-- Entry edit modal -->
+  <EntryEditModal
+    v-if="editEntry"
+    :is-open="showEditModal"
+    :entry="editEntry"
+    @dismiss="closeEdit"
+    @saved="onEntrySaved"
+  />
+
+  <!-- Entry delete confirmation -->
+  <ion-alert
+    :is-open="showDeleteAlert"
+    header="Delete Entry"
+    :message="`Delete the entry for ${deleteEntry?.day ?? ''}? This action cannot be undone.`"
+    :buttons="deleteAlertButtons"
+    @didDismiss="showDeleteAlert = false"
   />
 </template>
 
 <script setup lang="ts">
-import { IonButton } from '@ionic/vue';
+import { IonButton, IonAlert } from '@ionic/vue';
 import { computed, ref } from 'vue';
 
 import type { PathResponse, ImageResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
+import { useDeleteEntry } from '../generated/apiClient';
+import { extractErrorMessage } from '../lib/errors';
+import { db } from '../lib/db';
 import EntryCreateModal from './EntryCreateModal.vue';
 import EntryDetailModal from './EntryDetailModal.vue';
+import EntryEditModal from './EntryEditModal.vue';
 import type { EntryDetailData } from './EntryDetailModal.vue';
+import { useQueryClient } from '@tanstack/vue-query';
 
 const props = defineProps<{
   visiblePaths: PathResponse[];
@@ -165,6 +190,8 @@ interface DayPathEntry {
   preview: string | undefined;
   hasImages: boolean;
   images?: ImageResponse[];
+  edit_id?: number;
+  canEdit: boolean;
 }
 
 interface DayInfo {
@@ -191,6 +218,8 @@ const weekDays = computed<DayInfo[]>(() => {
       if (!path) continue;
       const dayEntries = entries.filter((e) => e.day === dateStr);
       for (const entry of dayEntries) {
+        const canEdit =
+          !!props.currentUserId && path.owner_user_id === props.currentUserId;
         pathEntries.push({
           entryId: entry.id,
           pathId,
@@ -199,6 +228,8 @@ const weekDays = computed<DayInfo[]>(() => {
           preview: entry.content,
           hasImages: (entry.image_filenames?.length ?? 0) > 0,
           images: entry.images,
+          edit_id: entry.edit_id,
+          canEdit,
         });
       }
     }
@@ -241,6 +272,8 @@ function openDetail(
     content: e.preview,
     hasImages: e.hasImages,
     images: e.images,
+    edit_id: e.edit_id,
+    canEdit: e.canEdit,
   }));
   detailStartIndex.value = dayEntries.indexOf(pe);
   showDetailModal.value = true;
@@ -249,6 +282,79 @@ function openDetail(
 function closeDetail() {
   showDetailModal.value = false;
   detailDayEntries.value = [];
+}
+
+const showEditModal = ref(false);
+const editEntry = ref<EntryDetailData | null>(null);
+
+function openEdit(entry: EntryDetailData) {
+  editEntry.value = entry;
+  showDetailModal.value = false;
+  showEditModal.value = true;
+}
+
+function closeEdit() {
+  showEditModal.value = false;
+  editEntry.value = null;
+}
+
+function onEntrySaved() {
+  emit('entryCreated');
+}
+
+const queryClient = useQueryClient();
+const { mutateAsync: doDeleteEntry } = useDeleteEntry();
+const showDeleteAlert = ref(false);
+const deleteEntry = ref<EntryDetailData | null>(null);
+const deleteError = ref('');
+
+const deleteAlertButtons = computed(() => [
+  {
+    text: 'Cancel',
+    role: 'cancel',
+  },
+  {
+    text: 'Delete',
+    role: 'destructive',
+    handler: () => {
+      void performDelete();
+    },
+  },
+]);
+
+function confirmDelete(entry: EntryDetailData) {
+  deleteEntry.value = entry;
+  showDetailModal.value = false;
+  showDeleteAlert.value = true;
+}
+
+async function performDelete() {
+  if (!deleteEntry.value) return;
+  deleteError.value = '';
+  try {
+    await doDeleteEntry({
+      pathCode: deleteEntry.value.pathId,
+      entrySlug: deleteEntry.value.entryId,
+    });
+    void queryClient.invalidateQueries({
+      queryKey: ['v1', 'paths', deleteEntry.value.pathId, 'entries'],
+    });
+    try {
+      const cacheKey = `${deleteEntry.value.pathId}:${deleteEntry.value.entryId}`;
+      await db.entryContent.delete(cacheKey);
+      await db.entryImages
+        .where('entry_id')
+        .equals(deleteEntry.value.entryId)
+        .delete();
+    } catch {
+      // IndexedDB may be unavailable.
+    }
+    emit('entryCreated');
+  } catch (err: unknown) {
+    deleteError.value = extractErrorMessage(err) ?? 'Failed to delete entry.';
+  } finally {
+    deleteEntry.value = null;
+  }
 }
 
 function onEntryCreated() {

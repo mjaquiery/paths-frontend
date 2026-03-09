@@ -22,7 +22,7 @@ export interface PathEntries {
 
 /** Tracks which edit_id we last loaded content for, keyed by entry id. */
 interface ContentState {
-  editId: string;
+  editId: number;
   content?: string;
   image_filenames?: string[];
   images?: ImageResponse[];
