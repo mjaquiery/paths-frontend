@@ -40,7 +40,7 @@
     />
 
     <!-- ── Main content ── -->
-    <ion-content class="ion-padding-horizontal">
+    <ion-content ref="contentRef" class="ion-padding-horizontal">
       <!-- Previously on this day -->
       <OnThisDaySpotlight
         v-if="visiblePaths.length > 0"
@@ -133,7 +133,7 @@ import {
   IonCard,
   IonCardContent,
 } from '@ionic/vue';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 
 import PathsSelectorBar from '../components/PathsSelectorBar.vue';
@@ -174,6 +174,8 @@ const multiPathEntries = useMultiPathEntries(visiblePathIds);
 
 const showCreateModal = ref(false);
 
+const contentRef = ref<InstanceType<typeof IonContent> | null>(null);
+
 const canCreateAny = computed(
   () =>
     !!currentUser.value &&
@@ -191,6 +193,7 @@ onMounted(() => {
       localStorage.removeItem('user');
     }
   }
+  void nextTick(() => contentRef.value?.$el?.scrollToBottom(0));
 });
 
 async function loginWithGoogle() {
