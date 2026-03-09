@@ -9,6 +9,59 @@
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
+      <!-- Active invitations -->
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Active invitations</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p v-if="activeInvitations.length === 0" class="empty-msg">
+            No pending invitations.
+          </p>
+          <ion-list v-else>
+            <ion-item
+              v-for="inv in activeInvitations"
+              :key="inv.id"
+              class="inv-item"
+            >
+              <ion-label>
+                <h3>Path: {{ inv.path_code }}</h3>
+                <p>Invited on {{ formatDate(inv.created_at) }}</p>
+              </ion-label>
+              <ion-button
+                slot="end"
+                size="small"
+                color="success"
+                :disabled="invBusy[inv.id]"
+                @click="acceptInv(inv.id)"
+              >
+                {{ invBusy[inv.id] ? 'Accepting…' : 'Accept' }}
+              </ion-button>
+              <ion-button
+                slot="end"
+                size="small"
+                color="medium"
+                fill="outline"
+                :disabled="invBusy[inv.id]"
+                @click="ignoreInv(inv.id)"
+              >
+                {{ invBusy[inv.id] ? 'Ignoring…' : 'Ignore' }}
+              </ion-button>
+              <ion-button
+                slot="end"
+                size="small"
+                color="danger"
+                fill="outline"
+                :disabled="invBusy[inv.id]"
+                @click="blockInv(inv.id, inv.inviter_user_id)"
+              >
+                Block sender
+              </ion-button>
+            </ion-item>
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
+
       <!-- Ignored invitations -->
       <ion-card>
         <ion-card-header>
@@ -103,6 +156,8 @@ import { ref, computed } from 'vue';
 import {
   useListInvitations,
   useAcceptInvitation,
+  useIgnoreInvitation,
+  useBlockInviter,
   useListBlocklist,
   useUnblockUser,
 } from '../generated/apiClient';
@@ -110,9 +165,16 @@ import {
 const { data: invitationsData, refetch: refetchInvitations } =
   useListInvitations();
 const { mutateAsync: doAccept } = useAcceptInvitation();
+const { mutateAsync: doIgnore } = useIgnoreInvitation();
+const { mutateAsync: doBlock } = useBlockInviter();
 
 const { data: blocklistData, refetch: refetchBlocklist } = useListBlocklist();
 const { mutateAsync: doUnblock } = useUnblockUser();
+
+const activeInvitations = computed(
+  () =>
+    invitationsData.value?.data?.filter((i) => i.status === 'invited') ?? [],
+);
 
 const ignoredInvitations = computed(
   () =>
@@ -129,6 +191,30 @@ async function acceptInv(invitationId: string) {
   try {
     await doAccept({ invitationId });
     await refetchInvitations();
+  } catch {
+    // silently fail
+  } finally {
+    invBusy.value[invitationId] = false;
+  }
+}
+
+async function ignoreInv(invitationId: string) {
+  invBusy.value[invitationId] = true;
+  try {
+    await doIgnore({ invitationId });
+    await refetchInvitations();
+  } catch {
+    // silently fail
+  } finally {
+    invBusy.value[invitationId] = false;
+  }
+}
+
+async function blockInv(invitationId: string, inviterUserId: string) {
+  invBusy.value[invitationId] = true;
+  try {
+    await doBlock({ data: { user_id: inviterUserId } });
+    await Promise.all([refetchInvitations(), refetchBlocklist()]);
   } catch {
     // silently fail
   } finally {

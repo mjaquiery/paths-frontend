@@ -646,6 +646,7 @@ function hexToRgba(hex: string, alpha: number): string {
   padding: 3px 10px 3px 6px;
   border-radius: 999px;
   border: 2px solid;
+  color: var(--ion-text-color, inherit);
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -734,7 +735,7 @@ function hexToRgba(hex: string, alpha: number): string {
 
 .colour-picker-hex {
   font-size: 0.875rem;
-  color: var(--ion-color-dark, #333);
+  color: var(--ion-text-color, #333);
   font-family: monospace;
 }
 
@@ -749,7 +750,7 @@ function hexToRgba(hex: string, alpha: number): string {
   font-size: 0.9rem;
   font-weight: 600;
   margin: 0 0 6px;
-  color: var(--ion-color-dark, #333);
+  color: var(--ion-text-color, #333);
 }
 
 .invitation-card {
@@ -764,7 +765,7 @@ function hexToRgba(hex: string, alpha: number): string {
 
 .invitation-path {
   font-size: 0.85rem;
-  color: var(--ion-color-dark, #333);
+  color: var(--ion-text-color, #333);
 }
 
 .invitation-actions {
