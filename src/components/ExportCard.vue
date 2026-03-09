@@ -31,14 +31,19 @@
       <div v-if="jsonDownloadUrl || imagesDownloadUrl">
         <ion-button
           v-if="jsonDownloadUrl"
-          :href="jsonDownloadUrl"
-          target="_blank"
+          @click="
+            downloadFileFromUrl(jsonDownloadUrl, `export-${exportJob?.id}.json`)
+          "
           >Download JSON</ion-button
         >
         <ion-button
           v-if="imagesDownloadUrl"
-          :href="imagesDownloadUrl"
-          target="_blank"
+          @click="
+            downloadFileFromUrl(
+              imagesDownloadUrl,
+              `export-${exportJob?.id}.zip`,
+            )
+          "
           >Download images</ion-button
         >
       </div>
@@ -72,7 +77,11 @@ import {
   downloadExportJson,
   downloadExportImages,
 } from '../generated/apiClient';
-import { isExportReady, isExportTerminal } from '../utils/export';
+import {
+  isExportReady,
+  isExportTerminal,
+  downloadFileFromUrl,
+} from '../utils/export';
 
 defineProps<{ paths: PathResponse[] }>();
 
