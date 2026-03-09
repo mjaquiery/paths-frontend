@@ -191,6 +191,7 @@ onMounted(() => {
       currentUser.value = JSON.parse(stored) as OAuthCallbackResponse;
     } catch {
       localStorage.removeItem('user');
+      localStorage.removeItem('session_token');
     }
   }
   void nextTick(() => contentRef.value?.$el?.scrollToBottom(0));
@@ -217,6 +218,7 @@ async function loginWithGoogle() {
 
 function logout() {
   localStorage.removeItem('user');
+  localStorage.removeItem('session_token');
   currentUser.value = null;
   visiblePaths.value = [];
 }

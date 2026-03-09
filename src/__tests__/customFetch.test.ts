@@ -4,6 +4,23 @@ const mockFetch = vi.fn();
 
 vi.stubGlobal('fetch', mockFetch);
 
+// Stub localStorage for bearer-token tests
+const localStorageStore: Record<string, string> = {};
+vi.stubGlobal('localStorage', {
+  getItem: vi.fn((key: string) => localStorageStore[key] ?? null),
+  setItem: vi.fn((key: string, value: string) => {
+    localStorageStore[key] = value;
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete localStorageStore[key];
+  }),
+  clear: vi.fn(() => {
+    for (const key of Object.keys(localStorageStore)) {
+      delete localStorageStore[key];
+    }
+  }),
+});
+
 // Reset module between tests so VITE_API_BASE_URL env changes take effect
 beforeEach(() => {
   vi.resetModules();
@@ -14,6 +31,8 @@ beforeEach(() => {
     headers: new Headers(),
     json: vi.fn().mockResolvedValue({}),
   });
+  // Clear stored token between tests
+  delete localStorageStore['session_token'];
 });
 
 afterEach(() => {
@@ -68,6 +87,37 @@ describe('customFetch', () => {
     const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
     const headers = fetchOptions.headers as Record<string, string>;
     expect(headers['Content-Type']).toBe('text/plain');
+  });
+
+  it('attaches Authorization: Bearer header when session_token is stored', async () => {
+    localStorageStore['session_token'] = 'test-token-abc';
+    const { customFetch } = await import('../lib/customFetch');
+    await customFetch('/v1/paths');
+
+    const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const headers = fetchOptions.headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer test-token-abc');
+  });
+
+  it('does not attach Authorization header when no session_token is stored', async () => {
+    const { customFetch } = await import('../lib/customFetch');
+    await customFetch('/v1/paths');
+
+    const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const headers = fetchOptions.headers as Record<string, string>;
+    expect(headers['Authorization']).toBeUndefined();
+  });
+
+  it('caller-supplied Authorization header takes precedence over stored token', async () => {
+    localStorageStore['session_token'] = 'stored-token';
+    const { customFetch } = await import('../lib/customFetch');
+    await customFetch('/v1/paths', {
+      headers: { Authorization: 'Bearer caller-token' },
+    });
+
+    const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const headers = fetchOptions.headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer caller-token');
   });
 
   it('prepends the base URL from VITE_API_BASE_URL env var', async () => {
