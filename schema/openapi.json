@@ -3,7 +3,7 @@
   "info": {
     "title": "paths backend API",
     "summary": "Path-centric backend API for Shared Journal PWA",
-    "version": "0.3.2"
+    "version": "0.3.3"
   },
   "paths": {
     "/health": {
@@ -53,6 +53,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       },
@@ -97,6 +100,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       }
@@ -111,6 +117,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -166,6 +175,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -206,6 +218,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -263,6 +278,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -312,6 +330,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -369,6 +390,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -423,6 +447,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -497,6 +524,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -546,6 +576,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -612,6 +645,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -672,6 +708,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -721,6 +760,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -778,6 +820,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -869,6 +914,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -939,6 +987,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       }
@@ -985,6 +1036,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       }
@@ -1031,6 +1085,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       }
@@ -1057,6 +1114,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       }
@@ -1083,6 +1143,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       }
@@ -1097,6 +1160,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -1155,6 +1221,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -1235,6 +1304,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       }
@@ -1249,6 +1321,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -1297,6 +1372,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -1345,6 +1423,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -1474,7 +1555,7 @@
           "auth"
         ],
         "summary": "Oauth Callback Get",
-        "description": "Return a response for GET requests to the OAuth callback endpoint.",
+        "description": "Handle GET OAuth callback when the backend is the redirect target.\n\nThe callback_uri is extracted from the signed state token rather than\npassed as a query parameter, so it is guaranteed to match the value used\nduring the original login request.",
         "operationId": "auth_callback_redirect",
         "parameters": [
           {
@@ -1546,6 +1627,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       }
@@ -1560,6 +1644,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -1601,6 +1688,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -1658,6 +1748,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       },
@@ -1695,6 +1788,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ]
       }
@@ -1709,6 +1805,9 @@
         "security": [
           {
             "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
           }
         ],
         "parameters": [
@@ -3105,6 +3204,11 @@
         "description": "Session token cookie obtained via Oauth callback",
         "in": "cookie",
         "name": "session_token"
+      },
+      "HTTPBearer": {
+        "type": "http",
+        "description": "Bearer token from the OAuth callback response body",
+        "scheme": "bearer"
       }
     }
   }

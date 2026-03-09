@@ -51,8 +51,8 @@ onMounted(async () => {
       data: { code, state, callback_uri: callbackUri },
     });
     if (result.data) {
-      const { token: _token, ...safeData } =
-        result.data as OAuthCallbackResponse;
+      const { token, ...safeData } = result.data as OAuthCallbackResponse;
+      localStorage.setItem('session_token', token);
       localStorage.setItem('user', JSON.stringify(safeData));
     }
   } catch {
