@@ -6,12 +6,12 @@ export const customFetch = async <T>(
     import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
   ).replace(/\/$/, '');
   const response = await fetch(`${baseUrl}${url}`, {
+    ...options,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(options?.headers ?? {}),
     },
-    ...options,
   });
   if (!response.ok) throw new Error(`Request failed: ${response.status}`);
   const data = response.status === 204 ? undefined : await response.json();
