@@ -25,7 +25,8 @@
               class="inv-item"
             >
               <ion-label>
-                <h3>Path: {{ inv.path_code }}</h3>
+                <h3>{{ inv.path_title }}</h3>
+                <p v-if="inv.inviter_email">From: {{ inv.inviter_email }}</p>
                 <p>Invited on {{ formatDate(inv.created_at) }}</p>
               </ion-label>
               <ion-button
@@ -78,7 +79,8 @@
               class="inv-item"
             >
               <ion-label>
-                <h3>Path: {{ inv.path_code }}</h3>
+                <h3>{{ inv.path_title }}</h3>
+                <p v-if="inv.inviter_email">From: {{ inv.inviter_email }}</p>
                 <p>Ignored on {{ formatDate(inv.updated_at) }}</p>
               </ion-label>
               <ion-button
