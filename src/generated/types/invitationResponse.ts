@@ -9,7 +9,9 @@ export interface InvitationResponse {
   id: string;
   path_id: string;
   path_code: string;
+  path_title: string;
   inviter_user_id: string;
+  inviter_email: string | null;
   invited_email: string;
   invited_user_id: string | null;
   status: string;
