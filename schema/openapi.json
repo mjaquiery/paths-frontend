@@ -3,7 +3,7 @@
   "info": {
     "title": "paths backend API",
     "summary": "Path-centric backend API for Shared Journal PWA",
-    "version": "0.3.3"
+    "version": "0.3.4"
   },
   "paths": {
     "/health": {
@@ -2587,10 +2587,25 @@
             "type": "string",
             "title": "Path Code"
           },
+          "path_title": {
+            "type": "string",
+            "title": "Path Title"
+          },
           "inviter_user_id": {
             "type": "string",
             "format": "uuid",
             "title": "Inviter User Id"
+          },
+          "inviter_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inviter Email"
           },
           "invited_email": {
             "type": "string",
@@ -2628,7 +2643,9 @@
           "id",
           "path_id",
           "path_code",
+          "path_title",
           "inviter_user_id",
+          "inviter_email",
           "invited_email",
           "invited_user_id",
           "status",
@@ -2640,9 +2657,11 @@
           "created_at": "2024-03-15T09:00:00Z",
           "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
           "invited_email": "subscriber@example.com",
+          "inviter_email": "owner@example.com",
           "inviter_user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
           "path_code": "AB3X7K",
           "path_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+          "path_title": "My Travel Journal",
           "status": "invited",
           "updated_at": "2024-03-15T09:00:00Z"
         }
