@@ -45,10 +45,20 @@
       </div>
     </ion-card-content>
   </ion-card>
+
+  <!-- Alert shown when remote export fails, offering to export local cache -->
+  <ion-alert
+    :is-open="showLocalExportAlert"
+    header="Export unavailable"
+    :message="localExportAlertMessage"
+    :buttons="localExportAlertButtons"
+    @didDismiss="showLocalExportAlert = false"
+  />
 </template>
 
 <script setup lang="ts">
 import {
+  IonAlert,
   IonButton,
   IonCard,
   IonCardContent,
@@ -77,6 +87,7 @@ import {
   isExportReady,
   isExportTerminal,
   downloadFileFromUrl,
+  exportLocalData,
 } from '../utils/export';
 
 defineProps<{ paths: PathResponse[] }>();
@@ -86,6 +97,8 @@ const exportJob = ref<ExportJobResponse | null>(null);
 const jsonDownloadUrl = ref('');
 const imagesDownloadUrl = ref('');
 const downloadError = ref('');
+const showLocalExportAlert = ref(false);
+const localExportAlertMessage = ref('');
 const { mutateAsync: createExportMutation } = useCreateExport();
 
 function todayYYYYMMDD(): string {
@@ -112,12 +125,18 @@ function setExportPath(pathId: string, event: CheckboxCustomEvent) {
 async function triggerExport() {
   jsonDownloadUrl.value = '';
   imagesDownloadUrl.value = '';
-  exportJob.value = (
-    await createExportMutation({
-      data: { path_ids: [...selectedForExport.value] },
-    })
-  ).data as ExportJobResponse;
-  await pollExport();
+  try {
+    exportJob.value = (
+      await createExportMutation({
+        data: { path_ids: [...selectedForExport.value] },
+      })
+    ).data as ExportJobResponse;
+    await pollExport();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    localExportAlertMessage.value = `Remote export failed: ${msg}. Would you like to export your locally cached data instead?`;
+    showLocalExportAlert.value = true;
+  }
 }
 
 async function pollExport() {
@@ -136,4 +155,18 @@ async function pollExport() {
     window.setTimeout(pollExport, 2000);
   }
 }
+
+async function handleLocalExport() {
+  downloadError.value = '';
+  try {
+    await exportLocalData([...selectedForExport.value]);
+  } catch (e) {
+    downloadError.value = e instanceof Error ? e.message : String(e);
+  }
+}
+
+const localExportAlertButtons = [
+  { text: 'Export local data', handler: handleLocalExport },
+  { text: 'Cancel', role: 'cancel' },
+];
 </script>

@@ -1,6 +1,6 @@
 {
   "name": "paths-frontend",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -43,6 +43,7 @@
     "storybook": "^8.6.3",
     "typescript": "^5.8.2",
     "vite": "^6.2.0",
+    "vite-plugin-pwa": "^1.2.0",
     "vitest": "^3.0.8",
     "vue-tsc": "^2.2.8"
   },
