@@ -16,7 +16,7 @@ export default defineConfig({
       manifest: {
         name: 'Paths',
         short_name: 'Paths',
-        description: 'Your shared journal',
+        description: 'Your journal, easily shared',
         theme_color: '#3949ab',
         background_color: '#ffffff',
         display: 'standalone',
