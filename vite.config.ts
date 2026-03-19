@@ -7,6 +7,9 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Disable auto-injection so the SW is booted explicitly in main.ts
+      // via `virtual:pwa-register`, keeping all bootstrap logic in one place.
+      injectRegister: null,
       includeAssets: [
         'favicon.ico',
         'favicon.svg',
