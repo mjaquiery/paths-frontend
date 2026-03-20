@@ -32,6 +32,7 @@
         </div>
         <ion-textarea
           v-if="contentTab === 'write'"
+          ref="textareaRef"
           v-model="content"
           placeholder="Write your entry… (markdown supported)"
           :rows="6"
@@ -39,6 +40,7 @@
           autocapitalize="sentences"
           autocorrect="on"
           spellcheck="true"
+          @ionInput="onTextareaInput"
         />
         <div v-else class="content-preview">
           <MarkdownContent v-if="content" :content="content" />
@@ -56,6 +58,14 @@
             class="existing-image-item"
           >
             <span class="existing-image-name">{{ img.filename }}</span>
+            <button
+              class="insert-image-btn"
+              type="button"
+              :aria-label="`Insert image ${img.filename} into content`"
+              @click="insertImageMarkdown(img.filename)"
+            >
+              ↳ Insert
+            </button>
             <button
               class="remove-image-btn"
               type="button"
@@ -87,6 +97,7 @@
       <ion-item>
         <ion-label position="stacked">Add images (optional)</ion-label>
         <input
+          ref="fileInputRef"
           type="file"
           accept="image/*"
           multiple
@@ -101,6 +112,14 @@
           class="pending-image-name"
         >
           {{ img.name }}
+          <button
+            class="insert-image-btn"
+            type="button"
+            :aria-label="`Insert image ${img.name} into content`"
+            @click="insertImageMarkdown(img.name)"
+          >
+            ↳ Insert
+          </button>
         </span>
       </div>
 
@@ -152,6 +171,8 @@ import { extractErrorMessage } from '../lib/errors';
 import { db } from '../lib/db';
 import MarkdownContent from './MarkdownContent.vue';
 import type { EntryDetailData } from './EntryDetailModal.vue';
+import { useModalBackNavigation } from '../composables/useModalBackNavigation';
+import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 
 const DEFAULT_IMAGE_CONTENT_TYPE = 'image/jpeg';
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -174,6 +195,11 @@ const emit = defineEmits<{
   saved: [];
 }>();
 
+useModalBackNavigation(
+  () => props.isOpen,
+  () => emit('dismiss'),
+);
+
 const queryClient = useQueryClient();
 const { mutateAsync: doUpdateEntry } = useUpdateEntry();
 const { mutateAsync: getUploadUrl } = useCreateImageUploadUrl();
@@ -187,6 +213,8 @@ const pendingImages = ref<File[]>([]);
 const saving = ref(false);
 const error = ref('');
 const conflictError = ref('');
+const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
 
 watch(
   () => props.isOpen,
@@ -201,6 +229,24 @@ watch(
       conflictError.value = '';
     }
   },
+);
+
+// If the entry content loads asynchronously after the modal opens (e.g. when
+// the user clicks Edit before the API response arrives), populate the field
+// once the content becomes available.
+watch(
+  () => props.entry.content,
+  (newContent) => {
+    if (props.isOpen && newContent !== undefined && content.value === '') {
+      content.value = newContent;
+    }
+  },
+);
+
+const { onTextareaInput, insertImageMarkdown } = useMarkdownEditor(
+  content,
+  textareaRef,
+  contentTab,
 );
 
 function removeImage(imageId: string) {
@@ -362,6 +408,9 @@ function onDismiss() {
 }
 
 .pending-image-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.8rem;
   background: var(--ion-color-light, #f4f4f4);
   border-radius: 4px;
@@ -396,7 +445,8 @@ function onDismiss() {
 }
 
 .remove-image-btn,
-.restore-image-btn {
+.restore-image-btn,
+.insert-image-btn {
   background: none;
   border: 1px solid currentColor;
   border-radius: 4px;
@@ -413,6 +463,10 @@ function onDismiss() {
 
 .restore-image-btn {
   color: var(--ion-color-success, green);
+}
+
+.insert-image-btn {
+  color: var(--ion-color-primary, #3880ff);
 }
 
 .content-tabs {

@@ -39,13 +39,14 @@
       <p v-else-if="!currentEntry.content" class="entry-detail-content">
         (no text)
       </p>
-      <MarkdownContent v-else :content="currentEntry.content" />
-      <div
-        v-if="currentEntry.images && currentEntry.images.length > 0"
-        class="entry-detail-images"
-      >
+      <MarkdownContent
+        v-else
+        :content="currentEntry.content"
+        :images="currentEntry.images"
+      />
+      <div v-if="unreferencedImages.length > 0" class="entry-detail-images">
         <EntryImage
-          v-for="img in currentEntry.images"
+          v-for="img in unreferencedImages"
           :key="img.id"
           :image-id="img.id"
           :alt="img.filename"
@@ -95,6 +96,8 @@ import { computed, ref, watch } from 'vue';
 import type { ImageResponse } from '../generated/types';
 import EntryImage from './EntryImage.vue';
 import MarkdownContent from './MarkdownContent.vue';
+import { useModalBackNavigation } from '../composables/useModalBackNavigation';
+import { referencedImageFilenames } from '../utils/markdown';
 
 export interface EntryDetailData {
   pathId: string;
@@ -117,11 +120,16 @@ const props = defineProps<{
   startIndex: number;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   dismiss: [];
   edit: [entry: EntryDetailData];
   delete: [entry: EntryDetailData];
 }>();
+
+useModalBackNavigation(
+  () => props.isOpen,
+  () => emit('dismiss'),
+);
 
 const currentIndex = ref(props.startIndex);
 
@@ -148,6 +156,21 @@ const currentEntry = computed<EntryDetailData>(
       canEdit: false,
     },
 );
+
+/** Filenames referenced in the markdown content via ![alt](filename) syntax. */
+const referencedFilenames = computed<Set<string>>(() => {
+  const content = currentEntry.value.content;
+  if (!content) return new Set();
+  return referencedImageFilenames(content);
+});
+
+/** Images that are not already embedded in the markdown content. */
+const unreferencedImages = computed<ImageResponse[]>(() => {
+  const images = currentEntry.value.images;
+  if (!images || images.length === 0) return [];
+  const refs = referencedFilenames.value;
+  return images.filter((img) => !refs.has(img.filename));
+});
 </script>
 
 <style scoped>

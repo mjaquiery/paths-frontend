@@ -14,6 +14,21 @@
     <!-- Theme colour for browser chrome -->
     <meta name="theme-color" content="#3949ab" />
     <title>Paths</title>
+    <!-- Inline dark-mode bootstrap: apply class before Vue renders to prevent flash -->
+    <script>
+      (function () {
+        try {
+          var pref = localStorage.getItem('darkModePreference');
+          var isDark =
+            pref === 'dark' ||
+            (pref !== 'light' &&
+              window.matchMedia &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark)
+            document.documentElement.classList.add('ion-palette-dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
