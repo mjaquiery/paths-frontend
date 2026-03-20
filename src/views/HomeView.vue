@@ -103,6 +103,12 @@
             Delete data
           </ion-button>
         </div>
+        <RefreshStatus
+          slot="end"
+          :status-type="refreshStatusType"
+          :status-text="refreshStatusText"
+          :last-checked-at="refreshLastCheckedAt"
+        />
       </ion-toolbar>
     </ion-footer>
 
@@ -140,6 +146,7 @@ import PathsSelectorBar from '../components/PathsSelectorBar.vue';
 import OnThisDaySpotlight from '../components/OnThisDaySpotlight.vue';
 import WeekView from '../components/WeekView.vue';
 import EntryCreateModal from '../components/EntryCreateModal.vue';
+import RefreshStatus from '../components/RefreshStatus.vue';
 import type {
   PathResponse,
   OAuthCallbackResponse,
@@ -147,6 +154,7 @@ import type {
 } from '../generated/types';
 import { authLogin } from '../generated/apiClient';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { useDarkMode } from '../composables/useDarkMode';
 
 const {
@@ -171,6 +179,12 @@ const visiblePaths = ref<PathResponse[]>([]);
 
 const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
 const multiPathEntries = useMultiPathEntries(visiblePathIds);
+
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
 
 const showCreateModal = ref(false);
 
