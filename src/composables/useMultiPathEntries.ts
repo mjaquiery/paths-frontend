@@ -47,6 +47,9 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
         queryKey: ['v1', 'paths', pathId, 'entries'],
         queryFn: () => listEntries(pathId),
         enabled: !!pathId,
+        refetchInterval: 25_000,
+        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: true,
       })),
     ),
   });
