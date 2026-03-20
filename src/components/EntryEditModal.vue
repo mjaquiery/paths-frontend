@@ -229,18 +229,7 @@ watch(
       conflictError.value = '';
     }
   },
-);
-
-// If the entry content loads asynchronously after the modal opens (e.g. when
-// the user clicks Edit before the API response arrives), populate the field
-// once the content becomes available.
-watch(
-  () => props.entry.content,
-  (newContent) => {
-    if (props.isOpen && newContent !== undefined && content.value === '') {
-      content.value = newContent;
-    }
-  },
+  { immediate: true },
 );
 
 const { onTextareaInput, insertImageMarkdown } = useMarkdownEditor(
