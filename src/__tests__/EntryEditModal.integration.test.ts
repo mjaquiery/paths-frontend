@@ -165,12 +165,47 @@ async function mountEditModal(entry: EntryDetailData = entryWithImage) {
   return wrapper;
 }
 
+/**
+ * Mount with isOpen=true from the start, simulating the production path where
+ * v-if and :is-open are both activated in the same synchronous batch.
+ * This verifies the { immediate: true } watch option works correctly.
+ */
+async function mountEditModalOpenFromStart(
+  entry: EntryDetailData = entryWithImage,
+) {
+  const queryClient = createQueryClient();
+  const wrapper = mount(EntryEditModal, {
+    props: {
+      isOpen: true,
+      entry,
+    },
+    global: {
+      plugins: [[VueQueryPlugin, { queryClient }]],
+      stubs: ionicStubs,
+    },
+  });
+  await nextTick();
+  return wrapper;
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 describe('EntryEditModal – basic rendering', () => {
   it('renders textarea pre-filled with existing content', async () => {
     const wrapper = await mountEditModal();
+
+    const textarea = wrapper.find('textarea');
+    expect(textarea.exists()).toBe(true);
+    expect(textarea.element.value).toBe('Original content');
+  });
+
+  it('pre-fills content when mounted with isOpen=true from the start (v-if batch scenario)', async () => {
+    // Regression test: when editEntry and showEditModal are set together in
+    // the same synchronous block (WeekView.openEdit), Vue batches the updates
+    // and the component mounts with isOpen already true. The watch must use
+    // { immediate: true } so it still fires and populates the textarea.
+    const wrapper = await mountEditModalOpenFromStart();
 
     const textarea = wrapper.find('textarea');
     expect(textarea.exists()).toBe(true);

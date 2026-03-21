@@ -56,6 +56,7 @@
         </div>
         <ion-textarea
           v-if="contentTab === 'write'"
+          ref="textareaRef"
           v-model="content"
           placeholder="Write your entry… (markdown supported)"
           :rows="6"
@@ -63,6 +64,7 @@
           autocapitalize="sentences"
           autocorrect="on"
           spellcheck="true"
+          @ionInput="onTextareaInput"
         />
         <div v-else class="content-preview">
           <MarkdownContent v-if="content" :content="content" />
@@ -74,6 +76,7 @@
       <ion-item>
         <ion-label position="stacked">Images (optional)</ion-label>
         <input
+          ref="fileInputRef"
           type="file"
           accept="image/*"
           multiple
@@ -88,6 +91,14 @@
           class="pending-image-name"
         >
           {{ img.name }}
+          <button
+            class="insert-image-btn"
+            type="button"
+            :aria-label="`Insert image ${img.name} into content`"
+            @click="insertImageMarkdown(img.name)"
+          >
+            ↳ Insert
+          </button>
         </span>
       </div>
 
@@ -133,6 +144,8 @@ import {
 import { extractErrorMessage } from '../lib/errors';
 import { db } from '../lib/db';
 import MarkdownContent from './MarkdownContent.vue';
+import { useModalBackNavigation } from '../composables/useModalBackNavigation';
+import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 
 const DEFAULT_IMAGE_CONTENT_TYPE = 'image/jpeg';
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -161,6 +174,11 @@ const emit = defineEmits<{
   created: [];
 }>();
 
+useModalBackNavigation(
+  () => props.isOpen,
+  () => emit('dismiss'),
+);
+
 const { mutateAsync: createEntry, isPending: saving } = useCreateEntry();
 const { mutateAsync: getUploadUrl } = useCreateImageUploadUrl();
 const { mutateAsync: completeUpload } = useCompleteImageUpload();
@@ -171,6 +189,8 @@ const content = ref('');
 const error = ref('');
 const pendingImages = ref<File[]>([]);
 const contentTab = ref<'write' | 'preview'>('write');
+const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
 
 const ownedPaths = computed(() =>
   props.paths.filter((p) => p.owner_user_id === props.currentUserId),
@@ -190,6 +210,12 @@ watch(
       contentTab.value = 'write';
     }
   },
+);
+
+const { onTextareaInput, insertImageMarkdown } = useMarkdownEditor(
+  content,
+  textareaRef,
+  contentTab,
 );
 
 function onFilesSelected(event: Event) {
@@ -323,10 +349,25 @@ async function submit() {
 }
 
 .pending-image-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.8rem;
   background: var(--ion-color-light, #f4f4f4);
   border-radius: 4px;
   padding: 2px 6px;
+}
+
+.insert-image-btn {
+  background: none;
+  border: 1px solid var(--ion-color-primary, #3880ff);
+  border-radius: 4px;
+  color: var(--ion-color-primary, #3880ff);
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 2px 6px;
+  flex-shrink: 0;
 }
 
 .content-tabs {
