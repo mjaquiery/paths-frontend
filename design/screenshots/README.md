@@ -1,6 +1,8 @@
 # UI Design Exploration – Screenshots
 
-Six candidate redesigns for the Paths mobile interface, generated with Playwright from HTML mockups. Each design shows the primary mobile experience for a user with:
+Six candidate redesigns for the Paths mobile interface, generated with Playwright from HTML mockups. Each design has a dedicated **brochure** (see the `*-brochure.md` files in this directory) that walks through every screenshot, explains the functionality available, and describes how the screens relate to each other.
+
+The scenario shown in all designs: user Alex with three paths:
 
 - **Daily Life** (purple) – their own path, almost daily entries, most with photos
 - **Projects & Ideas** (teal) – their own path, sparse entries
@@ -13,10 +15,14 @@ All screenshots are rendered at a 430×884 logical-pixel mobile viewport (2× de
 ## Design A – Enhanced Week View
 
 > Closest to the current design, but visually polished.
+>
+> 📖 **[Read the full brochure →](./design-a-brochure.md)**
 
 **Screens:**
 
+- `design-a-logged-out.png` – Login / welcome screen: feature highlights and Google OAuth button
 - `design-a-home.png` – Main home: paths selector bar, "Previously on this day" spotlight card, vertical week list with day boxes, footer links
+- `design-a-paths-management.png` – Expanded paths bar: visibility toggles, pending invitation, export & delete data buttons, logout
 - `design-a-entry-modal.png` – Entry creation: bottom-sheet modal with path selector, date picker, markdown editor with toolbar, image upload
 
 **Key ideas:**
@@ -32,10 +38,14 @@ All screenshots are rendered at a 430×884 logical-pixel mobile viewport (2× de
 ## Design B – Timeline Journal View
 
 > Left-aligned date timeline with rich entry cards for the focused day.
+>
+> 📖 **[Read the full brochure →](./design-b-brochure.md)**
 
 **Screens:**
 
-- `design-b-timeline.png` – Day view: large date header (day number, day name), horizontal day-strip with entry-count dots, path filter pills, "On this day in past years" accordion at top, timeline entries with inline photo strips
+- `design-b-timeline.png` – Day view: large date header, horizontal day-strip with entry-count dots, path filter pills, "On this day in past years" accordion, timeline entries with photo strips
+- `design-b-paths-management.png` – Paths management: visibility toggles, edit/share/delete per path, pending invitation, export & delete data
+- `design-b-entry-create.png` – Entry creation: bottom-sheet modal with warm parchment styling, path selector, date navigation, markdown editor
 
 **Key ideas:**
 
@@ -50,11 +60,14 @@ All screenshots are rendered at a 430×884 logical-pixel mobile viewport (2× de
 ## Design C – Month Calendar + Day Panel
 
 > Compact month calendar at top; selected day's entries shown below.
+>
+> 📖 **[Read the full brochure →](./design-c-brochure.md)**
 
 **Screens:**
 
-- `design-c-calendar.png` – Calendar view: month grid with coloured dots per day, selected day highlighted in blue, day panel below with entry cards and "Memories" section
-- `design-c-paths-management.png` – Paths & settings tab: manage own paths (show/hide toggle, edit, share, delete), subscribed paths, pending invitations with accept/ignore/block, data export/delete links
+- `design-c-calendar.png` – Calendar view: month grid with coloured dots per day, selected day highlighted, day panel with entry cards and "Memories" section
+- `design-c-paths-management.png` – Paths tab: show/hide toggles, edit/share/delete, subscribed paths, pending invitations, export & delete data
+- `design-c-entry-create.png` – Entry creation: bottom-sheet modal over blurred calendar, path selector, date navigation, markdown editor, image upload
 
 **Key ideas:**
 
@@ -69,11 +82,14 @@ All screenshots are rendered at a 430×884 logical-pixel mobile viewport (2× de
 ## Design D – Full-Screen Day Cards with Bottom Nav
 
 > Immersive full-bleed coloured card per day; swipe or tap to navigate.
+>
+> 📖 **[Read the full brochure →](./design-d-brochure.md)**
 
 **Screens:**
 
-- `design-d-fullscreen.png` – Today view: gradient header card with large date display, swipe-day pills (◀ Mar 20 · ● Mar 21 · Mar 22 ▶), horizontal year-context chips (2025 ✨, 2024, 2023), white bottom sheet with entries and photo strips, FAB
-- `design-d-edit-modal.png` – Entry edit: full-screen modal with cancel/save, path badge + date badge, markdown toolbar (B/I/Preview/H1/H2/List/Link), free-text editor, photo grid with remove buttons
+- `design-d-fullscreen.png` – Today view: gradient hero card with large date, swipe-day pills, year-context chips (2025 ✨ / 2024 / 2023), white bottom-sheet entries with photo strips, FAB
+- `design-d-paths-tab.png` – Paths tab: path cards with visibility toggles, edit/share/delete/unsubscribe, create new path, pending invitation, export & delete data
+- `design-d-edit-modal.png` – Entry edit: full-screen modal with cancel/save, path badge, date badge, markdown toolbar, photo grid
 
 **Key ideas:**
 
@@ -88,10 +104,14 @@ All screenshots are rendered at a 430×884 logical-pixel mobile viewport (2× de
 ## Design E – Chronological Entry Stream
 
 > A social-feed-style scrollable stream of entries across all paths.
+>
+> 📖 **[Read the full brochure →](./design-e-brochure.md)**
 
 **Screens:**
 
-- `design-e-stream.png` – Feed: top path filter chips, date group headers (sticky, with "✨ 2 years ago" badge), entry cards with hero photo, entry text, and action buttons (Edit / Delete)
+- `design-e-stream.png` – Feed: path filter chips, sticky date-group headers with "✨ N years ago" badge, entry cards with hero photo and action buttons
+- `design-e-settings.png` – Settings tab: path visibility toggles, edit/share/delete, pending invitation, export / appearance / delete account
+- `design-e-entry-create.png` – Entry creation: full-screen modal with path badge, date badge, markdown toolbar, photo footer
 
 **Key ideas:**
 
@@ -106,10 +126,14 @@ All screenshots are rendered at a 430×884 logical-pixel mobile viewport (2× de
 ## Design F – Zen Minimalist
 
 > Typography-first, editorial aesthetic. Serif font, paper-white background.
+>
+> 📖 **[Read the full brochure →](./design-f-brochure.md)**
 
 **Screens:**
 
-- `design-f-zen.png` – Journal view: serif date header (day name + "21 March 2026"), year navigation tabs (2023 / 2024 / 2025 / **2026**), week mini-bar with coloured dots, entries as left-bordered text blocks with subtle actions, "Previously on this day" memories at bottom, minimal footer with "+ Write Entry" pill
+- `design-f-zen.png` – Journal view: serif date header, year navigation tabs, week mini-bar with coloured dots, left-bordered entry text blocks, "Previously on this day" memories, minimal footer with "+ Write Entry"
+- `design-f-settings.png` – Settings panel: path visibility as editorial list, pending invitation, export / appearance / delete account
+- `design-f-entry-create.png` – Entry compose: full-screen view with zen toolbar, free-text writing area, word count, photos footer
 
 **Key ideas:**
 
@@ -124,14 +148,24 @@ All screenshots are rendered at a 430×884 logical-pixel mobile viewport (2× de
 
 ## File Reference
 
-| File                            | Design                    | State                |
-| ------------------------------- | ------------------------- | -------------------- |
-| `design-a-home.png`             | A – Enhanced Week         | Home / main view     |
-| `design-a-entry-modal.png`      | A – Enhanced Week         | Entry creation modal |
-| `design-b-timeline.png`         | B – Timeline Journal      | Day view             |
-| `design-c-calendar.png`         | C – Month Calendar        | Calendar + day panel |
-| `design-c-paths-management.png` | C – Month Calendar        | Paths & settings     |
-| `design-d-fullscreen.png`       | D – Full-screen Day Cards | Today view           |
-| `design-d-edit-modal.png`       | D – Full-screen Day Cards | Entry edit modal     |
-| `design-e-stream.png`           | E – Entry Stream          | Feed view            |
-| `design-f-zen.png`              | F – Zen Minimalist        | Journal view         |
+| File                            | Design                    | State                  |
+| ------------------------------- | ------------------------- | ---------------------- |
+| `design-a-logged-out.png`       | A – Enhanced Week         | Login / welcome screen |
+| `design-a-home.png`             | A – Enhanced Week         | Home / main view       |
+| `design-a-paths-management.png` | A – Enhanced Week         | Paths management panel |
+| `design-a-entry-modal.png`      | A – Enhanced Week         | Entry creation modal   |
+| `design-b-timeline.png`         | B – Timeline Journal      | Day view               |
+| `design-b-paths-management.png` | B – Timeline Journal      | Paths management       |
+| `design-b-entry-create.png`     | B – Timeline Journal      | Entry creation         |
+| `design-c-calendar.png`         | C – Month Calendar        | Calendar + day panel   |
+| `design-c-paths-management.png` | C – Month Calendar        | Paths & settings       |
+| `design-c-entry-create.png`     | C – Month Calendar        | Entry creation modal   |
+| `design-d-fullscreen.png`       | D – Full-screen Day Cards | Today view             |
+| `design-d-paths-tab.png`        | D – Full-screen Day Cards | Paths management tab   |
+| `design-d-edit-modal.png`       | D – Full-screen Day Cards | Entry edit modal       |
+| `design-e-stream.png`           | E – Entry Stream          | Feed view              |
+| `design-e-settings.png`         | E – Entry Stream          | Settings tab           |
+| `design-e-entry-create.png`     | E – Entry Stream          | Entry creation         |
+| `design-f-zen.png`              | F – Zen Minimalist        | Journal view           |
+| `design-f-settings.png`         | F – Zen Minimalist        | Settings panel         |
+| `design-f-entry-create.png`     | F – Zen Minimalist        | Entry compose view     |
