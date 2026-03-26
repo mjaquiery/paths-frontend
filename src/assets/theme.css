@@ -1,9 +1,10 @@
 /*
- * Brand theme — colours taken from the Paths app icon.
- * Primary: calendar header indigo #3949ab
- * Accent orange #f57c00 and teal #0097a7 are used as path colours.
+ * Design A — Enhanced Week View theme.
+ * Brand primary: #3949ab (indigo)
+ * Dark-first: deep navy-indigo background, card bg, light text
  */
 
+/* ── Light mode ── */
 :root {
   --ion-color-primary: #3949ab;
   --ion-color-primary-rgb: 57, 73, 171;
@@ -12,6 +13,72 @@
   --ion-color-primary-shade: #324196;
   --ion-color-primary-tint: #4d5bb3;
 
+  --ion-background-color: #f5f5f8;
+  --ion-background-color-rgb: 245, 245, 248;
+  --ion-card-background: #ffffff;
+  --ion-text-color: #1a1b2e;
+  --ion-text-color-rgb: 26, 27, 46;
+  --ion-toolbar-background: #ffffff;
+  --ion-item-background: #ffffff;
+  --ion-border-color: #e0e0ea;
+
+  --ion-color-light: #f0f0f5;
+  --ion-color-light-shade: #d8d8e0;
+  --ion-color-medium: #6b6b80;
+  --ion-color-dark: #1a1b2e;
+  --ion-color-success: #2e7d32;
+  --ion-color-warning: #f57c00;
+  --ion-color-danger: #c62828;
+
+  /* Path accent colours */
+  --path-color-purple: #7b52ab;
+  --path-color-teal: #00897b;
+  --path-color-amber: #f57c00;
+  --path-color-indigo: #3949ab;
+  --path-color-rose: #c2185b;
+  --path-color-blue: #1565c0;
+
+  /* Layout */
   --paths-border-radius: 8px;
   --paths-day-min-height: 72px;
+  --paths-today-border: #3949ab;
+  --paths-card-hover: rgba(57, 73, 171, 0.06);
+}
+
+/* ── Dark mode ── */
+.ion-palette-dark {
+  --ion-background-color: #1a1b2e;
+  --ion-background-color-rgb: 26, 27, 46;
+  --ion-card-background: #252640;
+  --ion-text-color: #e8e8f0;
+  --ion-text-color-rgb: 232, 232, 240;
+  --ion-toolbar-background: #1e1f35;
+  --ion-item-background: #252640;
+  --ion-border-color: #333360;
+
+  --ion-color-primary: #7986cb;
+  --ion-color-primary-rgb: 121, 134, 203;
+  --ion-color-primary-contrast: #1a1b2e;
+  --ion-color-primary-contrast-rgb: 26, 27, 46;
+  --ion-color-primary-shade: #6876b2;
+  --ion-color-primary-tint: #8693d0;
+
+  --ion-color-light: #2e2f50;
+  --ion-color-light-shade: #252640;
+  --ion-color-medium: #9999b8;
+  --ion-color-dark: #e8e8f0;
+  --ion-color-success: #66bb6a;
+  --ion-color-warning: #ffa726;
+  --ion-color-danger: #ef5350;
+
+  /* Path accent colours */
+  --path-color-purple: #b39ddb;
+  --path-color-teal: #80cbc4;
+  --path-color-amber: #ffcc02;
+  --path-color-indigo: #9fa8da;
+  --path-color-rose: #f48fb1;
+  --path-color-blue: #90caf9;
+
+  --paths-today-border: #7986cb;
+  --paths-card-hover: rgba(121, 134, 203, 0.12);
 }

@@ -1,13 +1,7 @@
 /**
  * Tests for WeekView multi-path and multi-entry rendering.
- *
- * WeekView receives already-resolved PathEntries data via props, so these
- * tests focus on the computed rendering logic: entries from multiple paths on
- * the same day are shown side-by-side, multiple entries from the same path on
- * the same day all appear, and entries with images show the 📷 thumbnail
- * indicator.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { nextTick } from 'vue';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount } from '@vue/test-utils';
@@ -15,6 +9,15 @@ import { mount } from '@vue/test-utils';
 import WeekView from '../components/WeekView.vue';
 import type { PathResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
+
+// ---------------------------------------------------------------------------
+// Mock router
+// ---------------------------------------------------------------------------
+const mockPush = vi.fn();
+vi.mock('@ionic/vue-router', () => ({
+  useRouter: () => ({ push: mockPush }),
+  useRoute: () => ({ params: {}, query: {} }),
+}));
 
 // ---------------------------------------------------------------------------
 // Stub Ionic components
@@ -27,25 +30,6 @@ const ionicStubs = {
     emits: ['click'],
   },
 };
-
-// Stub EntryCreateModal so we don't have to wire up the full modal chain
-vi.mock('../components/EntryCreateModal.vue', () => ({
-  default: {
-    template: '<div data-testid="entry-create-modal"></div>',
-    props: ['isOpen', 'paths', 'currentUserId', 'initialDay'],
-    emits: ['dismiss', 'created'],
-  },
-}));
-
-// Stub EntryDetailModal so we can test open/close without Ionic
-vi.mock('../components/EntryDetailModal.vue', () => ({
-  default: {
-    template:
-      '<div data-testid="entry-detail-modal" :data-open="isOpen" :data-start-index="startIndex" :data-entries-count="entries.length"></div>',
-    props: ['isOpen', 'entries', 'startIndex'],
-    emits: ['dismiss'],
-  },
-}));
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -92,6 +76,10 @@ function mountWeekView(
   });
 }
 
+beforeEach(() => {
+  mockPush.mockClear();
+});
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -108,9 +96,7 @@ describe('WeekView – multi-path entries on the same day', () => {
       color: '#00f',
       owner_user_id: 'user-2',
     });
-
     const todayStr = today();
-
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
@@ -137,13 +123,10 @@ describe('WeekView – multi-path entries on the same day', () => {
         ],
       },
     ];
-
     const wrapper = mountWeekView([pathA, pathB], pathEntries);
     await nextTick();
-
-    const html = wrapper.html();
-    expect(html).toContain('Entry from Path A');
-    expect(html).toContain('Entry from Path B');
+    expect(wrapper.html()).toContain('Entry from Path A');
+    expect(wrapper.html()).toContain('Entry from Path B');
   });
 
   it('displays both entries in the same day box when from different paths', async () => {
@@ -158,9 +141,7 @@ describe('WeekView – multi-path entries on the same day', () => {
       color: '#00f',
       owner_user_id: 'user-2',
     });
-
     const todayStr = today();
-
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
@@ -187,11 +168,8 @@ describe('WeekView – multi-path entries on the same day', () => {
         ],
       },
     ];
-
     const wrapper = mountWeekView([pathA, pathB], pathEntries);
     await nextTick();
-
-    // Both entries should appear in the same week view
     const dayEntries = wrapper.findAll('.day-entry');
     const entryTexts = dayEntries.map((e) => e.text());
     expect(entryTexts.some((t) => t.includes('Alpha content'))).toBe(true);
@@ -207,7 +185,6 @@ describe('WeekView – multiple entries from the same path on the same day', () 
       color: '#3949ab',
     });
     const todayStr = today();
-
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
@@ -229,10 +206,8 @@ describe('WeekView – multiple entries from the same path on the same day', () 
         ],
       },
     ];
-
     const wrapper = mountWeekView([path], pathEntries);
     await nextTick();
-
     expect(wrapper.html()).toContain('First entry today');
     expect(wrapper.html()).toContain('Second entry today');
   });
@@ -240,7 +215,6 @@ describe('WeekView – multiple entries from the same path on the same day', () 
   it('renders a separate .day-entry element for each entry', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
-
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
@@ -269,10 +243,8 @@ describe('WeekView – multiple entries from the same path on the same day', () 
         ],
       },
     ];
-
     const wrapper = mountWeekView([path], pathEntries);
     await nextTick();
-
     const dayEntries = wrapper.findAll('.day-entry');
     expect(dayEntries.length).toBeGreaterThanOrEqual(3);
   });
@@ -282,7 +254,6 @@ describe('WeekView – image thumbnail indicator', () => {
   it('shows 📷 indicator when an entry has images', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
-
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
@@ -298,17 +269,14 @@ describe('WeekView – image thumbnail indicator', () => {
         ],
       },
     ];
-
     const wrapper = mountWeekView([path], pathEntries);
     await nextTick();
-
     expect(wrapper.html()).toContain('📷');
   });
 
   it('does not show 📷 indicator when an entry has no images', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
-
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
@@ -324,17 +292,14 @@ describe('WeekView – image thumbnail indicator', () => {
         ],
       },
     ];
-
     const wrapper = mountWeekView([path], pathEntries);
     await nextTick();
-
     expect(wrapper.html()).not.toContain('📷');
   });
 
   it('shows 📷 for entries with images and not for those without, on the same day', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
-
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
@@ -358,10 +323,8 @@ describe('WeekView – image thumbnail indicator', () => {
         ],
       },
     ];
-
     const wrapper = mountWeekView([path], pathEntries);
     await nextTick();
-
     const indicators = wrapper.findAll('.day-entry-image-indicator');
     expect(indicators).toHaveLength(1);
   });
@@ -371,7 +334,6 @@ describe('WeekView – content placeholder text', () => {
   it('shows "Fetching..." when entry content is undefined (not yet loaded)', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
-
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
@@ -386,10 +348,8 @@ describe('WeekView – content placeholder text', () => {
         ],
       },
     ];
-
     const wrapper = mountWeekView([path], pathEntries);
     await nextTick();
-
     expect(wrapper.html()).toContain('Fetching...');
     expect(wrapper.html()).not.toContain('(no text)');
   });
@@ -397,31 +357,22 @@ describe('WeekView – content placeholder text', () => {
   it('shows "(no text)" when entry content is an empty string (fetched but empty)', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
-
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
         entries: [
-          {
-            id: 'e1',
-            path_id: 'p1',
-            day: todayStr,
-            edit_id: 1,
-            content: '',
-          },
+          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 1, content: '' },
         ],
       },
     ];
-
     const wrapper = mountWeekView([path], pathEntries);
     await nextTick();
-
     expect(wrapper.html()).toContain('(no text)');
     expect(wrapper.html()).not.toContain('Fetching...');
   });
 });
 
-describe('WeekView – entry detail modal', () => {
+describe('WeekView – route navigation', () => {
   function makeDetailPathEntries(todayStr: string): PathEntries[] {
     return [
       {
@@ -439,7 +390,7 @@ describe('WeekView – entry detail modal', () => {
     ];
   }
 
-  it('opens the detail modal when a day-entry is clicked', async () => {
+  it('navigates to entry view when a day-entry is clicked', async () => {
     const path = makePathResponse({
       path_id: 'p1',
       title: 'My Path',
@@ -448,20 +399,12 @@ describe('WeekView – entry detail modal', () => {
     const todayStr = today();
     const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
-
-    // Modal is always rendered but closed
-    const modalBefore = wrapper.find('[data-testid="entry-detail-modal"]');
-    expect(modalBefore.attributes('data-open')).toBe('false');
-
     await wrapper.find('.day-entry').trigger('click');
     await nextTick();
-
-    const modal = wrapper.find('[data-testid="entry-detail-modal"]');
-    expect(modal.attributes('data-open')).toBe('true');
-    expect(modal.attributes('data-start-index')).toBe('0');
+    expect(mockPush).toHaveBeenCalledWith('/entry/p1/e1');
   });
 
-  it('opens the detail modal when Enter is pressed on a day-entry', async () => {
+  it('navigates to entry view when Enter is pressed on a day-entry', async () => {
     const path = makePathResponse({
       path_id: 'p1',
       title: 'My Path',
@@ -470,24 +413,12 @@ describe('WeekView – entry detail modal', () => {
     const todayStr = today();
     const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
-
-    expect(
-      wrapper
-        .find('[data-testid="entry-detail-modal"]')
-        .attributes('data-open'),
-    ).toBe('false');
-
     await wrapper.find('.day-entry').trigger('keydown.enter');
     await nextTick();
-
-    expect(
-      wrapper
-        .find('[data-testid="entry-detail-modal"]')
-        .attributes('data-open'),
-    ).toBe('true');
+    expect(mockPush).toHaveBeenCalledWith('/entry/p1/e1');
   });
 
-  it('opens the detail modal when Space is pressed on a day-entry', async () => {
+  it('navigates to entry view when Space is pressed on a day-entry', async () => {
     const path = makePathResponse({
       path_id: 'p1',
       title: 'My Path',
@@ -496,70 +427,34 @@ describe('WeekView – entry detail modal', () => {
     const todayStr = today();
     const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
-
-    expect(
-      wrapper
-        .find('[data-testid="entry-detail-modal"]')
-        .attributes('data-open'),
-    ).toBe('false');
-
     await wrapper.find('.day-entry').trigger('keydown.space');
     await nextTick();
-
-    expect(
-      wrapper
-        .find('[data-testid="entry-detail-modal"]')
-        .attributes('data-open'),
-    ).toBe('true');
+    expect(mockPush).toHaveBeenCalledWith('/entry/p1/e1');
   });
 
-  it('passes all same-day entries to the modal', async () => {
+  it('navigates to create entry view when + button is clicked', async () => {
     const path = makePathResponse({
       path_id: 'p1',
       title: 'My Path',
       color: '#3949ab',
+      owner_user_id: 'user-1',
     });
     const todayStr = today();
-
-    const pathEntries: PathEntries[] = [
-      {
-        pathId: 'p1',
-        entries: [
-          {
-            id: 'e1',
-            path_id: 'p1',
-            day: todayStr,
-            edit_id: 1,
-            content: 'First',
-          },
-          {
-            id: 'e2',
-            path_id: 'p1',
-            day: todayStr,
-            edit_id: 2,
-            content: 'Second',
-          },
-        ],
-      },
-    ];
-
-    const wrapper = mountWeekView([path], pathEntries);
+    const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
-
-    await wrapper.find('.day-entry').trigger('click');
+    const dayBox = wrapper
+      .findAll('.day-box')
+      .find((box) => box.classes('day-box--today'));
+    expect(dayBox).toBeTruthy();
+    const createBtn = dayBox!.find('.day-create-btn');
+    await createBtn.trigger('click');
     await nextTick();
-
-    const modal = wrapper.find('[data-testid="entry-detail-modal"]');
-    expect(modal.attributes('data-open')).toBe('true');
-    expect(modal.attributes('data-entries-count')).toBe('2');
-    // First entry was clicked, so startIndex should be 0
-    expect(modal.attributes('data-start-index')).toBe('0');
+    expect(mockPush).toHaveBeenCalledWith(`/entry/p1/new?date=${todayStr}`);
   });
 
   it('entries are keyboard-accessible (role=button, tabindex=0)', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
-
     const pathEntries: PathEntries[] = [
       {
         pathId: 'p1',
@@ -574,10 +469,8 @@ describe('WeekView – entry detail modal', () => {
         ],
       },
     ];
-
     const wrapper = mountWeekView([path], pathEntries);
     await nextTick();
-
     const entry = wrapper.find('.day-entry');
     expect(entry.attributes('role')).toBe('button');
     expect(entry.attributes('tabindex')).toBe('0');

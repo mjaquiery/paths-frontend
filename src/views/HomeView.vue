@@ -59,7 +59,7 @@
 
       <!-- Generic create-entry button -->
       <div v-if="canCreateAny" class="create-entry-cta">
-        <ion-button expand="block" @click="showCreateModal = true">
+        <ion-button expand="block" @click="createNewEntry()">
           + Create Entry
         </ion-button>
       </div>
@@ -111,15 +111,6 @@
         />
       </ion-toolbar>
     </ion-footer>
-
-    <!-- Global entry creation modal -->
-    <EntryCreateModal
-      :is-open="showCreateModal"
-      :paths="visiblePaths"
-      :current-user-id="currentUser ? currentUser.user_id : ''"
-      @dismiss="showCreateModal = false"
-      @created="onEntryCreated"
-    />
   </ion-page>
 </template>
 
@@ -141,11 +132,11 @@ import {
 } from '@ionic/vue';
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
+import { useRouter } from '@ionic/vue-router';
 
 import PathsSelectorBar from '../components/PathsSelectorBar.vue';
 import OnThisDaySpotlight from '../components/OnThisDaySpotlight.vue';
 import WeekView from '../components/WeekView.vue';
-import EntryCreateModal from '../components/EntryCreateModal.vue';
 import RefreshStatus from '../components/RefreshStatus.vue';
 import type {
   PathResponse,
@@ -162,6 +153,8 @@ const {
   preference: darkPreference,
   toggle: toggleDarkMode,
 } = useDarkMode();
+
+const router = useRouter();
 
 const darkModeLabel = computed(() => {
   if (darkPreference.value === 'light') return 'Light mode – switch to dark';
@@ -185,8 +178,6 @@ const {
   statusText: refreshStatusText,
   lastCheckedAt: refreshLastCheckedAt,
 } = useRefreshStatus();
-
-const showCreateModal = ref(false);
 
 const contentRef = ref<InstanceType<typeof IonContent> | null>(null);
 
@@ -240,6 +231,15 @@ function logout() {
 function onEntryCreated() {
   // Invalidate all path-entry queries so the week view refreshes immediately
   void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+}
+
+function createNewEntry() {
+  const ownedPath = visiblePaths.value.find(
+    (p) => p.owner_user_id === currentUser.value?.user_id,
+  );
+  if (ownedPath) {
+    void router.push(`/entry/${ownedPath.path_id}/new`);
+  }
 }
 </script>
 

@@ -1,7 +1,7 @@
 <template>
   <ion-card v-if="spotlightYears.length > 0" class="on-this-day-card">
     <ion-card-header>
-      <ion-card-subtitle>Previously on this day</ion-card-subtitle>
+      <ion-card-subtitle>✨ Previously on this day</ion-card-subtitle>
       <ion-card-title>{{ formattedToday }}</ion-card-title>
     </ion-card-header>
     <ion-card-content>

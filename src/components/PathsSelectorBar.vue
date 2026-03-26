@@ -218,7 +218,7 @@
               color="primary"
               @click="openShare(path)"
             >
-              Share
+              🔗 Share
             </ion-button>
             <ion-button
               slot="end"
@@ -226,7 +226,7 @@
               fill="outline"
               @click="openEdit(path)"
             >
-              Edit
+              ✏️ Edit
             </ion-button>
             <ion-button
               slot="end"
@@ -235,7 +235,7 @@
               color="danger"
               @click="openDelete(path)"
             >
-              Delete
+              🗑️ Delete
             </ion-button>
           </template>
         </ion-item>

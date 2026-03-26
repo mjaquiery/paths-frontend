@@ -6,14 +6,14 @@ Design F is the active design direction. See **[design-f-brochure.md](design-f-b
 
 The brochure contains 24 screenshots across 6 screen sets (4 layout variants each):
 
-| Set | Screen | Files |
-|-----|--------|-------|
-| 1 | Home / onboarding (not logged in) | `f-1a` – `f-1d` |
-| 2 | Main paths / calendar view | `f-2a` – `f-2d` |
-| 3 | Full-screen view entry | `f-3a` – `f-3d` |
-| 4 | Full-screen create / edit entry | `f-4a` – `f-4d` |
-| 5 | Full-screen create / edit path | `f-5a` – `f-5d` |
-| 6 | Paths management, invitations, export, delete | `f-6a` – `f-6d` |
+| Set | Screen                                        | Files           |
+| --- | --------------------------------------------- | --------------- |
+| 1   | Home / onboarding (not logged in)             | `f-1a` – `f-1d` |
+| 2   | Main paths / calendar view                    | `f-2a` – `f-2d` |
+| 3   | Full-screen view entry                        | `f-3a` – `f-3d` |
+| 4   | Full-screen create / edit entry               | `f-4a` – `f-4d` |
+| 5   | Full-screen create / edit path                | `f-5a` – `f-5d` |
+| 6   | Paths management, invitations, export, delete | `f-6a` – `f-6d` |
 
 ---
 

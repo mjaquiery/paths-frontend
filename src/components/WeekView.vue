@@ -1,15 +1,23 @@
 <template>
   <div class="week-view">
-    <!-- Past-week navigation -->
-    <div v-if="hasPreviousEntries" class="week-nav week-nav--top">
+    <!-- Week navigation header -->
+    <div class="week-nav-header">
       <ion-button
         fill="clear"
         size="small"
-        aria-label="Navigate to older week"
+        aria-label="Previous week"
         @click="weekOffset--"
+        >◄ Prev</ion-button
       >
-        ▲ Older week
-      </ion-button>
+      <span class="week-range-label">{{ weekRangeLabel }}</span>
+      <ion-button
+        fill="clear"
+        size="small"
+        :disabled="weekOffset >= 0"
+        aria-label="Next week"
+        @click="weekOffset++"
+        >Next ►</ion-button
+      >
     </div>
 
     <div class="week-days">
@@ -21,21 +29,19 @@
       >
         <!-- Day header -->
         <div class="day-header">
-          <span class="day-label">
-            {{ dayInfo.label }}
-          </span>
+          <span class="day-label">{{ dayInfo.label }}</span>
           <ion-button
-            v-if="canCreate"
+            v-if="canCreate && firstOwnedPath"
             size="small"
             fill="clear"
             class="day-create-btn"
+            :aria-label="`Create entry for ${dayInfo.dateStr}`"
             @click="openCreate(dayInfo.dateStr)"
+            >+</ion-button
           >
-            +
-          </ion-button>
         </div>
 
-        <!-- Entries for this day, split across paths -->
+        <!-- Entries for this day -->
         <div
           v-if="dayInfo.pathEntries.length > 0"
           class="day-entries"
@@ -49,13 +55,9 @@
             role="button"
             tabindex="0"
             :aria-label="`View entry from ${pe.pathTitle}`"
-            @click="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
-            @keydown.enter="
-              openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)
-            "
-            @keydown.space.prevent="
-              openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)
-            "
+            @click="openDetail(pe)"
+            @keydown.enter="openDetail(pe)"
+            @keydown.space.prevent="openDetail(pe)"
           >
             <span
               class="day-entry-path-dot"
@@ -79,73 +81,16 @@
         <div v-else class="day-empty"></div>
       </div>
     </div>
-
-    <!-- Future-week navigation -->
-    <div v-if="weekOffset < 0" class="week-nav week-nav--bottom">
-      <ion-button
-        fill="clear"
-        size="small"
-        aria-label="Navigate to newer week"
-        @click="weekOffset++"
-      >
-        ▼ Newer week
-      </ion-button>
-    </div>
   </div>
-
-  <!-- Entry creation modal -->
-  <EntryCreateModal
-    :is-open="showCreateModal"
-    :paths="visiblePaths"
-    :current-user-id="currentUserId"
-    :initial-day="createModalDay"
-    @dismiss="showCreateModal = false"
-    @created="onEntryCreated"
-  />
-
-  <!-- Entry detail modal -->
-  <EntryDetailModal
-    :is-open="showDetailModal"
-    :entries="detailDayEntries"
-    :start-index="detailStartIndex"
-    @dismiss="closeDetail"
-    @edit="openEdit"
-    @delete="confirmDelete"
-  />
-
-  <!-- Entry edit modal -->
-  <EntryEditModal
-    v-if="editEntry"
-    :is-open="showEditModal"
-    :entry="editEntry"
-    @dismiss="closeEdit"
-    @saved="onEntrySaved"
-  />
-
-  <!-- Entry delete confirmation -->
-  <ion-alert
-    :is-open="showDeleteAlert"
-    header="Delete Entry"
-    :message="`Delete the entry for ${deleteEntry?.day ?? ''}? This action cannot be undone.`"
-    :buttons="deleteAlertButtons"
-    @didDismiss="showDeleteAlert = false"
-  />
 </template>
 
 <script setup lang="ts">
-import { IonButton, IonAlert } from '@ionic/vue';
+import { IonButton } from '@ionic/vue';
+import { useRouter } from '@ionic/vue-router';
 import { computed, ref } from 'vue';
 
 import type { PathResponse, ImageResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
-import { useDeleteEntry } from '../generated/apiClient';
-import { extractErrorMessage } from '../lib/errors';
-import { db } from '../lib/db';
-import EntryCreateModal from './EntryCreateModal.vue';
-import EntryDetailModal from './EntryDetailModal.vue';
-import EntryEditModal from './EntryEditModal.vue';
-import type { EntryDetailData } from './EntryDetailModal.vue';
-import { useQueryClient } from '@tanstack/vue-query';
 
 const props = defineProps<{
   visiblePaths: PathResponse[];
@@ -158,14 +103,9 @@ const emit = defineEmits<{
   entryCreated: [];
 }>();
 
-const weekOffset = ref(0); // 0 = current week, -1 = last week, etc.
-const showCreateModal = ref(false);
-const createModalDay = ref('');
-const showDetailModal = ref(false);
-const detailDayEntries = ref<EntryDetailData[]>([]);
-const detailStartIndex = ref(0);
+const router = useRouter();
+const weekOffset = ref(0);
 
-/** Build ISO date string for a day offset from today */
 function isoDate(offsetDays: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
@@ -203,23 +143,17 @@ interface DayInfo {
 
 const weekDays = computed<DayInfo[]>(() => {
   const todayStr = isoDate(0);
-  // 7-day window: oldest at index 0 (top), newest (today or future) at last (bottom)
   const days: DayInfo[] = [];
   const baseOffset = weekOffset.value * 7;
-
   for (let i = 6; i >= 0; i--) {
     const offsetFromToday = baseOffset - i;
     const dateStr = isoDate(offsetFromToday);
     const isToday = dateStr === todayStr;
-
     const pathEntries: DayPathEntry[] = [];
     for (const { pathId, entries } of props.pathEntries) {
       const path = props.visiblePaths.find((p) => p.path_id === pathId);
       if (!path) continue;
-      const dayEntries = entries.filter((e) => e.day === dateStr);
-      for (const entry of dayEntries) {
-        const canEdit =
-          !!props.currentUserId && path.owner_user_id === props.currentUserId;
+      for (const entry of entries.filter((e) => e.day === dateStr)) {
         pathEntries.push({
           entryId: entry.id,
           pathId,
@@ -229,11 +163,11 @@ const weekDays = computed<DayInfo[]>(() => {
           hasImages: (entry.image_filenames?.length ?? 0) > 0,
           images: entry.images,
           edit_id: entry.edit_id,
-          canEdit,
+          canEdit:
+            !!props.currentUserId && path.owner_user_id === props.currentUserId,
         });
       }
     }
-
     days.push({
       dateStr,
       label: dayLabel(dateStr, isToday),
@@ -241,124 +175,37 @@ const weekDays = computed<DayInfo[]>(() => {
       pathEntries,
     });
   }
-
   return days;
 });
 
-const hasPreviousEntries = computed(() => {
-  // Show "older week" button if any visible path has entries before the oldest displayed day
-  const oldestDay = weekDays.value[0]?.dateStr ?? '';
-  return props.pathEntries.some(({ entries }) =>
-    entries.some((e) => e.day < oldestDay),
-  );
+const weekRangeLabel = computed(() => {
+  const first = weekDays.value[0];
+  const last = weekDays.value[weekDays.value.length - 1];
+  if (!first || !last) return '';
+  const fmt = (ds: string) =>
+    new Date(ds + 'T00:00:00').toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+    });
+  const year = new Date(last.dateStr + 'T00:00:00').getFullYear();
+  return `Week of ${fmt(first.dateStr)} – ${fmt(last.dateStr)}, ${year}`;
 });
 
+const firstOwnedPath = computed(
+  () =>
+    props.visiblePaths.find((p) => p.owner_user_id === props.currentUserId) ??
+    null,
+);
+
+function openDetail(pe: DayPathEntry) {
+  void router.push(`/entry/${pe.pathId}/${pe.entryId}`);
+}
+
 function openCreate(dateStr: string) {
-  createModalDay.value = dateStr;
-  showCreateModal.value = true;
-}
-
-function openDetail(
-  pe: DayPathEntry,
-  dayEntries: DayPathEntry[],
-  dateStr: string,
-) {
-  detailDayEntries.value = dayEntries.map((e) => ({
-    pathId: e.pathId,
-    entryId: e.entryId,
-    pathTitle: e.pathTitle,
-    color: e.color,
-    day: dateStr,
-    content: e.preview,
-    hasImages: e.hasImages,
-    images: e.images,
-    edit_id: e.edit_id,
-    canEdit: e.canEdit,
-  }));
-  detailStartIndex.value = dayEntries.indexOf(pe);
-  showDetailModal.value = true;
-}
-
-function closeDetail() {
-  showDetailModal.value = false;
-  detailDayEntries.value = [];
-}
-
-const showEditModal = ref(false);
-const editEntry = ref<EntryDetailData | null>(null);
-
-function openEdit(entry: EntryDetailData) {
-  editEntry.value = entry;
-  showDetailModal.value = false;
-  showEditModal.value = true;
-}
-
-function closeEdit() {
-  showEditModal.value = false;
-  editEntry.value = null;
-}
-
-function onEntrySaved() {
-  emit('entryCreated');
-}
-
-const queryClient = useQueryClient();
-const { mutateAsync: doDeleteEntry } = useDeleteEntry();
-const showDeleteAlert = ref(false);
-const deleteEntry = ref<EntryDetailData | null>(null);
-const deleteError = ref('');
-
-const deleteAlertButtons = computed(() => [
-  {
-    text: 'Cancel',
-    role: 'cancel',
-  },
-  {
-    text: 'Delete',
-    role: 'destructive',
-    handler: () => {
-      void performDelete();
-    },
-  },
-]);
-
-function confirmDelete(entry: EntryDetailData) {
-  deleteEntry.value = entry;
-  showDetailModal.value = false;
-  showDeleteAlert.value = true;
-}
-
-async function performDelete() {
-  if (!deleteEntry.value) return;
-  deleteError.value = '';
-  try {
-    await doDeleteEntry({
-      pathCode: deleteEntry.value.pathId,
-      entrySlug: deleteEntry.value.entryId,
-    });
-    void queryClient.invalidateQueries({
-      queryKey: ['v1', 'paths', deleteEntry.value.pathId, 'entries'],
-    });
-    try {
-      const cacheKey = `${deleteEntry.value.pathId}:${deleteEntry.value.entryId}`;
-      await db.entryContent.delete(cacheKey);
-      await db.entryImages
-        .where('entry_id')
-        .equals(deleteEntry.value.entryId)
-        .delete();
-    } catch {
-      // IndexedDB may be unavailable.
-    }
-    emit('entryCreated');
-  } catch (err: unknown) {
-    deleteError.value = extractErrorMessage(err) ?? 'Failed to delete entry.';
-  } finally {
-    deleteEntry.value = null;
-  }
-}
-
-function onEntryCreated() {
-  emit('entryCreated');
+  if (!firstOwnedPath.value) return;
+  void router.push(
+    `/entry/${firstOwnedPath.value.path_id}/new?date=${dateStr}`,
+  );
 }
 </script>
 
@@ -367,9 +214,18 @@ function onEntryCreated() {
   padding: 0 8px;
 }
 
-.week-nav {
-  text-align: center;
-  padding: 4px 0;
+.week-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+}
+
+.week-range-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ion-text-color);
 }
 
 .week-days {
@@ -379,16 +235,17 @@ function onEntryCreated() {
 }
 
 .day-box {
-  border: 1px solid var(--ion-color-light-shade, #e0e0e0);
+  border: 1px solid var(--ion-border-color, #e0e0e0);
   border-radius: var(--paths-border-radius, 8px);
   min-height: var(--paths-day-min-height, 72px);
   overflow: hidden;
-  background: var(--ion-background-color, #fff);
+  background: var(--ion-card-background, #fff);
 }
 
 .day-box--today {
-  border-color: var(--ion-color-primary, #3949ab);
-  border-width: 2px;
+  border-color: var(--paths-today-border, #3949ab);
+  border-left-width: 4px;
+  border-left-style: solid;
 }
 
 .day-header {
@@ -397,7 +254,7 @@ function onEntryCreated() {
   justify-content: space-between;
   padding: 4px 8px 2px;
   background: var(--ion-color-light, #f4f4f4);
-  border-bottom: 1px solid var(--ion-color-light-shade, #e0e0e0);
+  border-bottom: 1px solid var(--ion-border-color, #e0e0e0);
 }
 
 .day-box--today .day-header {
@@ -425,7 +282,6 @@ function onEntryCreated() {
   height: 100%;
 }
 
-/* When multiple entries: split horizontally (side-by-side) */
 .day-entries--count-2,
 .day-entries--count-3,
 .day-entries--count-4 {
@@ -446,7 +302,7 @@ function onEntryCreated() {
 }
 
 .day-entry:hover {
-  background: var(--ion-color-light, #f4f4f4);
+  background: var(--paths-card-hover, rgba(57, 73, 171, 0.06));
 }
 
 .day-entry:focus-visible {
