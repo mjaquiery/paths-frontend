@@ -63,6 +63,9 @@
       :buttons="deleteAlertButtons"
       @didDismiss="showDeleteAlert = false"
     />
+    <p v-if="deleteError" class="delete-error ion-padding-horizontal">
+      {{ deleteError }}
+    </p>
   </ion-page>
 </template>
 
@@ -97,10 +100,15 @@ const path = computed(
   () => (paths.value ?? []).find((p) => p.path_id === pathId.value) ?? null,
 );
 
-const storedUser = localStorage.getItem('user');
-const currentUserId = storedUser
-  ? (JSON.parse(storedUser) as { user_id: string }).user_id
-  : '';
+function getStoredUserId(): string {
+  try {
+    const stored = localStorage.getItem('user');
+    return stored ? (JSON.parse(stored) as { user_id: string }).user_id : '';
+  } catch {
+    return '';
+  }
+}
+const currentUserId = getStoredUserId();
 const canEdit = computed(
   () => !!currentUserId && path.value?.owner_user_id === currentUserId,
 );
@@ -136,6 +144,7 @@ const previousYears = computed(() => {
 const queryClient = useQueryClient();
 const { mutateAsync: doDeleteEntry } = useDeleteEntry();
 const showDeleteAlert = ref(false);
+const deleteError = ref('');
 
 const deleteAlertButtons = computed(() => [
   { text: 'Cancel', role: 'cancel' },
@@ -154,6 +163,7 @@ function confirmDelete() {
 
 async function performDelete() {
   if (!entry.value) return;
+  deleteError.value = '';
   try {
     await doDeleteEntry({
       pathCode: pathId.value,
@@ -169,8 +179,9 @@ async function performDelete() {
       /* IndexedDB may be unavailable */
     }
     router.back();
-  } catch {
-    /* error handled gracefully */
+  } catch (err: unknown) {
+    deleteError.value =
+      (err instanceof Error ? err.message : null) ?? 'Failed to delete entry.';
   }
 }
 </script>
@@ -230,5 +241,11 @@ async function performDelete() {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.delete-error {
+  color: var(--ion-color-danger);
+  font-size: 0.85rem;
+  margin-top: 8px;
 }
 </style>

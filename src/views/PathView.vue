@@ -88,9 +88,14 @@ const path = computed(
 );
 
 const storedUser = localStorage.getItem('user');
-const currentUserId = storedUser
-  ? (JSON.parse(storedUser) as { user_id: string }).user_id
-  : '';
+let currentUserId = '';
+try {
+  currentUserId = storedUser
+    ? (JSON.parse(storedUser) as { user_id: string }).user_id
+    : '';
+} catch {
+  currentUserId = '';
+}
 const isOwned = computed(() => path.value?.owner_user_id === currentUserId);
 
 const pathIdArr = computed(() => (path.value ? [pathId.value] : []));

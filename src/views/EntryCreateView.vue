@@ -101,6 +101,7 @@ import { computed, ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { usePaths } from '../composables/usePaths';
 import { useCreateEntry } from '../generated/apiClient';
+import { extractErrorMessage } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 
 const route = useRoute();
@@ -108,9 +109,14 @@ const router = useRouter();
 
 const { data: paths } = usePaths();
 const storedUser = localStorage.getItem('user');
-const currentUserId = storedUser
-  ? (JSON.parse(storedUser) as { user_id: string }).user_id
-  : '';
+let currentUserId = '';
+try {
+  currentUserId = storedUser
+    ? (JSON.parse(storedUser) as { user_id: string }).user_id
+    : '';
+} catch {
+  currentUserId = '';
+}
 const ownedPaths = computed(() =>
   (paths.value ?? []).filter((p) => p.owner_user_id === currentUserId),
 );
@@ -142,8 +148,9 @@ async function save() {
     });
     void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
     router.back();
-  } catch {
-    saveError.value = 'Failed to save. Please try again.';
+  } catch (err: unknown) {
+    saveError.value =
+      extractErrorMessage(err) ?? 'Failed to save. Please try again.';
     saving.value = false;
   }
 }

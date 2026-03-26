@@ -136,9 +136,14 @@ const pathIds = computed(() => allPaths.value.map((p) => p.path_id));
 const multiPathEntries = useMultiPathEntries(pathIds);
 
 const storedUser = localStorage.getItem('user');
-const currentUserId = storedUser
-  ? (JSON.parse(storedUser) as { user_id: string }).user_id
-  : '';
+let currentUserId = '';
+try {
+  currentUserId = storedUser
+    ? (JSON.parse(storedUser) as { user_id: string }).user_id
+    : '';
+} catch {
+  currentUserId = '';
+}
 const ownedPaths = computed(() =>
   allPaths.value.filter((p) => p.owner_user_id === currentUserId),
 );

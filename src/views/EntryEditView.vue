@@ -76,6 +76,7 @@ import { computed, ref, watch } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { useUpdateEntry } from '../generated/apiClient';
+import { extractErrorMessage } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 
 const route = useRoute();
@@ -125,8 +126,9 @@ async function save() {
       queryKey: ['v1', 'paths', pathId.value, 'entries'],
     });
     router.back();
-  } catch {
-    saveError.value = 'Failed to save. Please try again.';
+  } catch (err: unknown) {
+    saveError.value =
+      extractErrorMessage(err) ?? 'Failed to save. Please try again.';
     saving.value = false;
   }
 }
