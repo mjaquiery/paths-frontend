@@ -102,7 +102,7 @@ import {
   IonButtons,
   IonBackButton,
 } from '@ionic/vue';
-import { useRoute, useRouter } from '@ionic/vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { computed } from 'vue';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { usePaths } from '../composables/usePaths';

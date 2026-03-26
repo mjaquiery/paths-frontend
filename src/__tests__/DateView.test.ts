@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import DateView from '../views/DateView.vue';
 
-vi.mock('@ionic/vue-router', () => ({
+vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { date: '2024-01-15' }, query: {} }),
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
 }));

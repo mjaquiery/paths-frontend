@@ -86,7 +86,7 @@
 
 <script setup lang="ts">
 import { IonButton } from '@ionic/vue';
-import { useRouter } from '@ionic/vue-router';
+import { useRouter } from 'vue-router';
 import { computed, ref } from 'vue';
 
 import type { PathResponse, ImageResponse } from '../generated/types';

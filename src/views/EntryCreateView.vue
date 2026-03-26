@@ -96,7 +96,7 @@ import {
   IonInput,
   IonTextarea,
 } from '@ionic/vue';
-import { useRoute, useRouter } from '@ionic/vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { computed, ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { usePaths } from '../composables/usePaths';

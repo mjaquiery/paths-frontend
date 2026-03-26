@@ -14,7 +14,7 @@ import type { PathEntries } from '../composables/useMultiPathEntries';
 // Mock router
 // ---------------------------------------------------------------------------
 const mockPush = vi.fn();
-vi.mock('@ionic/vue-router', () => ({
+vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mockPush }),
   useRoute: () => ({ params: {}, query: {} }),
 }));

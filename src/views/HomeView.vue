@@ -66,9 +66,39 @@
 
       <!-- Fallback: not logged in -->
       <div v-if="!currentUser" class="home-welcome">
-        <ion-card>
+        <div class="welcome-logo-wrap">
+          <img src="/favicon.svg" alt="Paths logo" class="welcome-logo" />
+          <h1 class="welcome-app-name">Paths</h1>
+          <p class="welcome-tagline">
+            A private journal across multiple streams of life.
+          </p>
+        </div>
+        <ion-card class="welcome-card">
           <ion-card-content>
-            <p>Log in to start writing your paths.</p>
+            <ul class="welcome-features">
+              <li>
+                Write daily entries across separate paths — Daily Life,
+                Projects, Travel, anything.
+              </li>
+              <li>
+                Revisit past years. The same date, one year ago, five years ago.
+              </li>
+              <li>
+                Share one path with someone special, keep the rest private.
+              </li>
+            </ul>
+            <ion-button
+              expand="block"
+              :disabled="loggingIn"
+              class="welcome-login-btn"
+              @click="loginWithGoogle"
+            >
+              {{ loggingIn ? 'Redirecting…' : 'Continue with Google' }}
+            </ion-button>
+            <p v-if="loginError" class="welcome-error">{{ loginError }}</p>
+            <p class="welcome-note">
+              Your data stays yours. Export or delete any time.
+            </p>
           </ion-card-content>
         </ion-card>
       </div>
@@ -132,7 +162,7 @@ import {
 } from '@ionic/vue';
 import { ref, computed, onMounted, nextTick } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
-import { useRouter } from '@ionic/vue-router';
+import { useRouter } from 'vue-router';
 
 import PathsSelectorBar from '../components/PathsSelectorBar.vue';
 import OnThisDaySpotlight from '../components/OnThisDaySpotlight.vue';
@@ -260,7 +290,75 @@ function createNewEntry() {
 }
 
 .home-welcome {
-  margin-top: 32px;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.welcome-logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.welcome-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+
+.welcome-app-name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--ion-color-primary);
+  margin: 0 0 6px;
+  letter-spacing: -0.5px;
+}
+
+.welcome-tagline {
+  font-size: 0.95rem;
+  color: var(--ion-color-medium);
+  text-align: center;
+  max-width: 280px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.welcome-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.welcome-features {
+  margin: 0 0 20px 16px;
+  padding: 0;
+  color: var(--ion-color-dark);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.welcome-features li {
+  margin-bottom: 8px;
+}
+
+.welcome-login-btn {
+  margin-bottom: 8px;
+}
+
+.welcome-error {
+  color: var(--ion-color-danger);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.welcome-note {
+  font-size: 0.78rem;
+  color: var(--ion-color-medium);
+  text-align: center;
+  margin: 8px 0 0;
 }
 
 .footer-links {

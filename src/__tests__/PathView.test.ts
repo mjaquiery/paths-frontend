@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import PathView from '../views/PathView.vue';
 
-vi.mock('@ionic/vue-router', () => ({
+vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { pathId: 'p1' }, query: {} }),
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
 }));
