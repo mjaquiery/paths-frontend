@@ -357,6 +357,72 @@ describe('useMultiPathEntries', () => {
     expect(result?.value[0]?.entries).toEqual([]);
   });
 
+  it('hydrates immediately when entry lists are already in the query cache', async () => {
+    vi.mocked(customFetch).mockImplementation((url: string) => {
+      if (url === '/v1/paths/p1/entries/e1') {
+        return Promise.resolve({
+          data: {
+            id: 'e1',
+            path_id: 'p1',
+            day: '2024-01-01',
+            edit_id: 1,
+            content: 'Warm cache content',
+          },
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      if (url === '/v1/paths/p1/entries/e1/images') {
+        return Promise.resolve({
+          data: [],
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      return Promise.resolve({
+        data: [],
+        status: 200,
+        headers: new Headers(),
+      });
+    });
+
+    const pathIds = ref(['p1']);
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          staleTime: Infinity,
+        },
+      },
+    });
+    queryClient.setQueryData(['v1', 'paths', 'p1', 'entries'], {
+      data: [{ id: 'e1', path_id: 'p1', day: '2024-01-01', edit_id: 1 }],
+      status: 200,
+      headers: new Headers(),
+    });
+
+    let result: ReturnType<typeof useMultiPathEntries> | undefined;
+
+    const TestComponent = defineComponent({
+      setup() {
+        result = useMultiPathEntries(pathIds);
+        return {};
+      },
+      template: '<div></div>',
+    });
+
+    mount(TestComponent, {
+      global: { plugins: [[VueQueryPlugin, { queryClient }]] },
+    });
+    await flushPromises();
+    await flushPromises();
+
+    expect(result?.value).toHaveLength(1);
+    expect(result?.value[0]?.entries).toHaveLength(1);
+    expect(result?.value[0]?.entries[0]?.id).toBe('e1');
+    expect(result?.value[0]?.entries[0]?.content).toBe('Warm cache content');
+  });
+
   it('keeps each pathId associated with its own entries when pathIds are reordered', async () => {
     vi.mocked(customFetch).mockImplementation((url: string) => {
       // Images endpoint: /v1/paths/{id}/entries/{entryId}/images

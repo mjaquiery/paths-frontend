@@ -13,46 +13,53 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-    <ion-content class="ion-padding">
-      <div v-if="!entry" class="edit-loading">Loading entry…</div>
-      <template v-else>
-        <ion-item>
-          <ion-label position="stacked">Content *</ion-label>
-          <div class="content-tabs">
-            <button
-              class="content-tab"
-              :class="{ active: contentTab === 'write' }"
-              type="button"
-              @click="contentTab = 'write'"
-            >
-              Write
-            </button>
-            <button
-              class="content-tab"
-              :class="{ active: contentTab === 'preview' }"
-              type="button"
-              @click="contentTab = 'preview'"
-            >
-              Preview
-            </button>
-          </div>
-          <ion-textarea
-            v-if="contentTab === 'write'"
-            v-model="content"
-            placeholder="Write your entry… (markdown supported)"
-            :rows="8"
-            auto-grow
-            autocapitalize="sentences"
-            autocorrect="on"
-            spellcheck="true"
-          />
-          <div v-else class="content-preview">
-            <MarkdownContent v-if="content" :content="content" />
-            <p v-else class="content-preview-empty">(nothing to preview)</p>
-          </div>
-        </ion-item>
-        <p v-if="saveError" class="save-error">{{ saveError }}</p>
-      </template>
+    <ion-content class="entry-editor-content">
+      <div class="entry-form">
+        <div v-if="!entry" class="edit-loading">Loading entry…</div>
+        <template v-else>
+          <section class="editor-section">
+            <div class="editor-header">
+              <label class="editor-label">Content *</label>
+              <div class="content-tabs" role="tablist" aria-label="Editor mode">
+                <button
+                  class="content-tab"
+                  :class="{ active: contentTab === 'write' }"
+                  type="button"
+                  @click="contentTab = 'write'"
+                >
+                  Write
+                </button>
+                <button
+                  class="content-tab"
+                  :class="{ active: contentTab === 'preview' }"
+                  type="button"
+                  @click="contentTab = 'preview'"
+                >
+                  Preview
+                </button>
+              </div>
+            </div>
+            <div class="editor-surface">
+              <ion-textarea
+                v-if="contentTab === 'write'"
+                v-model="content"
+                class="editor-textarea"
+                placeholder="Write your entry… (markdown supported)"
+                :rows="8"
+                auto-grow
+                autocapitalize="sentences"
+                autocorrect="on"
+                spellcheck="true"
+              />
+              <div v-else class="content-preview">
+                <MarkdownContent v-if="content" :content="content" />
+                <p v-else class="content-preview-empty">(nothing to preview)</p>
+              </div>
+            </div>
+          </section>
+          <p v-if="saveError" class="save-error">{{ saveError }}</p>
+        </template>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -67,8 +74,6 @@ import {
   IonButton,
   IonButtons,
   IonBackButton,
-  IonItem,
-  IonLabel,
   IonTextarea,
 } from '@ionic/vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -135,44 +140,109 @@ async function save() {
 </script>
 
 <style scoped>
+.entry-editor-content {
+  --padding-top: 18px;
+  --padding-bottom: 28px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
+.entry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
 .edit-loading {
-  padding: 24px;
+  padding: 32px 20px;
   text-align: center;
   color: var(--ion-color-medium);
+  border: 1px dashed var(--ion-border-color);
+  border-radius: 18px;
 }
+
+.editor-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--ion-border-color);
+  border-radius: 18px;
+  background: var(--ion-item-background);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.editor-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.editor-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ion-text-color);
+}
+
 .content-tabs {
   display: flex;
-  gap: 4px;
-  margin-bottom: 6px;
-  width: 100%;
+  gap: 8px;
+  width: auto;
 }
+
 .content-tab {
-  flex: 1;
-  padding: 4px 12px;
+  min-width: 88px;
+  padding: 8px 14px;
   border: 1px solid var(--ion-border-color);
-  border-radius: 4px;
-  background: transparent;
+  border-radius: 999px;
+  background: var(--ion-background-color);
   color: var(--ion-text-color);
   cursor: pointer;
   font-size: 0.85rem;
+  font-weight: 600;
 }
+
 .content-tab.active {
   background: var(--ion-color-primary);
   color: var(--ion-color-primary-contrast);
   border-color: var(--ion-color-primary);
 }
-.content-preview {
-  min-height: 120px;
-  padding: 8px;
-  width: 100%;
+
+.editor-surface {
+  border: 1px solid var(--ion-border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--ion-background-color);
 }
+
+.editor-textarea {
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  min-height: 250px;
+}
+
+.content-preview {
+  min-height: 250px;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .content-preview-empty {
   color: var(--ion-color-medium);
   font-style: italic;
+  margin: 0;
 }
+
 .save-error {
   color: var(--ion-color-danger);
   font-size: 0.85rem;
-  margin-top: 8px;
+  margin: 0 4px;
 }
 </style>

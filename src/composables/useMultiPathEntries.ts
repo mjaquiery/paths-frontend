@@ -165,7 +165,9 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
         }
       }
     },
-    { deep: true },
+    // Storybook and offline restores can mount with query data already warm.
+    // Run once immediately so the initial render reflects cached entries.
+    { deep: true, immediate: true },
   );
 
   return computed<PathEntries[]>(() =>

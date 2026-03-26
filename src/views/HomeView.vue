@@ -36,21 +36,25 @@
     <PathsSelectorBar
       v-if="currentUser"
       :current-user="currentUser"
-      @paths-changed="visiblePaths = $event"
+      @paths-changed="onPathsChanged"
     />
 
     <!-- ── Main content ── -->
     <ion-content ref="contentRef" class="ion-padding-horizontal">
+      <ion-text v-if="pathsError" color="danger" class="view-error-banner">
+        {{ pathsErrorMessage }}
+      </ion-text>
+
       <!-- Previously on this day -->
       <OnThisDaySpotlight
-        v-if="visiblePaths.length > 0"
-        :visible-paths="visiblePaths"
+        v-if="effectiveVisiblePaths.length > 0"
+        :visible-paths="effectiveVisiblePaths"
         :path-entries="multiPathEntries"
       />
 
       <!-- Primary week view -->
       <WeekView
-        :visible-paths="visiblePaths"
+        :visible-paths="effectiveVisiblePaths"
         :path-entries="multiPathEntries"
         :can-create="canCreateAny"
         :current-user-id="currentUser ? currentUser.user_id : ''"
@@ -175,8 +179,10 @@ import type {
 } from '../generated/types';
 import { authLogin } from '../generated/apiClient';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
+import { usePaths } from '../composables/usePaths';
 import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { useDarkMode } from '../composables/useDarkMode';
+import { extractErrorMessage } from '../lib/errors';
 
 const {
   isDark,
@@ -194,13 +200,29 @@ const darkModeLabel = computed(() => {
 
 const loggingIn = ref(false);
 const loginError = ref('');
-const currentUser = ref<OAuthCallbackResponse | null>(null);
+const currentUser = ref<OAuthCallbackResponse | null>(getStoredUser());
 const queryClient = useQueryClient();
 
 /** Ordered, visible paths managed by PathsSelectorBar */
 const visiblePaths = ref<PathResponse[]>([]);
+const { data: allPaths, error: pathsError } = usePaths();
+const hasReceivedPathSelection = ref(false);
+const pathsErrorMessage = computed(
+  () =>
+    extractErrorMessage(pathsError.value) ?? 'Unable to load paths right now.',
+);
 
-const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
+const effectiveVisiblePaths = computed(() => {
+  if (!currentUser.value) return [];
+  if (!hasReceivedPathSelection.value) {
+    return allPaths.value ?? [];
+  }
+  return visiblePaths.value;
+});
+
+const visiblePathIds = computed(() =>
+  effectiveVisiblePaths.value.map((p) => p.path_id),
+);
 const multiPathEntries = useMultiPathEntries(visiblePathIds);
 
 const {
@@ -214,23 +236,26 @@ const contentRef = ref<InstanceType<typeof IonContent> | null>(null);
 const canCreateAny = computed(
   () =>
     !!currentUser.value &&
-    visiblePaths.value.some(
+    effectiveVisiblePaths.value.some(
       (p) => p.owner_user_id === currentUser.value!.user_id,
     ),
 );
 
 onMounted(() => {
-  const stored = localStorage.getItem('user');
-  if (stored) {
-    try {
-      currentUser.value = JSON.parse(stored) as OAuthCallbackResponse;
-    } catch {
-      localStorage.removeItem('user');
-      localStorage.removeItem('session_token');
-    }
-  }
   void nextTick(() => contentRef.value?.$el?.scrollToBottom(0));
 });
+
+function getStoredUser(): OAuthCallbackResponse | null {
+  const stored = localStorage.getItem('user');
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored) as OAuthCallbackResponse;
+  } catch {
+    localStorage.removeItem('user');
+    localStorage.removeItem('session_token');
+    return null;
+  }
+}
 
 async function loginWithGoogle() {
   loggingIn.value = true;
@@ -256,6 +281,7 @@ function logout() {
   localStorage.removeItem('session_token');
   currentUser.value = null;
   visiblePaths.value = [];
+  hasReceivedPathSelection.value = false;
 }
 
 function onEntryCreated() {
@@ -264,12 +290,17 @@ function onEntryCreated() {
 }
 
 function createNewEntry() {
-  const ownedPath = visiblePaths.value.find(
+  const ownedPath = effectiveVisiblePaths.value.find(
     (p) => p.owner_user_id === currentUser.value?.user_id,
   );
   if (ownedPath) {
     void router.push(`/entry/${ownedPath.path_id}/new`);
   }
+}
+
+function onPathsChanged(paths: PathResponse[]) {
+  visiblePaths.value = paths;
+  hasReceivedPathSelection.value = true;
 }
 </script>
 
@@ -287,6 +318,12 @@ function createNewEntry() {
 
 .create-entry-cta {
   margin: 16px 0 8px;
+}
+
+.view-error-banner {
+  display: block;
+  margin: 16px 0;
+  font-size: 0.9rem;
 }
 
 .home-welcome {
@@ -363,7 +400,15 @@ function createNewEntry() {
 
 .footer-links {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .footer-links {
+    justify-content: flex-start;
+    padding: 6px 8px;
+  }
 }
 </style>

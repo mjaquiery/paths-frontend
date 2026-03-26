@@ -2,3 +2,10 @@
 .idea/
 node_modules
 dist
+storybook-static
+storybook-screens
+coverage
+*.log
+*.tsbuildinfo
+*.env.*
+.DS_Store

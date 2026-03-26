@@ -13,68 +13,75 @@
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-    <ion-content class="ion-padding">
-      <!-- Path selection -->
-      <ion-item>
-        <ion-label position="stacked">Path *</ion-label>
-        <ion-select
-          v-model="selectedPathId"
-          placeholder="Select a path"
-          interface="action-sheet"
-        >
-          <ion-select-option
-            v-for="p in ownedPaths"
-            :key="p.path_id"
-            :value="p.path_id"
-            >{{ p.title }}</ion-select-option
+    <ion-content class="entry-editor-content">
+      <div class="entry-form">
+        <ion-text v-if="pathsError" color="danger" class="view-error-banner">
+          {{ pathsErrorMessage }}
+        </ion-text>
+        <ion-item class="entry-field">
+          <ion-label position="stacked">Path *</ion-label>
+          <ion-select
+            v-model="selectedPathId"
+            placeholder="Select a path"
+            interface="action-sheet"
           >
-        </ion-select>
-      </ion-item>
+            <ion-select-option
+              v-for="p in ownedPaths"
+              :key="p.path_id"
+              :value="p.path_id"
+              >{{ p.title }}</ion-select-option
+            >
+          </ion-select>
+        </ion-item>
 
-      <!-- Day -->
-      <ion-item>
-        <ion-label position="stacked">Day *</ion-label>
-        <ion-input v-model="day" type="date" />
-      </ion-item>
+        <ion-item class="entry-field">
+          <ion-label position="stacked">Day *</ion-label>
+          <ion-input v-model="day" type="date" />
+        </ion-item>
 
-      <!-- Content with write/preview tabs -->
-      <ion-item>
-        <ion-label position="stacked">Content *</ion-label>
-        <div class="content-tabs">
-          <button
-            class="content-tab"
-            :class="{ active: contentTab === 'write' }"
-            type="button"
-            @click="contentTab = 'write'"
-          >
-            Write
-          </button>
-          <button
-            class="content-tab"
-            :class="{ active: contentTab === 'preview' }"
-            type="button"
-            @click="contentTab = 'preview'"
-          >
-            Preview
-          </button>
-        </div>
-        <ion-textarea
-          v-if="contentTab === 'write'"
-          v-model="content"
-          placeholder="Write your entry… (markdown supported)"
-          :rows="8"
-          auto-grow
-          autocapitalize="sentences"
-          autocorrect="on"
-          spellcheck="true"
-        />
-        <div v-else class="content-preview">
-          <MarkdownContent v-if="content" :content="content" />
-          <p v-else class="content-preview-empty">(nothing to preview)</p>
-        </div>
-      </ion-item>
+        <section class="editor-section">
+          <div class="editor-header">
+            <label class="editor-label">Content *</label>
+            <div class="content-tabs" role="tablist" aria-label="Editor mode">
+              <button
+                class="content-tab"
+                :class="{ active: contentTab === 'write' }"
+                type="button"
+                @click="contentTab = 'write'"
+              >
+                Write
+              </button>
+              <button
+                class="content-tab"
+                :class="{ active: contentTab === 'preview' }"
+                type="button"
+                @click="contentTab = 'preview'"
+              >
+                Preview
+              </button>
+            </div>
+          </div>
+          <div class="editor-surface">
+            <ion-textarea
+              v-if="contentTab === 'write'"
+              v-model="content"
+              class="editor-textarea"
+              placeholder="Write your entry… (markdown supported)"
+              :rows="8"
+              auto-grow
+              autocapitalize="sentences"
+              autocorrect="on"
+              spellcheck="true"
+            />
+            <div v-else class="content-preview">
+              <MarkdownContent v-if="content" :content="content" />
+              <p v-else class="content-preview-empty">(nothing to preview)</p>
+            </div>
+          </div>
+        </section>
 
-      <p v-if="saveError" class="save-error">{{ saveError }}</p>
+        <p v-if="saveError" class="save-error">{{ saveError }}</p>
+      </div>
     </ion-content>
   </ion-page>
 </template>
@@ -95,6 +102,7 @@ import {
   IonSelectOption,
   IonInput,
   IonTextarea,
+  IonText,
 } from '@ionic/vue';
 import { useRoute, useRouter } from 'vue-router';
 import { computed, ref } from 'vue';
@@ -107,7 +115,7 @@ import MarkdownContent from '../components/MarkdownContent.vue';
 const route = useRoute();
 const router = useRouter();
 
-const { data: paths } = usePaths();
+const { data: paths, error: pathsError } = usePaths();
 const storedUser = localStorage.getItem('user');
 let currentUserId = '';
 try {
@@ -119,6 +127,9 @@ try {
 }
 const ownedPaths = computed(() =>
   (paths.value ?? []).filter((p) => p.owner_user_id === currentUserId),
+);
+const pathsErrorMessage = computed(
+  () => extractErrorMessage(pathsError.value) ?? 'Unable to load paths.',
 );
 
 const selectedPathId = ref(String(route.params.pathId ?? ''));
@@ -157,39 +168,118 @@ async function save() {
 </script>
 
 <style scoped>
+.entry-editor-content {
+  --padding-top: 18px;
+  --padding-bottom: 28px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
+.entry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.entry-field {
+  --border-radius: 18px;
+  --padding-start: 14px;
+  --inner-padding-end: 14px;
+  --min-height: 72px;
+  border: 1px solid var(--ion-border-color);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.view-error-banner {
+  display: block;
+  margin: 0 4px;
+  font-size: 0.9rem;
+}
+
+.editor-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--ion-border-color);
+  border-radius: 18px;
+  background: var(--ion-item-background);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.editor-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.editor-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ion-text-color);
+}
+
 .content-tabs {
   display: flex;
-  gap: 4px;
-  margin-bottom: 6px;
-  width: 100%;
+  gap: 8px;
+  width: auto;
 }
+
 .content-tab {
-  flex: 1;
-  padding: 4px 12px;
+  min-width: 88px;
+  padding: 8px 14px;
   border: 1px solid var(--ion-border-color);
-  border-radius: 4px;
-  background: transparent;
+  border-radius: 999px;
+  background: var(--ion-background-color);
   color: var(--ion-text-color);
   cursor: pointer;
   font-size: 0.85rem;
+  font-weight: 600;
 }
+
 .content-tab.active {
   background: var(--ion-color-primary);
   color: var(--ion-color-primary-contrast);
   border-color: var(--ion-color-primary);
 }
-.content-preview {
-  min-height: 120px;
-  padding: 8px;
-  width: 100%;
+
+.editor-surface {
+  border: 1px solid var(--ion-border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--ion-background-color);
 }
+
+.editor-textarea {
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  min-height: 250px;
+}
+
+.content-preview {
+  min-height: 250px;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .content-preview-empty {
   color: var(--ion-color-medium);
   font-style: italic;
+  margin: 0;
 }
+
 .save-error {
   color: var(--ion-color-danger);
   font-size: 0.85rem;
-  margin-top: 8px;
+  margin: 0 4px;
 }
 </style>

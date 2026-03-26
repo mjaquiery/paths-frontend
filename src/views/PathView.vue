@@ -26,6 +26,9 @@
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
+      <ion-text v-if="pathsError" color="danger" class="view-error-banner">
+        {{ pathsErrorMessage }}
+      </ion-text>
       <div v-if="groupedEntries.length === 0" class="path-empty">
         <p>No entries yet.</p>
         <ion-button
@@ -72,19 +75,24 @@ import {
   IonButton,
   IonButtons,
   IonBackButton,
+  IonText,
 } from '@ionic/vue';
 import { useRoute, useRouter } from 'vue-router';
 import { computed } from 'vue';
 import { usePaths } from '../composables/usePaths';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
+import { extractErrorMessage } from '../lib/errors';
 
 const route = useRoute();
 const router = useRouter();
 const pathId = computed(() => String(route.params.pathId));
 
-const { data: paths } = usePaths();
+const { data: paths, error: pathsError } = usePaths();
 const path = computed(
   () => (paths.value ?? []).find((p) => p.path_id === pathId.value) ?? null,
+);
+const pathsErrorMessage = computed(
+  () => extractErrorMessage(pathsError.value) ?? 'Unable to load this path.',
 );
 
 const storedUser = localStorage.getItem('user');
@@ -181,5 +189,11 @@ const groupedEntries = computed<EntryGroup[]>(() => {
   font-size: 0.8rem;
   color: var(--ion-color-medium);
   flex-shrink: 0;
+}
+
+.view-error-banner {
+  display: block;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
 }
 </style>

@@ -23,6 +23,9 @@
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
+      <ion-text v-if="pathsError" color="danger" class="view-error-banner">
+        {{ pathsErrorMessage }}
+      </ion-text>
       <div v-if="dayEntries.length === 0" class="date-empty">
         <p>No entries for this day.</p>
         <ion-button
@@ -101,11 +104,13 @@ import {
   IonButton,
   IonButtons,
   IonBackButton,
+  IonText,
 } from '@ionic/vue';
 import { useRoute, useRouter } from 'vue-router';
 import { computed } from 'vue';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { usePaths } from '../composables/usePaths';
+import { extractErrorMessage } from '../lib/errors';
 
 const route = useRoute();
 const router = useRouter();
@@ -130,8 +135,11 @@ function offsetDate(base: string, days: number): string {
 const prevDate = computed(() => offsetDate(dateStr.value, -1));
 const nextDate = computed(() => offsetDate(dateStr.value, 1));
 
-const { data: paths } = usePaths();
+const { data: paths, error: pathsError } = usePaths();
 const allPaths = computed(() => paths.value ?? []);
+const pathsErrorMessage = computed(
+  () => extractErrorMessage(pathsError.value) ?? 'Unable to load paths.',
+);
 const pathIds = computed(() => allPaths.value.map((p) => p.path_id));
 const multiPathEntries = useMultiPathEntries(pathIds);
 
@@ -281,5 +289,11 @@ const previousYears = computed(() => {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.view-error-banner {
+  display: block;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
 }
 </style>

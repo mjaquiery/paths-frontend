@@ -1,0 +1,4 @@
+OPTIONS /v1/paths
+GET /v1/paths
+OPTIONS /v1/paths
+GET /v1/paths
