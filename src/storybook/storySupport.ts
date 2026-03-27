@@ -298,6 +298,7 @@ export const storybookRouter = createRouter({
     { path: '/entry/:pathId/new', component: DummyRoute },
     { path: '/entry/:pathId/:entryId', component: DummyRoute },
     { path: '/entry/:pathId/:entryId/edit', component: DummyRoute },
+    { path: '/paths/new', component: DummyRoute },
   ],
 });
 

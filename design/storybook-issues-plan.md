@@ -56,7 +56,7 @@ Redesign `RefreshStatus.vue`:
 
 ## Phase 1 — New views and routes
 
-### 1.1 `PathCreateView` + `/paths/new` route ⬜
+### 1.1 `PathCreateView` + `/paths/new` route ✅
 
 **New files:**
 
