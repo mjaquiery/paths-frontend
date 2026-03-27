@@ -25,6 +25,9 @@
             placeholder="Select a path"
             interface="action-sheet"
           >
+            <ion-select-option v-if="ownedPaths.length === 0" disabled value=""
+              >You don't own any paths yet.</ion-select-option
+            >
             <ion-select-option
               v-for="p in ownedPaths"
               :key="p.path_id"
@@ -36,6 +39,7 @@
 
         <ion-item class="entry-field">
           <ion-label position="stacked">Day *</ion-label>
+          <ion-note slot="helper">The date this entry is for</ion-note>
           <ion-input v-model="day" type="date" />
         </ion-item>
 
@@ -111,16 +115,18 @@ import {
   IonInput,
   IonTextarea,
   IonText,
+  IonNote,
 } from '@ionic/vue';
 import RefreshStatus from '../components/RefreshStatus.vue';
 import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { useRoute, useRouter } from 'vue-router';
-import { computed, ref } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { usePaths } from '../composables/usePaths';
 import { useCurrentUser } from '../composables/useCurrentUser';
 import { useCreateEntry } from '../generated/apiClient';
 import { extractErrorMessage } from '../lib/errors';
+import { isPathHidden, getPathOrder } from '../lib/db';
 import MarkdownContent from '../components/MarkdownContent.vue';
 
 const route = useRoute();
@@ -141,10 +147,59 @@ const {
   lastCheckedAt: refreshLastCheckedAt,
 } = useRefreshStatus();
 
-const selectedPathId = ref(String(route.params.pathId ?? ''));
 const day = ref(
   String(route.query.date ?? new Date().toISOString().slice(0, 10)),
 );
+
+// Auto-select: prefer path from route param, else highest-ranked visible owned
+// path, else highest-ranked hidden owned path, else redirect to /paths/new.
+const selectedPathId = ref(String(route.params.pathId ?? ''));
+
+async function pickDefaultPath() {
+  if (ownedPaths.value.length === 0) {
+    // No owned paths — redirect to create one first
+    const redirect = encodeURIComponent(`/entry/new?date=${day.value}`);
+    await router.replace(`/paths/new?redirect=${redirect}`);
+    return;
+  }
+
+  if (selectedPathId.value) return; // already set (from route param)
+
+  const order = getPathOrder();
+  const sorted = [...ownedPaths.value].sort((a, b) => {
+    const ia = order.indexOf(a.path_id);
+    const ib = order.indexOf(b.path_id);
+    if (ia === -1 && ib === -1) return 0;
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+
+  // First visible owned path
+  for (const p of sorted) {
+    if (!(await isPathHidden(p.path_id))) {
+      selectedPathId.value = p.path_id;
+      return;
+    }
+  }
+  // Fall back to first hidden owned path
+  selectedPathId.value = sorted[0].path_id;
+}
+
+onMounted(() => {
+  if (ownedPaths.value.length > 0 || paths.value !== undefined) {
+    void pickDefaultPath();
+  }
+});
+
+watch(ownedPaths, (newVal, oldVal) => {
+  // Run once paths data arrives from the server
+  if (oldVal?.length === 0 && newVal.length > 0 && !selectedPathId.value) {
+    void pickDefaultPath();
+  } else if (newVal.length === 0 && paths.value !== undefined) {
+    void pickDefaultPath();
+  }
+});
 const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
 const saving = ref(false);

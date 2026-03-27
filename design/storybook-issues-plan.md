@@ -124,12 +124,12 @@ ellipsis; overflow: hidden; white-space: nowrap`.
 
 ## Phase 3 — Per-view functional fixes
 
-### 3.1 PathView ⬜
+### 3.1 PathView ✅
 
 - Add `:focus-visible` ring on `.path-entry-row` matching `:hover` style.
 - Format `entry.day` with `toLocaleDateString()` (L53).
 
-### 3.2 DateView ⬜
+### 3.2 DateView ✅
 
 - Replace `◄`/`►` with `ion-icon` `chevron-back`/`chevron-forward` (L14, L19).
 - Extract duplicated "Write in [Path]" markup into single unconditional fragment.
@@ -137,26 +137,26 @@ ellipsis; overflow: hidden; white-space: nowrap`.
   `/entry/new?date=<date>`.
 - `thisYear` → `computed(() => new Date().getFullYear())` (L185).
 
-### 3.3 EntryView ⬜
+### 3.3 EntryView ✅
 
 - Move `deleteError <p>` inside `ion-content` (currently after `</ion-content>`,
   L66–68).
 - Format `entry?.day` with `toLocaleDateString()` (L32, L62 in delete alert).
 
-### 3.4 EntryEditView ⬜
+### 3.4 EntryEditView ✅
 
 - Detect HTTP 409 specifically and show: _"This entry was edited on another device.
   Reload to see the latest version before editing."_
 - Display path name and date in the view header (not just "Edit Entry").
 
-### 3.5 EntryCreateView ⬜
+### 3.5 EntryCreateView ✅
 
 - Path default: highest-ranked visible owned path → highest-ranked hidden owned
   path → redirect to `/paths/new?redirect=/entry/new?date=<date>`.
 - Add empty-state message in selector when no owned paths exist.
 - Add field-level hint to the Day field.
 
-### 3.6 InvitationsView ⬜
+### 3.6 InvitationsView ✅
 
 - Replace all four `catch { // silently fail }` blocks (L245, L257, L269, L282)
   with per-card `invError` state or toast.
@@ -164,14 +164,14 @@ ellipsis; overflow: hidden; white-space: nowrap`.
 - Add **Block sender** action to Ignored section (L102–111).
 - Separate `invBusy` key for Block vs. Accept/Ignore.
 
-### 3.7 ExportView ⬜
+### 3.7 ExportView ✅
 
 - `pathsErrorMessage` → `computed(...)` (L44–45).
 - Replace `<p>Loading…</p>` Suspense fallback with `ion-spinner` + skeleton card.
 - Add "Nothing to export" empty-state when `paths` is empty.
 - Show offline warning banner (via shared `RefreshStatus`).
 
-### 3.8 DeleteView ⬜
+### 3.8 DeleteView ✅
 
 - Full deletion-request flow via `POST /v1/account/deletion-requests`.
 - Prominent **"Export your data first"** link to `/export` at the top.

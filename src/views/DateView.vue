@@ -11,14 +11,16 @@
             :router-link="`/date/${prevDate}`"
             router-direction="back"
             aria-label="Previous day"
-            >◄</ion-button
           >
+            <ion-icon slot="icon-only" name="chevron-back" />
+          </ion-button>
           <ion-button
             :router-link="`/date/${nextDate}`"
             router-direction="forward"
             aria-label="Next day"
-            >►</ion-button
           >
+            <ion-icon slot="icon-only" name="chevron-forward" />
+          </ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -29,14 +31,13 @@
       <div v-if="dayEntries.length === 0" class="date-empty">
         <p>No entries for this day.</p>
         <ion-button
-          v-for="path in ownedPaths"
-          :key="path.path_id"
-          :router-link="`/entry/${path.path_id}/new?date=${dateStr}`"
+          v-if="ownedPaths.length > 0"
+          :router-link="`/entry/new?date=${dateStr}`"
           router-direction="forward"
           expand="block"
           class="date-write-btn"
         >
-          + Write in {{ path.title }}
+          + Create entry
         </ion-button>
       </div>
       <div v-else>
@@ -60,14 +61,13 @@
           <p class="date-entry-preview">{{ item.preview || '(no text)' }}</p>
         </div>
         <ion-button
-          v-for="path in ownedPaths"
-          :key="path.path_id"
-          :router-link="`/entry/${path.path_id}/new?date=${dateStr}`"
+          v-if="ownedPaths.length > 0"
+          :router-link="`/entry/new?date=${dateStr}`"
           router-direction="forward"
           expand="block"
           class="date-write-btn"
         >
-          + Write in {{ path.title }}
+          + Create entry
         </ion-button>
       </div>
 
@@ -112,6 +112,7 @@ import {
   IonButton,
   IonButtons,
   IonBackButton,
+  IonIcon,
   IonText,
 } from '@ionic/vue';
 import RefreshStatus from '../components/RefreshStatus.vue';

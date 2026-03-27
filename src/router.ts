@@ -23,6 +23,7 @@ const router = createRouter({
     { path: '/date/:date', component: DateView },
     { path: '/path/:pathId', component: PathView },
     { path: '/paths/new', component: PathCreateView },
+    { path: '/entry/new', component: EntryCreateView },
     { path: '/entry/:pathId/new', component: EntryCreateView },
     { path: '/entry/:pathId/:entryId', component: EntryView },
     { path: '/entry/:pathId/:entryId/edit', component: EntryEditView },

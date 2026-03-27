@@ -50,7 +50,13 @@
           @keydown.enter="router.push(`/entry/${pathId}/${entry.id}`)"
           @keydown.space.prevent="router.push(`/entry/${pathId}/${entry.id}`)"
         >
-          <span class="path-entry-date">{{ entry.day }}</span>
+          <span class="path-entry-date">{{
+            new Date(entry.day + 'T00:00:00').toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })
+          }}</span>
           <span class="path-entry-preview">{{
             entry.content || '(no text)'
           }}</span>
@@ -165,6 +171,10 @@ const groupedEntries = computed<EntryGroup[]>(() => {
 }
 .path-entry-row:hover {
   background: var(--paths-card-hover);
+}
+.path-entry-row:focus-visible {
+  outline: 2px solid var(--ion-color-primary, #3949ab);
+  outline-offset: 1px;
 }
 .path-entry-date {
   font-size: 0.8rem;

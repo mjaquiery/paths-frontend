@@ -5,7 +5,16 @@
         <ion-buttons slot="start">
           <ion-back-button :default-href="`/entry/${pathId}/${entryId}`" />
         </ion-buttons>
-        <ion-title>Edit Entry</ion-title>
+        <ion-title>
+          <span v-if="path && entry">
+            <span
+              class="edit-path-dot"
+              :style="{ backgroundColor: path.color }"
+            ></span>
+            {{ path.title }} — {{ formattedEntryDay }}
+          </span>
+          <span v-else>Edit Entry</span>
+        </ion-title>
         <ion-buttons slot="end">
           <ion-button :disabled="saving || !canSave" @click="save">
             {{ saving ? 'Saving…' : 'Save' }}
@@ -90,6 +99,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
+import { usePaths } from '../composables/usePaths';
 import { useUpdateEntry } from '../generated/apiClient';
 import { extractErrorMessage } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
@@ -99,11 +109,26 @@ const router = useRouter();
 const pathId = computed(() => String(route.params.pathId));
 const entryId = computed(() => String(route.params.entryId));
 
+const { data: paths } = usePaths();
+const path = computed(
+  () => (paths.value ?? []).find((p) => p.path_id === pathId.value) ?? null,
+);
+
 const pathIdArr = computed(() => [pathId.value]);
 const multiPathEntries = useMultiPathEntries(pathIdArr);
 const entry = computed(() => {
   const pe = multiPathEntries.value.find((x) => x.pathId === pathId.value);
   return pe?.entries.find((e) => e.id === entryId.value) ?? null;
+});
+
+const formattedEntryDay = computed(() => {
+  if (!entry.value?.day) return '';
+  return new Date(entry.value.day + 'T00:00:00').toLocaleDateString(undefined, {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 });
 
 const content = ref('');
@@ -148,8 +173,18 @@ async function save() {
     });
     router.back();
   } catch (err: unknown) {
-    saveError.value =
-      extractErrorMessage(err) ?? 'Failed to save. Please try again.';
+    // HTTP 409 = optimistic lock conflict: another device edited first.
+    const status =
+      err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { status?: number } }).response?.status
+        : undefined;
+    if (status === 409) {
+      saveError.value =
+        'This entry was edited on another device. Reload to see the latest version before editing.';
+    } else {
+      saveError.value =
+        extractErrorMessage(err) ?? 'Failed to save. Please try again.';
+    }
     saving.value = false;
   }
 }
@@ -260,5 +295,15 @@ async function save() {
   color: var(--ion-color-danger);
   font-size: 0.85rem;
   margin: 0 4px;
+}
+
+.edit-path-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
 }
 </style>

@@ -63,12 +63,15 @@
                       size="small"
                       color="danger"
                       fill="outline"
-                      :disabled="invBusy[inv.id]"
+                      :disabled="blockBusy[inv.id]"
                       @click="blockInv(inv.id, inv.inviter_user_id)"
                     >
-                      Block sender
+                      {{ blockBusy[inv.id] ? 'Blocking…' : 'Block sender' }}
                     </ion-button>
                   </div>
+                  <p v-if="invError[inv.id]" class="action-error">
+                    {{ invError[inv.id] }}
+                  </p>
                 </div>
               </ion-item>
             </ion-list>
@@ -108,7 +111,19 @@
                     >
                       {{ invBusy[inv.id] ? 'Accepting…' : 'Accept' }}
                     </ion-button>
+                    <ion-button
+                      size="small"
+                      color="danger"
+                      fill="outline"
+                      :disabled="blockBusy[inv.id]"
+                      @click="blockInv(inv.id, inv.inviter_user_id)"
+                    >
+                      {{ blockBusy[inv.id] ? 'Blocking…' : 'Block sender' }}
+                    </ion-button>
                   </div>
+                  <p v-if="invError[inv.id]" class="action-error">
+                    {{ invError[inv.id] }}
+                  </p>
                 </div>
               </ion-item>
             </ion-list>
@@ -131,7 +146,9 @@
               >
                 <div class="inv-card">
                   <ion-label class="inv-copy">
-                    <h3 class="inv-title">{{ entry.blocked_user_id }}</h3>
+                    <h3 class="inv-title">
+                      User ID: {{ entry.blocked_user_id }}
+                    </h3>
                     <p class="inv-meta">
                       Blocked on {{ formatDate(entry.created_at) }}
                     </p>
@@ -151,6 +168,12 @@
                       }}
                     </ion-button>
                   </div>
+                  <p
+                    v-if="unblockError[entry.blocked_user_id]"
+                    class="action-error"
+                  >
+                    {{ unblockError[entry.blocked_user_id] }}
+                  </p>
                 </div>
               </ion-item>
             </ion-list>
@@ -235,15 +258,20 @@ const ignoredInvitations = computed(
 const blocklist = computed(() => blocklistData.value?.data ?? []);
 
 const invBusy = ref<Record<string, boolean>>({});
+const blockBusy = ref<Record<string, boolean>>({});
 const unblockBusy = ref<Record<string, boolean>>({});
+const invError = ref<Record<string, string>>({});
+const unblockError = ref<Record<string, string>>({});
 
 async function acceptInv(invitationId: string) {
   invBusy.value[invitationId] = true;
+  invError.value[invitationId] = '';
   try {
     await doAccept({ invitationId });
     await refetchInvitations();
-  } catch {
-    // silently fail
+  } catch (err) {
+    invError.value[invitationId] =
+      extractErrorMessage(err) ?? 'Failed to accept. Please try again.';
   } finally {
     invBusy.value[invitationId] = false;
   }
@@ -251,35 +279,41 @@ async function acceptInv(invitationId: string) {
 
 async function ignoreInv(invitationId: string) {
   invBusy.value[invitationId] = true;
+  invError.value[invitationId] = '';
   try {
     await doIgnore({ invitationId });
     await refetchInvitations();
-  } catch {
-    // silently fail
+  } catch (err) {
+    invError.value[invitationId] =
+      extractErrorMessage(err) ?? 'Failed to ignore. Please try again.';
   } finally {
     invBusy.value[invitationId] = false;
   }
 }
 
 async function blockInv(invitationId: string, inviterUserId: string) {
-  invBusy.value[invitationId] = true;
+  blockBusy.value[invitationId] = true;
+  invError.value[invitationId] = '';
   try {
     await doBlock({ data: { user_id: inviterUserId } });
     await Promise.all([refetchInvitations(), refetchBlocklist()]);
-  } catch {
-    // silently fail
+  } catch (err) {
+    invError.value[invitationId] =
+      extractErrorMessage(err) ?? 'Failed to block sender. Please try again.';
   } finally {
-    invBusy.value[invitationId] = false;
+    blockBusy.value[invitationId] = false;
   }
 }
 
 async function unblock(blockedUserId: string) {
   unblockBusy.value[blockedUserId] = true;
+  unblockError.value[blockedUserId] = '';
   try {
     await doUnblock({ blockedUserId });
     await refetchBlocklist();
-  } catch {
-    // silently fail
+  } catch (err) {
+    unblockError.value[blockedUserId] =
+      extractErrorMessage(err) ?? 'Failed to unblock. Please try again.';
   } finally {
     unblockBusy.value[blockedUserId] = false;
   }
@@ -363,5 +397,11 @@ function formatDate(dateStr: string): string {
 .inv-actions ion-button {
   margin: 0;
   flex: 1 1 140px;
+}
+
+.action-error {
+  color: var(--ion-color-danger);
+  font-size: 0.85rem;
+  margin: 4px 0 0;
 }
 </style>

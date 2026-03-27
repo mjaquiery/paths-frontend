@@ -30,7 +30,18 @@
     </ion-header>
     <ion-content class="ion-padding">
       <p v-if="deleteError" class="delete-error">{{ deleteError }}</p>
-      <p class="entry-meta">{{ entry?.day }}</p>
+      <p class="entry-meta">
+        {{
+          entry?.day
+            ? new Date(entry.day + 'T00:00:00').toLocaleDateString(undefined, {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })
+            : ''
+        }}
+      </p>
       <div v-if="entry?.content === undefined" class="entry-loading">
         Loading…
       </div>
@@ -60,7 +71,7 @@
     <ion-alert
       :is-open="showDeleteAlert"
       header="Delete Entry"
-      :message="`Delete the entry for ${entry?.day ?? ''}? This action cannot be undone.`"
+      :message="`Delete the entry for ${entry?.day ? new Date(entry.day + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''}? This action cannot be undone.`"
       :buttons="deleteAlertButtons"
       @didDismiss="showDeleteAlert = false"
     />

@@ -13,11 +13,18 @@
         <ion-text v-if="pathsError" color="danger" class="view-error-banner">
           {{ pathsErrorMessage }}
         </ion-text>
+        <p v-if="paths !== undefined && paths.length === 0" class="empty-msg">
+          You don't have any paths to export yet.
+        </p>
         <Suspense>
           <template #default>
-            <ExportCard :paths="paths ?? []" />
+            <ExportCard v-if="(paths ?? []).length > 0" :paths="paths ?? []" />
           </template>
-          <template #fallback><p>Loading…</p></template>
+          <template #fallback>
+            <div class="loading-fallback">
+              <ion-spinner name="crescent" />
+            </div>
+          </template>
         </Suspense>
       </div>
     </ion-content>
@@ -42,6 +49,7 @@ import {
   IonButtons,
   IonBackButton,
   IonText,
+  IonSpinner,
 } from '@ionic/vue';
 
 import ExportCard from '../components/ExportCard.vue';
@@ -81,5 +89,17 @@ const {
   display: block;
   margin-bottom: 16px;
   font-size: 0.9rem;
+}
+
+.empty-msg {
+  color: var(--ion-color-medium);
+  font-size: 0.95rem;
+  margin: 0 0 16px;
+}
+
+.loading-fallback {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
 }
 </style>
