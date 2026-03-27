@@ -483,11 +483,17 @@ export async function prepareStoryEnvironment(context: {
   applyStorybookColorMode(colorMode);
   applyStorybookNetworkMode(networkMode);
 
+  // Wait for the router's initial navigation to finish before navigating.
+  // Without this, isReady() hangs if the current route already matches the
+  // target route and the initial navigation has not yet been completed.
+  await Promise.race([
+    storybookRouter.isReady(),
+    new Promise<void>((resolve) => setTimeout(resolve, 500)),
+  ]);
+
   if (storybookRouter.currentRoute.value.fullPath !== route) {
     await storybookRouter.replace(route);
   }
-
-  await storybookRouter.isReady();
 
   return {};
 }

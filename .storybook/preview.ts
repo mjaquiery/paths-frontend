@@ -13,7 +13,15 @@ import {
   withStorybookChrome,
 } from '../src/storybook/storySupport';
 
-initialize();
+initialize({
+  onUnhandledRequest(request, print) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith('/v1/')) {
+      print.warning();
+    }
+    // Silently bypass all other requests (Vite module fetches, static assets, etc.)
+  },
+});
 
 const preview: Preview = {
   globalTypes: {
