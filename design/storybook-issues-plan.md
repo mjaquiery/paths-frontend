@@ -75,7 +75,7 @@ Redesign `RefreshStatus.vue`:
 
 ## Phase 2 — HomeView redesign
 
-### 2.1 Hamburger menu (`ion-popover`) ⬜
+### 2.1 Hamburger menu (`ion-popover`) ✅
 
 - Add `☰` button to header toolbar (`slot="end"`).
 - Popover contains: **+ New Path** (→ `/paths/new`), **Manage invitations**
@@ -83,21 +83,21 @@ Redesign `RefreshStatus.vue`:
   **Logout** / **Login**, **Dark mode toggle**.
 - Remove footer links and move Logout/Login/dark-mode from `ion-buttons` to popover.
 
-### 2.2 HomeView header + toolbar cleanup ⬜
+### 2.2 HomeView header + toolbar cleanup ✅
 
 - Remove duplicate `loginError` from toolbar `ion-buttons` (L28–30); keep only
   welcome-card copy (L102).
 - Remove `+ Create Entry` block CTA (L65–69).
 - Remove entire `ion-footer` (contents moved to hamburger).
 
-### 2.3 WeekView newest-first + scroll fix ⬜
+### 2.3 WeekView newest-first + scroll fix ✅
 
 - `WeekView.vue`: reverse day rendering to newest-first (today at top).
 - `HomeView.vue`: remove vestigial `scrollToBottom` `onMounted` call (L244–246).
 - When `canCreateAny` is false, disable per-day `+` chips and show a full-width
   "Create a Path" button at the bottom of `ion-content`.
 
-### 2.4 `PathsSelectorBar` horizontal-pill redesign ⬜
+### 2.4 `PathsSelectorBar` horizontal-pill redesign ✅
 
 - Pills: fixed max-width (`calc(25% - 8px)`) so exactly 4 fit; `text-overflow:
 ellipsis; overflow: hidden; white-space: nowrap`.
@@ -107,16 +107,16 @@ ellipsis; overflow: hidden; white-space: nowrap`.
     (`PathDeleteModal`).
 - Remove inline create form from `PathsSelectorBar` (creation → `/paths/new`).
 
-### 2.5 Invitations notification row ⬜
+### 2.5 Invitations notification row ✅
 
 - Pending invitation count/notification in its own full-width row below the path
   pills bar, above `WeekView`.
 
-### 2.6 `PathsApiError` full-width top banner ⬜
+### 2.6 `PathsApiError` full-width top banner ✅
 
 - Confirm `.view-error-banner` renders full-width below the header; adjust if not.
 
-### 2.7 `createNewEntry()` date param ⬜
+### 2.7 `createNewEntry()` date param ✅
 
 - `HomeView.vue` L297: add `?date=${today}` to the `router.push` call.
 

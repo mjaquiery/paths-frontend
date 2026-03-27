@@ -145,7 +145,7 @@ const weekDays = computed<DayInfo[]>(() => {
   const todayStr = isoDate(0);
   const days: DayInfo[] = [];
   const baseOffset = weekOffset.value * 7;
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 0; i <= 6; i++) {
     const offsetFromToday = baseOffset - i;
     const dateStr = isoDate(offsetFromToday);
     const isToday = dateStr === todayStr;
@@ -179,16 +179,16 @@ const weekDays = computed<DayInfo[]>(() => {
 });
 
 const weekRangeLabel = computed(() => {
-  const first = weekDays.value[0];
-  const last = weekDays.value[weekDays.value.length - 1];
-  if (!first || !last) return '';
+  const newest = weekDays.value[0];
+  const oldest = weekDays.value[weekDays.value.length - 1];
+  if (!newest || !oldest) return '';
   const fmt = (ds: string) =>
     new Date(ds + 'T00:00:00').toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',
     });
-  const year = new Date(last.dateStr + 'T00:00:00').getFullYear();
-  return `Week of ${fmt(first.dateStr)} – ${fmt(last.dateStr)}, ${year}`;
+  const year = new Date(newest.dateStr + 'T00:00:00').getFullYear();
+  return `Week of ${fmt(oldest.dateStr)} – ${fmt(newest.dateStr)}, ${year}`;
 });
 
 const firstOwnedPath = computed(

@@ -9,28 +9,108 @@
         </ion-thumbnail>
         <ion-title>Paths</ion-title>
         <ion-buttons slot="end">
-          <ion-button
-            :title="darkModeLabel"
-            :aria-label="darkModeLabel"
-            @click="toggleDarkMode"
+          <!-- Welcome name (logged-in only) -->
+          <ion-label
+            v-if="currentUser"
+            class="ion-padding-end header-user-name"
           >
-            {{ darkPreference === 'system' ? '🖥️' : isDark ? '☀️' : '🌙' }}
+            {{ currentUser.display_name || currentUser.user_id }}
+          </ion-label>
+
+          <!-- Hamburger menu button -->
+          <ion-button
+            id="hamburger-trigger"
+            :aria-label="'Open menu'"
+            @click="menuOpen = true"
+          >
+            ☰
           </ion-button>
-          <template v-if="currentUser">
-            <ion-label class="ion-padding-end">{{
-              currentUser.display_name || currentUser.user_id
-            }}</ion-label>
-            <ion-button @click="logout">Logout</ion-button>
-          </template>
-          <ion-button v-else :disabled="loggingIn" @click="loginWithGoogle">
-            {{ loggingIn ? 'Redirecting…' : 'Login with Google' }}
-          </ion-button>
-          <ion-text v-if="loginError" color="danger" class="ion-padding-start">
-            {{ loginError }}
-          </ion-text>
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
+
+    <!-- ── Hamburger popover ── -->
+    <ion-popover
+      :is-open="menuOpen"
+      trigger="hamburger-trigger"
+      trigger-action="click"
+      :dismiss-on-select="true"
+      @did-dismiss="menuOpen = false"
+    >
+      <ion-list lines="none">
+        <ion-item
+          button
+          :detail="false"
+          router-link="/paths/new"
+          router-direction="forward"
+          @click="menuOpen = false"
+        >
+          + New Path
+        </ion-item>
+        <ion-item
+          button
+          :detail="false"
+          router-link="/invitations"
+          router-direction="forward"
+          @click="menuOpen = false"
+        >
+          Manage invitations
+        </ion-item>
+        <ion-item
+          button
+          :detail="false"
+          router-link="/export"
+          router-direction="forward"
+          @click="menuOpen = false"
+        >
+          Export data
+        </ion-item>
+        <ion-item
+          button
+          :detail="false"
+          router-link="/delete"
+          router-direction="forward"
+          @click="menuOpen = false"
+        >
+          Delete data
+        </ion-item>
+        <ion-item-divider />
+        <ion-item
+          button
+          :detail="false"
+          @click="
+            toggleDarkMode();
+            menuOpen = false;
+          "
+        >
+          {{ darkPreference === 'system' ? '🖥️' : isDark ? '☀️' : '🌙' }}
+          {{ darkModeLabel }}
+        </ion-item>
+        <ion-item
+          v-if="currentUser"
+          button
+          :detail="false"
+          @click="
+            logout();
+            menuOpen = false;
+          "
+        >
+          Logout
+        </ion-item>
+        <ion-item
+          v-else
+          button
+          :detail="false"
+          :disabled="loggingIn"
+          @click="
+            loginWithGoogle();
+            menuOpen = false;
+          "
+        >
+          {{ loggingIn ? 'Redirecting…' : 'Login with Google' }}
+        </ion-item>
+      </ion-list>
+    </ion-popover>
 
     <!-- ── Paths selector bar (logged-in only) ── -->
     <PathsSelectorBar
@@ -40,9 +120,18 @@
     />
 
     <!-- ── Main content ── -->
-    <ion-content ref="contentRef" class="ion-padding-horizontal">
+    <ion-content class="ion-padding-horizontal">
       <ion-text v-if="pathsError" color="danger" class="view-error-banner">
         {{ pathsErrorMessage }}
+      </ion-text>
+
+      <!-- Login error (shown only when not logged in) -->
+      <ion-text
+        v-if="loginError && !currentUser"
+        color="danger"
+        class="view-error-banner"
+      >
+        {{ loginError }}
       </ion-text>
 
       <!-- Previously on this day -->
@@ -61,10 +150,15 @@
         @entry-created="onEntryCreated"
       />
 
-      <!-- Generic create-entry button -->
-      <div v-if="canCreateAny" class="create-entry-cta">
-        <ion-button expand="block" @click="createNewEntry()">
-          + Create Entry
+      <!-- No paths: prompt to create one -->
+      <div v-if="currentUser && !canCreateAny" class="no-paths-cta">
+        <p class="no-paths-hint">You have no paths yet.</p>
+        <ion-button
+          expand="block"
+          router-link="/paths/new"
+          router-direction="forward"
+        >
+          + Create a Path
         </ion-button>
       </div>
 
@@ -107,44 +201,6 @@
         </ion-card>
       </div>
     </ion-content>
-
-    <!-- ── Footer ── -->
-    <ion-footer>
-      <ion-toolbar>
-        <div class="footer-links">
-          <ion-button
-            fill="clear"
-            size="small"
-            router-link="/invitations"
-            router-direction="forward"
-          >
-            Manage invitations
-          </ion-button>
-          <ion-button
-            fill="clear"
-            size="small"
-            router-link="/export"
-            router-direction="forward"
-          >
-            Export data
-          </ion-button>
-          <ion-button
-            fill="clear"
-            size="small"
-            router-link="/delete"
-            router-direction="forward"
-          >
-            Delete data
-          </ion-button>
-        </div>
-        <RefreshStatus
-          slot="end"
-          :status-type="refreshStatusType"
-          :status-text="refreshStatusText"
-          :last-checked-at="refreshLastCheckedAt"
-        />
-      </ion-toolbar>
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -160,18 +216,19 @@ import {
   IonLabel,
   IonText,
   IonThumbnail,
-  IonFooter,
   IonCard,
   IonCardContent,
+  IonPopover,
+  IonList,
+  IonItem,
+  IonItemDivider,
 } from '@ionic/vue';
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
-import { useRouter } from 'vue-router';
 
 import PathsSelectorBar from '../components/PathsSelectorBar.vue';
 import OnThisDaySpotlight from '../components/OnThisDaySpotlight.vue';
 import WeekView from '../components/WeekView.vue';
-import RefreshStatus from '../components/RefreshStatus.vue';
 import type {
   PathResponse,
   OAuthCallbackResponse,
@@ -180,7 +237,6 @@ import type {
 import { authLogin } from '../generated/apiClient';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { usePaths } from '../composables/usePaths';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { useDarkMode } from '../composables/useDarkMode';
 import { extractErrorMessage } from '../lib/errors';
 
@@ -190,8 +246,6 @@ const {
   toggle: toggleDarkMode,
 } = useDarkMode();
 
-const router = useRouter();
-
 const darkModeLabel = computed(() => {
   if (darkPreference.value === 'light') return 'Light mode – switch to dark';
   if (darkPreference.value === 'dark') return 'Dark mode – switch to system';
@@ -200,6 +254,7 @@ const darkModeLabel = computed(() => {
 
 const loggingIn = ref(false);
 const loginError = ref('');
+const menuOpen = ref(false);
 const currentUser = ref<OAuthCallbackResponse | null>(getStoredUser());
 const queryClient = useQueryClient();
 
@@ -225,14 +280,6 @@ const visiblePathIds = computed(() =>
 );
 const multiPathEntries = useMultiPathEntries(visiblePathIds);
 
-const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
-
-const contentRef = ref<InstanceType<typeof IonContent> | null>(null);
-
 const canCreateAny = computed(
   () =>
     !!currentUser.value &&
@@ -240,10 +287,6 @@ const canCreateAny = computed(
       (p) => p.owner_user_id === currentUser.value!.user_id,
     ),
 );
-
-onMounted(() => {
-  void nextTick(() => contentRef.value?.$el?.scrollToBottom(0));
-});
 
 function getStoredUser(): OAuthCallbackResponse | null {
   const stored = localStorage.getItem('user');
@@ -289,15 +332,6 @@ function onEntryCreated() {
   void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
 }
 
-function createNewEntry() {
-  const ownedPath = effectiveVisiblePaths.value.find(
-    (p) => p.owner_user_id === currentUser.value?.user_id,
-  );
-  if (ownedPath) {
-    void router.push(`/entry/${ownedPath.path_id}/new`);
-  }
-}
-
 function onPathsChanged(paths: PathResponse[]) {
   visiblePaths.value = paths;
   hasReceivedPathSelection.value = true;
@@ -316,14 +350,30 @@ function onPathsChanged(paths: PathResponse[]) {
   object-fit: contain;
 }
 
-.create-entry-cta {
-  margin: 16px 0 8px;
+.header-user-name {
+  font-size: 0.875rem;
+  color: var(--ion-color-medium);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .view-error-banner {
   display: block;
   margin: 16px 0;
   font-size: 0.9rem;
+}
+
+.no-paths-cta {
+  margin: 24px 0 8px;
+  text-align: center;
+}
+
+.no-paths-hint {
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+  margin: 0 0 12px;
 }
 
 .home-welcome {
@@ -396,19 +446,5 @@ function onPathsChanged(paths: PathResponse[]) {
   color: var(--ion-color-medium);
   text-align: center;
   margin: 8px 0 0;
-}
-
-.footer-links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-}
-
-@media (max-width: 480px) {
-  .footer-links {
-    justify-content: flex-start;
-    padding: 6px 8px;
-  }
 }
 </style>
