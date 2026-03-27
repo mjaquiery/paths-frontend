@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 import HomeView from './HomeView.vue';
 import {
   createStoryApiError,
+  createEmptyState,
   createPopulatedState,
   createStoryEntry,
   createStoryNetworkError,
@@ -94,10 +95,35 @@ export const PathsApiError: Story = {
   parameters: createStoryParameters({
     state: populatedState,
     route: '/',
+    seedCacheFromState: true,
     requestOverrides: [
       createStoryApiError('*/v1/paths', 503, 'GET', {
         detail: 'Storybook forced paths outage.',
       }),
     ],
+  }),
+};
+
+/**
+ * No paths at all — only owned paths allow entry creation, so WeekView should
+ * show a "Create a Path" CTA rather than per-day "+" chips.
+ */
+export const EmptyPaths: Story = {
+  parameters: createStoryParameters({
+    state: createEmptyState({ paths: [] }),
+    route: '/',
+    seedCacheFromState: true,
+  }),
+};
+
+/**
+ * Paths are loading (no cache, no state seeded) — the selector bar and week
+ * view should show loading skeletons / spinners.
+ */
+export const Loading: Story = {
+  parameters: createStoryParameters({
+    state: populatedState,
+    route: '/',
+    seedCacheFromState: false,
   }),
 };

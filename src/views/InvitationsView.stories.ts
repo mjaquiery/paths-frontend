@@ -104,3 +104,28 @@ export const ApiError: Story = {
     ],
   }),
 };
+
+/**
+ * An action mutation (accept / ignore / block / unblock) fails with a server
+ * error — the per-card error message should appear next to the affected card.
+ */
+export const ActionError: Story = {
+  parameters: createStoryParameters({
+    state: populatedState,
+    route: '/invitations',
+    requestOverrides: [
+      createStoryApiError('*/v1/invitations/*/accept', 503, 'POST', {
+        detail: 'Storybook forced accept outage.',
+      }),
+      createStoryApiError('*/v1/invitations/*/ignore', 503, 'POST', {
+        detail: 'Storybook forced ignore outage.',
+      }),
+      createStoryApiError('*/v1/invitations/blocklist', 503, 'POST', {
+        detail: 'Storybook forced block outage.',
+      }),
+      createStoryApiError('*/v1/invitations/blocklist/*', 503, 'DELETE', {
+        detail: 'Storybook forced unblock outage.',
+      }),
+    ],
+  }),
+};

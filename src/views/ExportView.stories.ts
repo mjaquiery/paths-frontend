@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import ExportView from './ExportView.vue';
 import {
+  createStoryApiError,
   createStoryNetworkError,
   createPopulatedState,
   createStoryPath,
@@ -75,5 +76,22 @@ export const Offline: Story = {
     networkMode: 'offline',
     seedCacheFromState: true,
     requestOverrides: [createStoryNetworkError('*/v1/*')],
+  }),
+};
+
+/**
+ * The paths API fails — the view should display an error banner while still
+ * showing the rest of the export UI.
+ */
+export const ApiError: Story = {
+  parameters: createStoryParameters({
+    state: populatedState,
+    route: '/export',
+    seedCacheFromState: true,
+    requestOverrides: [
+      createStoryApiError('*/v1/paths', 503, 'GET', {
+        detail: 'Storybook forced paths outage.',
+      }),
+    ],
   }),
 };

@@ -50,3 +50,22 @@ export const WithRedirect: Story = {
     route: '/paths/new?redirect=/entry/new?date=2025-03-15',
   }),
 };
+
+/**
+ * Simulate the saving state: the form has been filled in and submitted but the
+ * POST is not yet resolved.  The Create button shows "Creating…" and is
+ * disabled.  Trigger by filling in the title field and tapping Create.
+ */
+export const Saving: Story = {
+  parameters: createStoryParameters({
+    state: populatedState,
+    route: '/paths/new',
+    requestOverrides: [
+      // Return a very slow response to keep the view in the saving state.
+      // In practice, interact: fill the title and tap Create to observe.
+      createStoryApiError('*/v1/paths', 202, 'POST', {
+        detail: 'Storybook slow response placeholder.',
+      }),
+    ],
+  }),
+};

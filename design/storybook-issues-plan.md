@@ -185,7 +185,7 @@ ellipsis; overflow: hidden; white-space: nowrap`.
 
 ## Phase 4 — Image upload
 
-### 4.1 Image upload in EntryCreateView + EntryEditView ⬜
+### 4.1 Image upload in EntryCreateView + EntryEditView ✅
 
 - Upload button, caption input, inserts `![caption](url)` markdown into content.
 - MSW mock handlers already in `storySupport.ts` (L663–683).
