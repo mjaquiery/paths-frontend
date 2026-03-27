@@ -29,23 +29,35 @@
           <section class="editor-section">
             <div class="editor-header">
               <label class="editor-label">Content *</label>
-              <div class="content-tabs" role="tablist" aria-label="Editor mode">
-                <button
-                  class="content-tab"
-                  :class="{ active: contentTab === 'write' }"
-                  type="button"
-                  @click="contentTab = 'write'"
+              <div class="editor-header-controls">
+                <ImageUploadButton
+                  v-if="entry"
+                  :path-code="pathId"
+                  :entry-slug="entryId"
+                  @insert="insertImageMarkdown"
+                />
+                <div
+                  class="content-tabs"
+                  role="tablist"
+                  aria-label="Editor mode"
                 >
-                  Write
-                </button>
-                <button
-                  class="content-tab"
-                  :class="{ active: contentTab === 'preview' }"
-                  type="button"
-                  @click="contentTab = 'preview'"
-                >
-                  Preview
-                </button>
+                  <button
+                    class="content-tab"
+                    :class="{ active: contentTab === 'write' }"
+                    type="button"
+                    @click="contentTab = 'write'"
+                  >
+                    Write
+                  </button>
+                  <button
+                    class="content-tab"
+                    :class="{ active: contentTab === 'preview' }"
+                    type="button"
+                    @click="contentTab = 'preview'"
+                  >
+                    Preview
+                  </button>
+                </div>
               </div>
             </div>
             <div class="editor-surface">
@@ -103,6 +115,7 @@ import { usePaths } from '../composables/usePaths';
 import { useUpdateEntry } from '../generated/apiClient';
 import { extractErrorMessage } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
+import ImageUploadButton from '../components/ImageUploadButton.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -151,6 +164,10 @@ watch(
 );
 
 const canSave = computed(() => !!content.value.trim());
+
+function insertImageMarkdown(markdown: string) {
+  content.value = content.value ? content.value + '\n\n' + markdown : markdown;
+}
 
 const queryClient = useQueryClient();
 const { mutateAsync: updateEntry } = useUpdateEntry();
@@ -228,9 +245,16 @@ async function save() {
 .editor-header {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+}
+
+.editor-header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .editor-label {

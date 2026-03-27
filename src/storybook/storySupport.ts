@@ -57,6 +57,10 @@ export interface StoryState {
   blocklist: BlocklistEntryResponse[];
   subscriptionsByPath: Record<string, SubscriberResponse[]>;
   authLoginUrl: string;
+  deletionRequest?: {
+    state: 'requested' | 'running' | 'complete' | 'failed';
+    error_message?: string | null;
+  } | null;
 }
 
 export interface StoryRequestOverride {
@@ -836,6 +840,38 @@ function createMockHandlers(
         expires_in_seconds: 900,
       };
       return HttpResponse.json(response, { status: 200 });
+    }),
+    http.post('*/v1/account/deletion-requests', () => {
+      const req = {
+        id: 'del-req-1',
+        state: 'requested' as const,
+        error_message: null,
+        failure_code: null,
+        attempt_count: 0,
+        created_at: storyTimestampOffset(0),
+        updated_at: storyTimestampOffset(0),
+      };
+      state.deletionRequest = req;
+      return HttpResponse.json(req, { status: 200 });
+    }),
+    http.get('*/v1/account/deletion-requests/latest', () => {
+      if (!state.deletionRequest) {
+        return HttpResponse.json(
+          { detail: 'No deletion request found.' },
+          { status: 404 },
+        );
+      }
+      return HttpResponse.json(
+        {
+          id: 'del-req-1',
+          ...state.deletionRequest,
+          failure_code: null,
+          attempt_count: 1,
+          created_at: storyTimestampOffset(-1),
+          updated_at: storyTimestampOffset(0),
+        },
+        { status: 200 },
+      );
     }),
     http.all('*/v1/*', ({ request }) => {
       const url = new URL(request.url);

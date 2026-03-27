@@ -46,23 +46,41 @@
         <section class="editor-section">
           <div class="editor-header">
             <label class="editor-label">Content *</label>
-            <div class="content-tabs" role="tablist" aria-label="Editor mode">
-              <button
-                class="content-tab"
-                :class="{ active: contentTab === 'write' }"
-                type="button"
-                @click="contentTab = 'write'"
+            <div class="editor-header-controls">
+              <template v-if="savedEntryId">
+                <ImageUploadButton
+                  :path-code="selectedPathId"
+                  :entry-slug="savedEntryId"
+                  @insert="insertImageMarkdown"
+                />
+              </template>
+              <ion-button
+                v-else
+                size="small"
+                fill="outline"
+                :disabled="!canSave || saving"
+                @click="saveForImageUpload"
               >
-                Write
-              </button>
-              <button
-                class="content-tab"
-                :class="{ active: contentTab === 'preview' }"
-                type="button"
-                @click="contentTab = 'preview'"
-              >
-                Preview
-              </button>
+                {{ saving ? 'Saving…' : '+ Image' }}
+              </ion-button>
+              <div class="content-tabs" role="tablist" aria-label="Editor mode">
+                <button
+                  class="content-tab"
+                  :class="{ active: contentTab === 'write' }"
+                  type="button"
+                  @click="contentTab = 'write'"
+                >
+                  Write
+                </button>
+                <button
+                  class="content-tab"
+                  :class="{ active: contentTab === 'preview' }"
+                  type="button"
+                  @click="contentTab = 'preview'"
+                >
+                  Preview
+                </button>
+              </div>
             </div>
           </div>
           <div class="editor-surface">
@@ -128,6 +146,7 @@ import { useCreateEntry } from '../generated/apiClient';
 import { extractErrorMessage } from '../lib/errors';
 import { isPathHidden, getPathOrder } from '../lib/db';
 import MarkdownContent from '../components/MarkdownContent.vue';
+import ImageUploadButton from '../components/ImageUploadButton.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -204,6 +223,8 @@ const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
 const saving = ref(false);
 const saveError = ref('');
+// Set once the entry has been saved (we need it to upload images)
+const savedEntryId = ref('');
 
 const canSave = computed(
   () => !!selectedPathId.value && !!day.value && !!content.value.trim(),
@@ -217,17 +238,42 @@ async function save() {
   saving.value = true;
   saveError.value = '';
   try {
-    await createEntry({
+    const result = await createEntry({
       pathCode: selectedPathId.value,
       data: { day: day.value, content: content.value },
     });
     void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+    savedEntryId.value = result.data.id;
     router.back();
   } catch (err: unknown) {
     saveError.value =
       extractErrorMessage(err) ?? 'Failed to save. Please try again.';
     saving.value = false;
   }
+}
+
+// Save the entry first (to get an ID), then surface it for image upload.
+async function saveForImageUpload() {
+  if (!canSave.value || saving.value || savedEntryId.value) return;
+  saving.value = true;
+  saveError.value = '';
+  try {
+    const result = await createEntry({
+      pathCode: selectedPathId.value,
+      data: { day: day.value, content: content.value },
+    });
+    void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+    savedEntryId.value = result.data.id;
+  } catch (err: unknown) {
+    saveError.value =
+      extractErrorMessage(err) ?? 'Failed to save. Please try again.';
+  } finally {
+    saving.value = false;
+  }
+}
+
+function insertImageMarkdown(markdown: string) {
+  content.value = content.value ? content.value + '\n\n' + markdown : markdown;
 }
 </script>
 
@@ -278,9 +324,16 @@ async function save() {
 .editor-header {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
+}
+
+.editor-header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .editor-label {
