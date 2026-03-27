@@ -81,6 +81,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { computed } from 'vue';
 import { usePaths } from '../composables/usePaths';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
+import { useCurrentUser } from '../composables/useCurrentUser';
 import { extractErrorMessage } from '../lib/errors';
 
 const route = useRoute();
@@ -95,16 +96,10 @@ const pathsErrorMessage = computed(
   () => extractErrorMessage(pathsError.value) ?? 'Unable to load this path.',
 );
 
-const storedUser = localStorage.getItem('user');
-let currentUserId = '';
-try {
-  currentUserId = storedUser
-    ? (JSON.parse(storedUser) as { user_id: string }).user_id
-    : '';
-} catch {
-  currentUserId = '';
-}
-const isOwned = computed(() => path.value?.owner_user_id === currentUserId);
+const { currentUserId } = useCurrentUser();
+const isOwned = computed(
+  () => path.value?.owner_user_id === currentUserId.value,
+);
 
 const pathIdArr = computed(() => (path.value ? [pathId.value] : []));
 const multiPathEntries = useMultiPathEntries(pathIdArr);

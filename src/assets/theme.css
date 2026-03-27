@@ -82,3 +82,28 @@
   --paths-today-border: #7986cb;
   --paths-card-hover: rgba(121, 134, 203, 0.12);
 }
+
+/* ── Shared view utilities ── */
+
+/**
+ * Full-width error banner shown at the top of ion-content.
+ * Use as: <ion-text color="danger" class="view-error-banner">…</ion-text>
+ */
+.view-error-banner {
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  margin-bottom: 12px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+/**
+ * Ensures ion-content has at least 0.5em left/right breathing room on all
+ * views.  Views that already use ion-padding (16px) or set explicit scoped
+ * padding will naturally satisfy this — this rule is a safety-net default.
+ */
+ion-content:not([class*='ion-padding']) {
+  --padding-start: max(0.5em, var(--ion-safe-area-left, 0px));
+  --padding-end: max(0.5em, var(--ion-safe-area-right, 0px));
+}

@@ -21,6 +21,13 @@
         </Suspense>
       </div>
     </ion-content>
+    <ion-footer>
+      <RefreshStatus
+        :status-type="refreshStatusType"
+        :status-text="refreshStatusText"
+        :last-checked-at="refreshLastCheckedAt"
+      />
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -31,18 +38,30 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonFooter,
   IonButtons,
   IonBackButton,
   IonText,
 } from '@ionic/vue';
 
 import ExportCard from '../components/ExportCard.vue';
+import RefreshStatus from '../components/RefreshStatus.vue';
 import { usePaths } from '../composables/usePaths';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { extractErrorMessage } from '../lib/errors';
+import { computed } from 'vue';
 
 const { data: paths, error: pathsError } = usePaths();
-const pathsErrorMessage =
-  extractErrorMessage(pathsError.value) ?? 'Unable to load paths right now.';
+const pathsErrorMessage = computed(
+  () =>
+    extractErrorMessage(pathsError.value) ?? 'Unable to load paths right now.',
+);
+
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
 </script>
 
 <style scoped>

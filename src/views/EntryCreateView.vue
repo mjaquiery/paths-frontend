@@ -83,6 +83,13 @@
         <p v-if="saveError" class="save-error">{{ saveError }}</p>
       </div>
     </ion-content>
+    <ion-footer>
+      <RefreshStatus
+        :status-type="refreshStatusType"
+        :status-text="refreshStatusText"
+        :last-checked-at="refreshLastCheckedAt"
+      />
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -93,6 +100,7 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonFooter,
   IonButton,
   IonButtons,
   IonBackButton,
@@ -104,10 +112,13 @@ import {
   IonTextarea,
   IonText,
 } from '@ionic/vue';
+import RefreshStatus from '../components/RefreshStatus.vue';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { useRoute, useRouter } from 'vue-router';
 import { computed, ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { usePaths } from '../composables/usePaths';
+import { useCurrentUser } from '../composables/useCurrentUser';
 import { useCreateEntry } from '../generated/apiClient';
 import { extractErrorMessage } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
@@ -116,21 +127,19 @@ const route = useRoute();
 const router = useRouter();
 
 const { data: paths, error: pathsError } = usePaths();
-const storedUser = localStorage.getItem('user');
-let currentUserId = '';
-try {
-  currentUserId = storedUser
-    ? (JSON.parse(storedUser) as { user_id: string }).user_id
-    : '';
-} catch {
-  currentUserId = '';
-}
+const { currentUserId } = useCurrentUser();
 const ownedPaths = computed(() =>
-  (paths.value ?? []).filter((p) => p.owner_user_id === currentUserId),
+  (paths.value ?? []).filter((p) => p.owner_user_id === currentUserId.value),
 );
 const pathsErrorMessage = computed(
   () => extractErrorMessage(pathsError.value) ?? 'Unable to load paths.',
 );
+
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
 
 const selectedPathId = ref(String(route.params.pathId ?? ''));
 const day = ref(

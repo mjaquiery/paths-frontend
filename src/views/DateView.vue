@@ -91,6 +91,13 @@
         </div>
       </div>
     </ion-content>
+    <ion-footer>
+      <RefreshStatus
+        :status-type="refreshStatusType"
+        :status-text="refreshStatusText"
+        :last-checked-at="refreshLastCheckedAt"
+      />
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -101,15 +108,19 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonFooter,
   IonButton,
   IonButtons,
   IonBackButton,
   IonText,
 } from '@ionic/vue';
+import RefreshStatus from '../components/RefreshStatus.vue';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { useRoute, useRouter } from 'vue-router';
 import { computed } from 'vue';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { usePaths } from '../composables/usePaths';
+import { useCurrentUser } from '../composables/useCurrentUser';
 import { extractErrorMessage } from '../lib/errors';
 
 const route = useRoute();
@@ -143,17 +154,16 @@ const pathsErrorMessage = computed(
 const pathIds = computed(() => allPaths.value.map((p) => p.path_id));
 const multiPathEntries = useMultiPathEntries(pathIds);
 
-const storedUser = localStorage.getItem('user');
-let currentUserId = '';
-try {
-  currentUserId = storedUser
-    ? (JSON.parse(storedUser) as { user_id: string }).user_id
-    : '';
-} catch {
-  currentUserId = '';
-}
+const { currentUserId } = useCurrentUser();
+
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
+
 const ownedPaths = computed(() =>
-  allPaths.value.filter((p) => p.owner_user_id === currentUserId),
+  allPaths.value.filter((p) => p.owner_user_id === currentUserId.value),
 );
 
 const dayEntries = computed(() => {
@@ -182,7 +192,7 @@ const dayEntries = computed(() => {
   return result;
 });
 
-const thisYear = new Date().getFullYear();
+const thisYear = computed(() => new Date().getFullYear());
 const todayMonthDay = computed(() => dateStr.value.slice(5));
 
 const previousYears = computed(() => {
@@ -195,7 +205,7 @@ const previousYears = computed(() => {
     for (const entry of entries) {
       if (
         entry.day.slice(5) === todayMonthDay.value &&
-        Number(entry.day.slice(0, 4)) < thisYear
+        Number(entry.day.slice(0, 4)) < thisYear.value
       ) {
         result.push({
           pathId,

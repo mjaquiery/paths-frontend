@@ -29,6 +29,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
+      <p v-if="deleteError" class="delete-error">{{ deleteError }}</p>
       <p class="entry-meta">{{ entry?.day }}</p>
       <div v-if="entry?.content === undefined" class="entry-loading">
         Loading…
@@ -63,9 +64,13 @@
       :buttons="deleteAlertButtons"
       @didDismiss="showDeleteAlert = false"
     />
-    <p v-if="deleteError" class="delete-error ion-padding-horizontal">
-      {{ deleteError }}
-    </p>
+    <ion-footer>
+      <RefreshStatus
+        :status-type="refreshStatusType"
+        :status-text="refreshStatusText"
+        :last-checked-at="refreshLastCheckedAt"
+      />
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -76,17 +81,21 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonFooter,
   IonButton,
   IonButtons,
   IonBackButton,
   IonAlert,
 } from '@ionic/vue';
+import RefreshStatus from '../components/RefreshStatus.vue';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { useRoute, useRouter } from 'vue-router';
 import { computed, ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { usePaths } from '../composables/usePaths';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { useDeleteEntry } from '../generated/apiClient';
+import { useCurrentUser } from '../composables/useCurrentUser';
 import { db } from '../lib/db';
 import MarkdownContent from '../components/MarkdownContent.vue';
 
@@ -100,18 +109,17 @@ const path = computed(
   () => (paths.value ?? []).find((p) => p.path_id === pathId.value) ?? null,
 );
 
-function getStoredUserId(): string {
-  try {
-    const stored = localStorage.getItem('user');
-    return stored ? (JSON.parse(stored) as { user_id: string }).user_id : '';
-  } catch {
-    return '';
-  }
-}
-const currentUserId = getStoredUserId();
+const { currentUserId } = useCurrentUser();
 const canEdit = computed(
-  () => !!currentUserId && path.value?.owner_user_id === currentUserId,
+  () =>
+    !!currentUserId.value && path.value?.owner_user_id === currentUserId.value,
 );
+
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
 
 const pathIdArr = computed(() => (pathId.value ? [pathId.value] : []));
 const multiPathEntries = useMultiPathEntries(pathIdArr);
@@ -121,7 +129,7 @@ const entry = computed(() => {
   return pe?.entries.find((e) => e.id === entryId.value) ?? null;
 });
 
-const thisYear = new Date().getFullYear();
+const thisYear = computed(() => new Date().getFullYear());
 const previousYears = computed(() => {
   if (!entry.value) return [];
   const monthDay = entry.value.day.slice(5);
@@ -130,7 +138,7 @@ const previousYears = computed(() => {
     .filter(
       (e) =>
         e.day.slice(5) === monthDay &&
-        Number(e.day.slice(0, 4)) < thisYear &&
+        Number(e.day.slice(0, 4)) < thisYear.value &&
         e.id !== entryId.value,
     )
     .map((e) => ({

@@ -61,6 +61,13 @@
         </template>
       </div>
     </ion-content>
+    <ion-footer>
+      <RefreshStatus
+        :status-type="refreshStatusType"
+        :status-text="refreshStatusText"
+        :last-checked-at="refreshLastCheckedAt"
+      />
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -71,11 +78,14 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonFooter,
   IonButton,
   IonButtons,
   IonBackButton,
   IonTextarea,
 } from '@ionic/vue';
+import RefreshStatus from '../components/RefreshStatus.vue';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { useRoute, useRouter } from 'vue-router';
 import { computed, ref, watch } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -100,6 +110,12 @@ const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
 const saving = ref(false);
 const saveError = ref('');
+
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
 
 watch(
   entry,
