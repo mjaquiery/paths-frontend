@@ -65,9 +65,13 @@ const ionicStubs = {
   IonNote: { template: '<div><slot /></div>' },
   RefreshStatus: { template: '<div />' },
   EntryImage: { template: '<div />', props: ['imageId', 'alt'] },
+  EntryImageDraftPreview: {
+    template: '<div />',
+    props: ['imageId', 'previewUrl', 'filename', 'alt'],
+  },
   MarkdownContent: {
     template: '<div><slot /></div>',
-    props: ['content', 'images'],
+    props: ['content', 'images', 'localImageUrls'],
   },
 };
 

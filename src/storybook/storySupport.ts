@@ -548,6 +548,16 @@ function createMockHandlers(
   const state = clone(inputState);
   const exportPolls: Record<string, number> = {};
   const exportRequests: Record<string, string[]> = {};
+  const pendingUploads = new Map<
+    string,
+    {
+      pathId: string;
+      entryId: string;
+      filename: string;
+      contentType: string | null;
+      stripMetadata: boolean;
+    }
+  >();
   let uploadCounter = 0;
 
   return [
@@ -604,7 +614,11 @@ function createMockHandlers(
       );
     }),
     http.post('*/v1/paths/:pathCode/entries', async ({ params, request }) => {
-      const body = (await request.json()) as { day: string; content: string };
+      const body = (await request.json()) as {
+        day: string;
+        content: string;
+        image_filenames?: string[];
+      };
       const pathId = String(params.pathCode);
       const existing = state.entriesByPath[pathId] ?? [];
       const created = createStoryEntry({
@@ -613,6 +627,15 @@ function createMockHandlers(
         day: body.day,
         edit_id: 1,
         content: body.content,
+        images: (body.image_filenames ?? []).map((filename, index) =>
+          createImage({
+            id: `img-${slugify(filename)}-${index + 1}`,
+            entry_id: `entry-${pathId}-${existing.length + 1}`,
+            filename,
+            content_type: 'image/jpeg',
+            byte_size: 200_000,
+          }),
+        ),
       });
       state.entriesByPath[pathId] = [created, ...existing];
       return HttpResponse.json(created.summary, { status: 201 });
@@ -634,6 +657,7 @@ function createMockHandlers(
         const body = (await request.json()) as {
           content: string;
           expected_edit_id: number;
+          image_filenames?: string[];
         };
         const entry = findEntryRecord(
           state,
@@ -645,6 +669,11 @@ function createMockHandlers(
         }
         entry.record.content = body.content;
         entry.record.summary.edit_id = body.expected_edit_id + 1;
+        if (body.image_filenames) {
+          entry.record.images = entry.record.images.filter((image) =>
+            body.image_filenames?.includes(image.filename),
+          );
+        }
         return HttpResponse.json(toEntryContent(entry.record), { status: 200 });
       },
     ),
@@ -668,25 +697,62 @@ function createMockHandlers(
     }),
     http.post(
       '*/v1/paths/:pathCode/entries/:entrySlug/images/upload-url',
-      async ({ request }) => {
-        const body = (await request.json()) as { filename: string };
+      async ({ params, request }) => {
+        const body = (await request.json()) as {
+          filename: string;
+          content_type?: string;
+          strip_metadata?: boolean;
+        };
         uploadCounter += 1;
         const imageId = `upload-${slugify(body.filename)}-${uploadCounter}`;
+        pendingUploads.set(imageId, {
+          pathId: String(params.pathCode),
+          entryId: String(params.entrySlug),
+          filename: body.filename,
+          contentType: body.content_type ?? 'image/jpeg',
+          stripMetadata: body.strip_metadata ?? false,
+        });
         return HttpResponse.json(
           {
             image_id: imageId,
             upload_url: `https://storybook.paths.local/uploads/${imageId}`,
             expires_in_seconds: 600,
           },
-          { status: 201 },
+          { status: 200 },
         );
       },
     ),
     http.put('https://storybook.paths.local/uploads/:imageId', () => {
       return new HttpResponse(null, { status: 200 });
     }),
-    http.post('*/v1/images/:imageId/complete', () => {
-      return new HttpResponse(null, { status: 200 });
+    http.post('*/v1/images/:imageId/complete', async ({ params, request }) => {
+      const imageId = String(params.imageId);
+      const upload = pendingUploads.get(imageId);
+      if (!upload) {
+        return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+      }
+
+      const body = (await request.json()) as { byte_size?: number };
+      const entry = findEntryRecord(state, upload.entryId, upload.pathId);
+      if (!entry) {
+        return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+      }
+
+      const image = createImage({
+        id: imageId,
+        entry_id: upload.entryId,
+        filename: upload.filename,
+        content_type: upload.contentType,
+        byte_size: body.byte_size ?? null,
+      });
+      image.strip_metadata = upload.stripMetadata;
+      entry.record.images = [
+        ...entry.record.images.filter((candidate) => candidate.id !== image.id),
+        image,
+      ];
+      pendingUploads.delete(imageId);
+
+      return HttpResponse.json(image, { status: 200 });
     }),
     http.get('*/v1/images/:imageId/download-url', ({ params }) => {
       const imageId = String(params.imageId);
@@ -1183,7 +1249,7 @@ function installDeterministicDate() {
 
   class MockDate extends RealDate {
     constructor(...args: ConstructorParameters<DateConstructor>) {
-      if (args.length === 0) {
+      if (args.length < 1) {
         super(fixedTime);
       } else {
         super(...args);
@@ -1208,7 +1274,10 @@ function installDeterministicDate() {
 }
 
 function installMatchMediaStub() {
-  if (typeof window === 'undefined' || window.matchMedia) {
+  if (
+    typeof window === 'undefined' ||
+    typeof window.matchMedia === 'function'
+  ) {
     return;
   }
 

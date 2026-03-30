@@ -3,13 +3,8 @@ import {
   useCreateImageUploadUrl,
   useCompleteImageUpload,
 } from '../generated/apiClient';
+import type { ImageResponse, ImageUploadResponse } from '../generated/types';
 import { extractErrorMessage } from '../lib/errors';
-
-export interface UploadedImage {
-  imageId: string;
-  filename: string;
-  byteSize: number;
-}
 
 /**
  * Composable for uploading a single image to an existing entry.
@@ -33,7 +28,7 @@ export function useImageUpload() {
     pathCode: string,
     entrySlug: string,
     file: File,
-  ): Promise<UploadedImage | null> {
+  ): Promise<ImageResponse | null> {
     uploading.value = true;
     uploadError.value = '';
 
@@ -49,12 +44,14 @@ export function useImageUpload() {
         },
       });
 
-      const { image_id: imageId, upload_url: uploadUrl } =
-        urlResponse.status === 200
-          ? urlResponse.data
+      const uploadPayload =
+        urlResponse.status >= 200 && urlResponse.status < 300
+          ? (urlResponse.data as ImageUploadResponse)
           : (() => {
               throw new Error('Failed to get upload URL.');
             })();
+
+      const { image_id: imageId, upload_url: uploadUrl } = uploadPayload;
 
       // 2. Upload the file bytes directly to storage.
       const putResponse = await fetch(uploadUrl, {
@@ -68,12 +65,15 @@ export function useImageUpload() {
       }
 
       // 3. Notify the backend that the upload is complete.
-      await completeUpload({
+      const completeResponse = await completeUpload({
         imageId,
         data: { byte_size: file.size },
       });
+      if (completeResponse.status !== 200) {
+        throw new Error('Failed to finalize image upload.');
+      }
 
-      return { imageId, filename: file.name, byteSize: file.size };
+      return completeResponse.data;
     } catch (err: unknown) {
       uploadError.value =
         extractErrorMessage(err) ?? 'Image upload failed. Please try again.';

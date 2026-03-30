@@ -18,6 +18,8 @@ const props = defineProps<{
   /** Optional list of images attached to this entry, used to resolve inline
    *  image filenames to actual download URLs. */
   images?: ImageResponse[];
+  /** Optional filename -> local preview URL map for unsaved draft images. */
+  localImageUrls?: Record<string, string>;
 }>();
 
 // Fetch download URLs for all provided images in parallel.
@@ -61,9 +63,10 @@ function escapeHtml(value: string) {
 
 const renderedHtml = computed(() => {
   const urlMap = imageUrlMap.value;
+  const localImageUrls = props.localImageUrls ?? {};
   const renderer = new Renderer();
   renderer.image = ({ href, title, text }) => {
-    const resolvedSrc = urlMap.get(href) ?? href;
+    const resolvedSrc = localImageUrls[href] ?? urlMap.get(href) ?? href;
     const escapedSrc = resolvedSrc.replace(/"/g, '&quot;');
     const escapedAlt = escapeHtml(text ?? '');
     const titleAttr = title ? ` title="${title.replace(/"/g, '&quot;')}"` : '';
