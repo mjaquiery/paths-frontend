@@ -1,8 +1,7 @@
 <template>
-  <a
-    :href="imageUrl || undefined"
-    target="_blank"
-    rel="noopener noreferrer"
+  <component
+    :is="linked ? 'a' : 'div'"
+    v-bind="linkAttrs"
     class="entry-image-link"
     :aria-label="alt || 'View image'"
   >
@@ -26,7 +25,7 @@
       :aria-label="errorMessage || 'Failed to load image'"
       >⚠️</span
     >
-  </a>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -38,7 +37,10 @@ import { extractErrorMessage } from '../lib/errors';
 const props = defineProps<{
   imageId: string;
   alt?: string;
+  linked?: boolean;
 }>();
+
+const linked = computed(() => props.linked !== false);
 
 const { data, isLoading, error } = useGetImageDownloadUrl(
   computed(() => props.imageId),
@@ -54,6 +56,15 @@ const thumbnailUrl = computed(
     null,
 );
 const errorMessage = computed(() => extractErrorMessage(error.value));
+const linkAttrs = computed(() =>
+  linked.value
+    ? {
+        href: imageUrl.value || undefined,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      }
+    : {},
+);
 </script>
 
 <style scoped>

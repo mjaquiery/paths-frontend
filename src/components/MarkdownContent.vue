@@ -7,7 +7,10 @@ import { computed } from 'vue';
 import { marked, Renderer } from 'marked';
 import DOMPurify from 'dompurify';
 import { useQueries } from '@tanstack/vue-query';
-import { getImageDownloadUrl } from '../generated/apiClient';
+import {
+  getGetImageDownloadUrlQueryKey,
+  getImageDownloadUrl,
+} from '../generated/apiClient';
 import type { ImageResponse, ImageDownloadResponse } from '../generated/types';
 
 const props = defineProps<{
@@ -21,7 +24,7 @@ const props = defineProps<{
 const imageQueries = useQueries({
   queries: computed(() =>
     (props.images ?? []).map((img) => ({
-      queryKey: ['v1', 'images', img.id, 'download'],
+      queryKey: getGetImageDownloadUrlQueryKey(img.id),
       queryFn: () => getImageDownloadUrl(img.id),
       enabled: !!img.id,
     })),
@@ -47,28 +50,31 @@ const imageUrlMap = computed<Map<string, string>>(() => {
   return map;
 });
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const renderedHtml = computed(() => {
   const urlMap = imageUrlMap.value;
+  const renderer = new Renderer();
+  renderer.image = ({ href, title, text }) => {
+    const resolvedSrc = urlMap.get(href) ?? href;
+    const escapedSrc = resolvedSrc.replace(/"/g, '&quot;');
+    const escapedAlt = escapeHtml(text ?? '');
+    const titleAttr = title ? ` title="${title.replace(/"/g, '&quot;')}"` : '';
+    const figureCaption = text?.trim()
+      ? `<figcaption class="markdown-image-caption">${escapeHtml(text)}</figcaption>`
+      : '';
+    return `<figure class="markdown-image-figure"><img src="${escapedSrc}" alt="${escapedAlt}"${titleAttr} loading="lazy" class="markdown-inline-image" />${figureCaption}</figure>`;
+  };
 
-  // If there are images to resolve, use a custom renderer that substitutes
-  // filenames with actual signed URLs so inline images display correctly.
-  if (urlMap.size > 0) {
-    const renderer = new Renderer();
-    renderer.image = ({ href, title, text }) => {
-      const resolvedSrc = urlMap.get(href) ?? href;
-      const escapedSrc = resolvedSrc.replace(/"/g, '&quot;');
-      const escapedAlt = (text ?? '').replace(/"/g, '&quot;');
-      const titleAttr = title
-        ? ` title="${title.replace(/"/g, '&quot;')}"`
-        : '';
-      return `<img src="${escapedSrc}" alt="${escapedAlt}"${titleAttr} loading="lazy" class="markdown-inline-image" />`;
-    };
-    const raw = marked.parse(props.content, { renderer }) as string;
-    return DOMPurify.sanitize(raw, { ADD_ATTR: ['loading'] });
-  }
-
-  const raw = marked.parse(props.content) as string;
-  return DOMPurify.sanitize(raw);
+  const raw = marked.parse(props.content, { renderer }) as string;
+  return DOMPurify.sanitize(raw, { ADD_ATTR: ['loading'] });
 });
 </script>
 
@@ -143,9 +149,22 @@ const renderedHtml = computed(() => {
 
 .markdown-content :deep(.markdown-inline-image) {
   max-width: 100%;
-  border-radius: 4px;
+  border-radius: 8px;
   display: block;
-  margin: 0.5em 0;
+  margin: 0 auto;
+}
+
+.markdown-content :deep(.markdown-image-figure) {
+  margin: 1rem 0 1.25rem;
+}
+
+.markdown-content :deep(.markdown-image-caption) {
+  margin-top: 0.55rem;
+  color: var(--ion-color-medium, #888);
+  font-size: 0.86rem;
+  font-style: italic;
+  line-height: 1.4;
+  text-align: center;
 }
 
 .markdown-content :deep(hr) {

@@ -696,6 +696,11 @@ function createMockHandlers(
       const download = createImageDownload(imageId);
       return HttpResponse.json(download, { status: 200 });
     }),
+    http.get('*/storybook-images/:imageId/:variant', ({ params }) => {
+      const imageId = String(params.imageId);
+      const variant = String(params.variant);
+      return createStoryImageAssetResponse(imageId, variant === 'thumbnail');
+    }),
     http.get('*/v1/paths/:pathCode/subscriptions', ({ params }) => {
       const subscribers =
         state.subscriptionsByPath[String(params.pathCode)] ?? [];
@@ -953,6 +958,14 @@ function createExportJob(
 }
 
 function createImageDownload(imageId: string): ImageDownloadResponse {
+  return {
+    image_url: `/storybook-images/${imageId}/full`,
+    thumbnail_url: `/storybook-images/${imageId}/thumbnail`,
+    expires_in_seconds: 600,
+  };
+}
+
+function createStoryImageAssetResponse(imageId: string, thumbnail = false) {
   const color = imageId.includes('sunrise')
     ? '#2B6CB0'
     : imageId.includes('whiteboard')
@@ -963,11 +976,13 @@ function createImageDownload(imageId: string): ImageDownloadResponse {
     .replace(/^upload-/, 'upload')
     .replace(/-/g, ' ');
 
-  return {
-    image_url: svgDataUrl(label, color),
-    thumbnail_url: svgDataUrl(label, color, 160, 160),
-    expires_in_seconds: 600,
-  };
+  return new HttpResponse(
+    svgMarkup(label, color, thumbnail ? 160 : 960, thumbnail ? 160 : 640),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'image/svg+xml' },
+    },
+  );
 }
 
 function buildExportPayload(state: StoryState, requestedPathIds: string[]) {
@@ -1478,9 +1493,9 @@ function createJsonDataUrl(value: unknown) {
   )}`;
 }
 
-function svgDataUrl(label: string, color: string, width = 960, height = 640) {
+function svgMarkup(label: string, color: string, width = 960, height = 640) {
   const safeLabel = escapeXml(label);
-  const svg = `
+  return `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
       <rect width="${width}" height="${height}" fill="${color}" />
       <rect x="32" y="32" width="${width - 64}" height="${height - 64}" rx="28" fill="rgba(255,255,255,0.16)" />
@@ -1490,8 +1505,6 @@ function svgDataUrl(label: string, color: string, width = 960, height = 640) {
       )}">${safeLabel}</text>
     </svg>
   `;
-
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
 function escapeXml(value: string) {

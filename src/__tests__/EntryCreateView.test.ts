@@ -5,7 +5,11 @@ import EntryCreateView from '../views/EntryCreateView.vue';
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { pathId: 'p1' }, query: { date: '2024-01-15' } }),
-  useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), back: vi.fn(), replace: vi.fn() }),
+}));
+
+vi.mock('../composables/useCurrentUser', () => ({
+  useCurrentUser: () => ({ currentUserId: { value: 'user-1' } }),
 }));
 
 vi.mock('../composables/usePaths', () => ({
@@ -30,6 +34,9 @@ vi.mock('../composables/usePaths', () => ({
 
 vi.mock('../generated/apiClient', () => ({
   useCreateEntry: () => ({ mutateAsync: vi.fn() }),
+  useUpdateEntry: () => ({ mutateAsync: vi.fn() }),
+  useCreateImageUploadUrl: () => ({ mutateAsync: vi.fn() }),
+  useCompleteImageUpload: () => ({ mutateAsync: vi.fn() }),
 }));
 
 const ionicStubs = {
@@ -38,6 +45,7 @@ const ionicStubs = {
   IonToolbar: { template: '<div><slot /></div>' },
   IonTitle: { template: '<div><slot /></div>' },
   IonContent: { template: '<div><slot /></div>' },
+  IonFooter: { template: '<div><slot /></div>' },
   IonButton: {
     template:
       '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
@@ -46,15 +54,20 @@ const ionicStubs = {
   },
   IonButtons: { template: '<div><slot /></div>' },
   IonBackButton: { template: '<button>Back</button>' },
+  IonModal: { template: '<div><slot /></div>' },
   IonItem: { template: '<div><slot /></div>' },
   IonLabel: { template: '<label><slot /></label>' },
   IonSelect: { template: '<select><slot /></select>' },
   IonSelectOption: { template: '<option><slot /></option>' },
   IonInput: { template: '<input />' },
   IonTextarea: { template: '<textarea></textarea>' },
+  IonText: { template: '<div><slot /></div>' },
+  IonNote: { template: '<div><slot /></div>' },
+  RefreshStatus: { template: '<div />' },
+  EntryImage: { template: '<div />', props: ['imageId', 'alt'] },
   MarkdownContent: {
     template: '<div><slot /></div>',
-    props: ['content'],
+    props: ['content', 'images'],
   },
 };
 
