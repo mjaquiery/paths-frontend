@@ -120,6 +120,13 @@
               </div>
             </div>
 
+            <p
+              v-if="autosaveOffline"
+              class="autosave-offline-note image-offline-note"
+            >
+              Image upload is unavailable while offline.
+            </p>
+
             <div class="editor-surface">
               <ion-textarea
                 v-if="contentTab === 'write'"
@@ -153,12 +160,6 @@
           <p v-if="imageError" class="save-error">{{ imageError }}</p>
           <p v-else-if="autosaveOffline" class="autosave-offline-note">
             Currently offline — your changes will be saved when you reconnect.
-          </p>
-          <p
-            v-if="autosaveOffline"
-            class="autosave-offline-note image-offline-note"
-          >
-            Image upload is unavailable while offline.
           </p>
         </template>
       </div>
@@ -423,6 +424,9 @@ const autosaveOffline = ref(false);
 /** Timer handle for the content autosave debounce */
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** In-flight flush promise (set while flushContentAutosave is running) */
+let autosaveFlushPromise: Promise<void> | null = null;
+
 /** Last content value that was successfully PATCHed to the server */
 let lastSavedContent = '';
 
@@ -545,7 +549,9 @@ function scheduleContentAutosave() {
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
 
   autosaveTimer = setTimeout(() => {
-    void flushContentAutosave();
+    autosaveFlushPromise = flushContentAutosave().finally(() => {
+      autosaveFlushPromise = null;
+    });
   }, AUTOSAVE_DEBOUNCE_MS);
 }
 
@@ -806,10 +812,13 @@ async function commitDraft() {
   commitError.value = '';
 
   try {
-    // Flush any pending autosave first
+    // Cancel any pending debounce timer and await any in-flight autosave
     if (autosaveTimer !== null) {
       clearTimeout(autosaveTimer);
       autosaveTimer = null;
+    }
+    if (autosaveFlushPromise) {
+      await autosaveFlushPromise;
     }
 
     // Ensure we have a draft — create one now if init failed earlier

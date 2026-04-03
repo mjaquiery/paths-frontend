@@ -34,6 +34,7 @@ import {
 import type { PathEntries } from '../composables/useMultiPathEntries';
 import type { EntryDetailData } from '../components/EntryDetailModal.vue';
 import { db } from '../lib/db';
+import { resetPendingSaves } from '../composables/usePendingSaves';
 
 const STORYBOOK_NOW_ISO = '2025-03-15T12:00:00.000Z';
 const STORYBOOK_NOW = new Date(STORYBOOK_NOW_ISO);
@@ -478,6 +479,7 @@ export async function prepareStoryEnvironment(context: {
   storybookQueryClient.clear();
   clearSessionStorage();
   await clearStoryDatabase();
+  resetPendingSaves();
 
   if (pathOrder.length > 0) {
     localStorage.setItem('pathOrder', JSON.stringify(pathOrder));

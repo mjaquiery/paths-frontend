@@ -97,6 +97,13 @@
               </div>
             </div>
 
+            <p
+              v-if="autosaveOffline"
+              class="autosave-offline-note image-offline-note"
+            >
+              Image upload is unavailable while offline.
+            </p>
+
             <div class="editor-surface">
               <ion-textarea
                 v-if="contentTab === 'write'"
@@ -130,12 +137,6 @@
           <p v-if="imageError" class="save-error">{{ imageError }}</p>
           <p v-else-if="autosaveOffline" class="autosave-offline-note">
             Currently offline — your changes will be saved when you reconnect.
-          </p>
-          <p
-            v-if="autosaveOffline"
-            class="autosave-offline-note image-offline-note"
-          >
-            Image upload is unavailable while offline.
           </p>
         </template>
       </div>
@@ -239,17 +240,45 @@
           <div class="conflict-version">
             <h3 class="conflict-version-title">Your version</h3>
             <div class="conflict-version-body">
-              <pre class="conflict-content-preview">{{
-                conflictLocalContent
-              }}</pre>
+              <MarkdownContent
+                v-if="conflictLocalContent"
+                :content="conflictLocalContent"
+                :images="[]"
+                :local-image-urls="{}"
+              />
+              <p v-else class="conflict-content-empty">(empty)</p>
+            </div>
+            <div class="conflict-version-select">
+              <ion-button
+                expand="block"
+                fill="outline"
+                :disabled="resolvingConflict"
+                @click="resolveConflict('local')"
+              >
+                {{ resolvingConflict ? 'Saving...' : 'Keep mine' }}
+              </ion-button>
             </div>
           </div>
           <div class="conflict-version">
             <h3 class="conflict-version-title">Remote version (current)</h3>
             <div class="conflict-version-body">
-              <pre class="conflict-content-preview">{{
-                conflictRemoteContent
-              }}</pre>
+              <MarkdownContent
+                v-if="conflictRemoteContent"
+                :content="conflictRemoteContent"
+                :images="[]"
+                :local-image-urls="{}"
+              />
+              <p v-else class="conflict-content-empty">(empty)</p>
+            </div>
+            <div class="conflict-version-select">
+              <ion-button
+                expand="block"
+                fill="outline"
+                :disabled="resolvingConflict"
+                @click="resolveConflict('remote')"
+              >
+                Use remote
+              </ion-button>
             </div>
           </div>
         </div>
@@ -468,6 +497,9 @@ const autosaveOffline = ref(false);
 /** Timer handle for autosave debounce */
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** In-flight flush promise (set while flushContentAutosave is running) */
+let autosaveFlushPromise: Promise<void> | null = null;
+
 /** Timer handle for background draft-init retry */
 let draftInitRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -644,7 +676,9 @@ function scheduleContentAutosave() {
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
 
   autosaveTimer = setTimeout(() => {
-    void flushContentAutosave();
+    autosaveFlushPromise = flushContentAutosave().finally(() => {
+      autosaveFlushPromise = null;
+    });
   }, AUTOSAVE_DEBOUNCE_MS);
 }
 
@@ -907,9 +941,13 @@ async function commitDraft() {
   let finalContent = content.value;
 
   try {
+    // Cancel any pending debounce timer and await any in-flight autosave
     if (autosaveTimer !== null) {
       clearTimeout(autosaveTimer);
       autosaveTimer = null;
+    }
+    if (autosaveFlushPromise) {
+      await autosaveFlushPromise;
     }
 
     // Ensure we have a draft — attempt init if it failed earlier
@@ -1472,14 +1510,16 @@ onBeforeUnmount(async () => {
   overflow-y: auto;
 }
 
-.conflict-content-preview {
+.conflict-content-empty {
   margin: 0;
   font-size: 0.82rem;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: inherit;
-  color: var(--ion-text-color);
+  color: var(--ion-color-medium);
+  font-style: italic;
+}
+
+.conflict-version-select {
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--ion-border-color);
 }
 
 .conflict-actions {

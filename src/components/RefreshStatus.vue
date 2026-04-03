@@ -25,6 +25,16 @@
         ↑ {{ pendingSavesCount }}
       </span>
 
+      <!-- Draft-init error indicator -->
+      <span
+        v-if="draftInitErrors.length > 0"
+        class="refresh-status__draft-init-badge"
+        :aria-label="`${draftInitErrors.length} draft ${draftInitErrors.length === 1 ? 'error' : 'errors'}`"
+        aria-live="polite"
+      >
+        ⚠ {{ draftInitErrors.length }}
+      </span>
+
       <span class="refresh-status__chevron" aria-hidden="true">▾</span>
     </summary>
 
@@ -269,6 +279,21 @@ async function confirmDeleteCache() {
 
 /* ── Pending-saves badge ── */
 .refresh-status__pending-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ion-color-warning, #f57c00);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+/* ── Draft-init error badge ── */
+.refresh-status__draft-init-badge {
   display: inline-flex;
   align-items: center;
   gap: 2px;

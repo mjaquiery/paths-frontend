@@ -118,3 +118,15 @@ export function usePendingSaves() {
     clearDraftInitError,
   };
 }
+
+/**
+ * Reset all singleton state back to empty.
+ * Call this in Storybook's `prepareStoryEnvironment` so each story starts
+ * with a clean slate.
+ */
+export function resetPendingSaves() {
+  _pendingSaves.value = [];
+  _savedNotification.value = null;
+  _contentSavingKeys.value = new Set();
+  _draftInitErrors.value = new Map();
+}
