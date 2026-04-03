@@ -151,8 +151,7 @@
           </section>
 
           <p v-if="imageError" class="save-error">{{ imageError }}</p>
-          <p v-else-if="commitError" class="save-error">{{ commitError }}</p>
-          <p v-else-if="draftInitError" class="save-error">
+          <p v-else-if="draftInitError" class="autosave-offline-note">
             {{ draftInitError }} — retrying in background.
           </p>
           <p v-else-if="autosaveOffline" class="autosave-offline-note">
@@ -161,6 +160,32 @@
         </template>
       </div>
     </ion-content>
+
+    <!-- Commit-fail inform dialog (save failed, retrying in background) -->
+    <ion-modal
+      :is-open="commitFailDialogOpen"
+      @didDismiss="commitFailDialogOpen = false"
+    >
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Save failed</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding commit-fail-dialog-content">
+        <p class="commit-fail-dialog-message">{{ commitFailDialogMessage }}</p>
+        <p class="commit-fail-dialog-note">
+          Your entry will keep retrying to save in the background. You can watch
+          the status bar at the bottom of the screen for updates.
+        </p>
+      </ion-content>
+      <ion-footer>
+        <ion-toolbar>
+          <div class="commit-fail-dialog-actions">
+            <ion-button @click="commitFailDialogOpen = false">OK</ion-button>
+          </div>
+        </ion-toolbar>
+      </ion-footer>
+    </ion-modal>
 
     <!-- Caption insert modal -->
     <ion-modal :is-open="isCaptionModalOpen" @didDismiss="closeCaptionModal">
@@ -301,6 +326,7 @@ import { useDraftImageUpload } from '../composables/useDraftImageUpload';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { usePaths } from '../composables/usePaths';
 import { useRefreshStatus } from '../composables/useRefreshStatus';
+import { usePendingSaves } from '../composables/usePendingSaves';
 import {
   startCreateEntryDraft,
   useAbandonEntryDraft,
@@ -360,6 +386,9 @@ const {
   lastCheckedAt: refreshLastCheckedAt,
 } = useRefreshStatus();
 
+const { registerPendingSave, removePendingSave, clearSavedNotification } =
+  usePendingSaves();
+
 const day = ref(
   String(route.query.date ?? new Date().toISOString().slice(0, 10)),
 );
@@ -386,6 +415,16 @@ let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Last content value that was successfully PATCHed to the server */
 let lastSavedContent = '';
+
+/** Whether the commit-fail inform dialog is open */
+const commitFailDialogOpen = ref(false);
+/** Message shown in the commit-fail inform dialog */
+const commitFailDialogMessage = ref('');
+
+/** Background commit-retry timer (after a manual save failure) */
+let commitRetryTimer: ReturnType<typeof setTimeout> | null = null;
+/** Whether a commit retry is currently in progress */
+const commitRetrying = ref(false);
 
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
@@ -666,6 +705,81 @@ async function confirmImageInsert() {
 
 // ─── Commit ───────────────────────────────────────────────────────────────
 
+/**
+ * Build a human-readable label for the pending-save badge.
+ * Uses path title + day if available.
+ */
+function buildPendingSaveLabel(): string {
+  const pathTitle =
+    ownedPaths.value.find((p) => p.path_id === selectedPathId.value)?.title ??
+    selectedPathId.value;
+  return `${pathTitle} — ${day.value}`;
+}
+
+/** Key used to identify this draft in the pending-saves store */
+function pendingSaveKey(): string {
+  return `create:${selectedPathId.value}:${day.value}`;
+}
+
+/** Attempt a background commit retry (called after a failed manual save). */
+async function attemptCommitRetry() {
+  commitRetryTimer = null;
+  if (!canCommit.value || commitRetrying.value) return;
+  commitRetrying.value = true;
+
+  try {
+    const currentDraftId = draftId.value || (await ensureDraft());
+    if (!currentDraftId) {
+      // Still no draft — schedule another retry
+      commitRetryTimer = setTimeout(
+        () => void attemptCommitRetry(),
+        AUTOSAVE_DEBOUNCE_MS,
+      );
+      return;
+    }
+
+    imageDrafts.value = syncDraftCaptionsFromContent(
+      imageDrafts.value,
+      content.value,
+    );
+    const finalContent = appendMissingImageMarkdown(
+      content.value,
+      imageDrafts.value,
+    );
+    content.value = finalContent;
+
+    if (finalContent !== lastSavedContent) {
+      await patchDraft({
+        draftId: currentDraftId,
+        data: { content: finalContent },
+      });
+      lastSavedContent = finalContent;
+    }
+
+    await commitDraftApi({ draftId: currentDraftId });
+
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] }),
+      queryClient.invalidateQueries({
+        queryKey: ['v1', 'paths', selectedPathId.value, 'entries'],
+      }),
+    ]);
+
+    // Success — deregister pending save and signal success
+    removePendingSave(pendingSaveKey(), true);
+    draftId.value = '';
+    router.back();
+  } catch {
+    // Still failing — schedule another retry
+    commitRetryTimer = setTimeout(
+      () => void attemptCommitRetry(),
+      AUTOSAVE_DEBOUNCE_MS,
+    );
+  } finally {
+    commitRetrying.value = false;
+  }
+}
+
 async function commitDraft() {
   if (!canCommit.value) return;
 
@@ -717,6 +831,7 @@ async function commitDraft() {
     ]);
 
     // Draft committed — no need to abandon on unmount
+    clearSavedNotification();
     draftId.value = '';
     router.back();
   } catch (err: unknown) {
@@ -725,21 +840,30 @@ async function commitDraft() {
         ? (err as { response?: { status?: number } }).response?.status
         : undefined;
 
+    let message: string;
     if (status === 422) {
       const detail = (
         err as { response?: { data?: { detail?: { code?: string } } } }
       ).response?.data?.detail;
       if (detail?.code === 'images_not_ready') {
-        commitError.value =
+        message =
           'Some images are still uploading. Please wait a moment and try again.';
       } else {
-        commitError.value =
+        message =
           extractErrorMessage(err) ?? 'Failed to save. Please try again.';
       }
     } else {
-      commitError.value =
-        extractErrorMessage(err) ?? 'Failed to save. Please try again.';
+      message = extractErrorMessage(err) ?? 'Failed to save. Please try again.';
     }
+
+    // Show the inform dialog and start a background retry
+    commitFailDialogMessage.value = message;
+    commitFailDialogOpen.value = true;
+    registerPendingSave(pendingSaveKey(), buildPendingSaveLabel());
+    commitRetryTimer = setTimeout(
+      () => void attemptCommitRetry(),
+      AUTOSAVE_DEBOUNCE_MS,
+    );
   } finally {
     committing.value = false;
   }
@@ -806,7 +930,11 @@ watch(ownedPaths, (nextPaths, previousPaths) => {
 onBeforeUnmount(async () => {
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
   if (draftInitRetryTimer !== null) clearTimeout(draftInitRetryTimer);
+  if (commitRetryTimer !== null) clearTimeout(commitRetryTimer);
   window.removeEventListener('online', handleOnline);
+
+  // Deregister any pending save entry (not succeeded — just navigating away)
+  removePendingSave(pendingSaveKey(), false);
 
   for (const draft of imageDrafts.value) {
     revokeDraftPreviewUrl(draft);
@@ -1113,6 +1241,33 @@ onBeforeUnmount(async () => {
 }
 
 .image-caption-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.commit-fail-dialog-content {
+  --padding-top: 18px;
+  --padding-start: 20px;
+  --padding-end: 20px;
+}
+
+.commit-fail-dialog-message {
+  font-size: 0.95rem;
+  color: var(--ion-color-danger);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.commit-fail-dialog-note {
+  font-size: 0.88rem;
+  color: var(--ion-color-medium);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.commit-fail-dialog-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;

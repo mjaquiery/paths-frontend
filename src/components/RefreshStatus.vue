@@ -3,10 +3,46 @@
     <summary class="refresh-status__summary" :aria-label="summaryAriaLabel">
       <span class="refresh-status__dot" aria-hidden="true" />
       <span class="refresh-status__text">{{ statusText }}</span>
+
+      <!-- Pending-saves indicator -->
+      <span
+        v-if="pendingSavesCount > 0"
+        class="refresh-status__pending-badge"
+        :aria-label="`${pendingSavesCount} unsaved ${pendingSavesCount === 1 ? 'change' : 'changes'} retrying`"
+        aria-live="polite"
+      >
+        ↑ {{ pendingSavesCount }}
+      </span>
+
       <span class="refresh-status__chevron" aria-hidden="true">▾</span>
     </summary>
 
     <div class="refresh-status__panel" role="status" aria-live="polite">
+      <!-- Saved notification (stays until navigation) -->
+      <p v-if="savedNotification" class="refresh-status__saved-note">
+        ✓ {{ savedNotification }}
+      </p>
+
+      <!-- Pending-saves list -->
+      <div
+        v-if="pendingSavesCount > 0"
+        class="refresh-status__pending-list"
+        aria-label="Entries retrying to save"
+      >
+        <p class="refresh-status__pending-title">
+          Retrying save ({{ pendingSavesCount }}):
+        </p>
+        <ul class="refresh-status__pending-items">
+          <li
+            v-for="save in pendingSaves"
+            :key="save.key"
+            class="refresh-status__pending-item"
+          >
+            ↑ {{ save.label }}
+          </li>
+        </ul>
+      </div>
+
       <p class="refresh-status__detail-text">
         <template v-if="statusType === 'offline'">
           You're offline. Showing cached content.
@@ -75,6 +111,7 @@
 import { ref, computed } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import type { RefreshStatusType } from '../composables/useRefreshStatus';
+import { usePendingSaves } from '../composables/usePendingSaves';
 import { db } from '../lib/db';
 
 const props = defineProps<{
@@ -86,9 +123,17 @@ const props = defineProps<{
 const queryClient = useQueryClient();
 const confirmingDelete = ref(false);
 
-const summaryAriaLabel = computed(
-  () => `Refresh status: ${props.statusText || 'unknown'}. Click to expand.`,
-);
+const { pendingSaves, pendingSavesCount, savedNotification } =
+  usePendingSaves();
+
+const summaryAriaLabel = computed(() => {
+  const base = `Refresh status: ${props.statusText || 'unknown'}.`;
+  const pending =
+    pendingSavesCount.value > 0
+      ? ` ${pendingSavesCount.value} unsaved ${pendingSavesCount.value === 1 ? 'change' : 'changes'} retrying.`
+      : '';
+  return `${base}${pending} Click to expand.`;
+});
 
 function handleRefresh() {
   void queryClient.invalidateQueries({ queryKey: ['v1'] });
@@ -161,6 +206,21 @@ async function confirmDeleteCache() {
   text-overflow: ellipsis;
 }
 
+/* ── Pending-saves badge ── */
+.refresh-status__pending-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ion-color-warning, #f57c00);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
 .refresh-status__chevron {
   font-size: 0.7rem;
   transition: transform 0.2s;
@@ -197,6 +257,45 @@ details[open] .refresh-status__chevron {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* ── Saved notification ── */
+.refresh-status__saved-note {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ion-color-success, #2dd36f);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ── Pending-saves list ── */
+.refresh-status__pending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.refresh-status__pending-title {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ion-color-warning, #f57c00);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.refresh-status__pending-items {
+  margin: 0;
+  padding: 0 0 0 12px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.refresh-status__pending-item {
+  font-size: 0.73rem;
+  color: var(--ion-color-medium, #808080);
+  line-height: 1.4;
 }
 
 .refresh-status__detail-text {

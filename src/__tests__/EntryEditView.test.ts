@@ -69,6 +69,17 @@ vi.mock('../composables/useRefreshStatus', () => ({
   }),
 }));
 
+vi.mock('../composables/usePendingSaves', () => ({
+  usePendingSaves: () => ({
+    registerPendingSave: vi.fn(),
+    removePendingSave: vi.fn(),
+    clearSavedNotification: vi.fn(),
+    pendingSaves: { value: [] },
+    pendingSavesCount: { value: 0 },
+    savedNotification: { value: null },
+  }),
+}));
+
 vi.mock('../lib/db', () => ({
   db: {
     entryContent: { delete: vi.fn() },
@@ -296,7 +307,7 @@ describe('EntryEditView', () => {
     expect(mockRouterBack).toHaveBeenCalled();
   });
 
-  it('shows commit error when commit fails', async () => {
+  it('shows commit-fail dialog when commit fails', async () => {
     mockCommitDraft.mockRejectedValue(networkError());
     const wrapper = mountEditView();
     await flushPromises();
@@ -305,9 +316,9 @@ describe('EntryEditView', () => {
       .find((b) => b.text().includes('Save'));
     await saveBtn?.trigger('click');
     await flushPromises();
-    // The view shows the error message extracted from the rejection
-    expect(wrapper.html()).toMatch(/save-error/i);
-    expect(wrapper.find('.save-error').exists()).toBe(true);
+    // The commit-fail dialog should be open
+    expect(wrapper.html()).toMatch(/Save failed/i);
+    expect(wrapper.html()).toMatch(/retrying to save in the background/i);
   });
 
   it('opens conflict resolution modal when commit returns 409', async () => {

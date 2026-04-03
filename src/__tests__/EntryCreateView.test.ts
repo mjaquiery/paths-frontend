@@ -68,6 +68,17 @@ vi.mock('../composables/useRefreshStatus', () => ({
   }),
 }));
 
+vi.mock('../composables/usePendingSaves', () => ({
+  usePendingSaves: () => ({
+    registerPendingSave: vi.fn(),
+    removePendingSave: vi.fn(),
+    clearSavedNotification: vi.fn(),
+    pendingSaves: { value: [] },
+    pendingSavesCount: { value: 0 },
+    savedNotification: { value: null },
+  }),
+}));
+
 vi.mock('../lib/db', () => ({
   db: {
     entryContent: { delete: vi.fn() },
@@ -120,7 +131,10 @@ const ionicStubs = {
   },
   IonButtons: { template: '<div><slot /></div>' },
   IonBackButton: { template: '<button>Back</button>' },
-  IonModal: { template: '<div><slot /></div>' },
+  IonModal: {
+    template: '<div v-if="isOpen"><slot /></div>',
+    props: ['isOpen', 'canDismiss'],
+  },
   IonItem: { template: '<div><slot /></div>' },
   IonLabel: { template: '<label><slot /></label>' },
   IonSelect: {
@@ -345,7 +359,7 @@ describe('EntryCreateView', () => {
     expect(mockRouterBack).toHaveBeenCalled();
   });
 
-  it('shows commit error message when commit fails', async () => {
+  it('shows commit-fail dialog when commit fails', async () => {
     mockCommitDraft.mockRejectedValue({ response: { status: 503 } });
     const wrapper = mountCreateView();
     await flushPromises();
@@ -357,7 +371,9 @@ describe('EntryCreateView', () => {
       .find((b) => b.text().includes('Save'));
     await saveBtn?.trigger('click');
     await flushPromises();
-    expect(wrapper.html()).toMatch(/failed to save/i);
+    // The commit-fail dialog should be open (modal rendered with isOpen=true)
+    expect(wrapper.html()).toMatch(/Save failed/i);
+    expect(wrapper.html()).toMatch(/retrying to save in the background/i);
   });
 
   it('abandons the draft on unmount if not committed', async () => {

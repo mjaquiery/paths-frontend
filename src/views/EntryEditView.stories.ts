@@ -68,6 +68,7 @@ export const Default: Story = {
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
+    seedCacheFromState: true,
   }),
 };
 
