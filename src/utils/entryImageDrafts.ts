@@ -1,14 +1,24 @@
-import type { ImageResponse } from '../generated/types';
+import type { DraftImageResponse, ImageResponse } from '../generated/types';
 import { referencedImageCaptions, referencedImageFilenames } from './markdown';
 
 export type EntryImageDraftSource = 'local' | 'server';
-export type EntryImageDraftStatus = 'local' | 'uploading' | 'ready' | 'failed';
+// 'draft-uploading' means bytes sent to storage, background task processing
+// 'draft-ready' means server confirmed the draft image is ready
+export type EntryImageDraftStatus =
+  | 'local'
+  | 'uploading'
+  | 'draft-uploading'
+  | 'draft-ready'
+  | 'ready'
+  | 'failed';
 
 export interface EntryImageDraft {
   localId: string;
   source: EntryImageDraftSource;
   status: EntryImageDraftStatus;
   image: ImageResponse | null;
+  /** Server-side draft image id (from DraftImageResponse), if this image has been uploaded to a draft */
+  draftImageId: string | null;
   file: File | null;
   filename: string;
   previewUrl: string | null;
@@ -27,6 +37,7 @@ export function createLocalImageDraft(file: File): EntryImageDraft {
     source: 'local',
     status: 'local',
     image: null,
+    draftImageId: null,
     file,
     filename: file.name,
     previewUrl: URL.createObjectURL(file),
@@ -45,8 +56,33 @@ export function createServerImageDraft(
     source: 'server',
     status: 'ready',
     image,
+    draftImageId: null,
     file: null,
     filename: image.filename,
+    previewUrl: null,
+    captionDraft,
+    removed: false,
+    error: '',
+  };
+}
+
+/**
+ * Create a draft entry from a DraftImageResponse (for images already in a server draft).
+ * Used when re-opening or resuming a draft.
+ */
+export function createDraftServerImageDraft(
+  draftImage: DraftImageResponse,
+  captionDraft = '',
+): EntryImageDraft {
+  const isDraftReady = draftImage.status === 'ready';
+  return {
+    localId: nextDraftId(),
+    source: 'server',
+    status: isDraftReady ? 'draft-ready' : 'draft-uploading',
+    image: null,
+    draftImageId: String(draftImage.id),
+    file: null,
+    filename: draftImage.filename,
     previewUrl: null,
     captionDraft,
     removed: false,
@@ -85,6 +121,16 @@ export function getAttachedImageFilenames(drafts: EntryImageDraft[]) {
   return drafts
     .filter((draft) => !draft.removed)
     .map((draft) => draft.filename);
+}
+
+/**
+ * Returns the draft image IDs for all non-removed server-draft images.
+ * Used to track which draft images to include in commits.
+ */
+export function getAttachedDraftImageIds(drafts: EntryImageDraft[]) {
+  return drafts
+    .filter((draft) => !draft.removed && draft.draftImageId)
+    .map((draft) => draft.draftImageId as string);
 }
 
 export function appendMissingImageMarkdown(

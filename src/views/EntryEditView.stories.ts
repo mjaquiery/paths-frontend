@@ -94,26 +94,67 @@ export const WithManyImages: Story = {
   }),
 };
 
-export const SaveError409: Story = {
+/**
+ * Draft init fails with a 409 (stale edit_id) — the view shows the
+ * "edited on another device" message instead of the editor.
+ */
+export const DraftInitConflict: Story = {
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
     seedCacheFromState: true,
     requestOverrides: [
-      createStoryApiError('*/v1/paths/*/entries/*', 409, 'PUT', {
+      createStoryApiError('*/v1/paths/*/entries/*/draft', 409, 'GET', {
         detail: 'Edit ID mismatch.',
       }),
     ],
   }),
 };
 
+/**
+ * Draft init fails with a server error — the view shows a generic error
+ * message instead of the editor.
+ */
+export const DraftInitError: Story = {
+  parameters: createStoryParameters({
+    state: populatedState,
+    route: '/entry/daily-river/entry-daily-today/edit',
+    seedCacheFromState: true,
+    requestOverrides: [
+      createStoryApiError('*/v1/paths/*/entries/*/draft', 503, 'GET', {
+        detail: 'Storybook forced draft outage.',
+      }),
+    ],
+  }),
+};
+
+/**
+ * Commit returns 409 — the conflict resolution modal is shown so the user
+ * can choose between their local version and the current remote version.
+ */
+export const ConflictResolution: Story = {
+  parameters: createStoryParameters({
+    state: populatedState,
+    route: '/entry/daily-river/entry-daily-today/edit',
+    seedCacheFromState: true,
+    requestOverrides: [
+      createStoryApiError('*/v1/entry-drafts/*/commit', 409, 'POST', {
+        detail: 'Edit ID mismatch.',
+      }),
+    ],
+  }),
+};
+
+/**
+ * Commit returns a 503 — a save error message is shown below the editor.
+ */
 export const SaveError: Story = {
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
     seedCacheFromState: true,
     requestOverrides: [
-      createStoryApiError('*/v1/paths/*/entries/*', 503, 'PUT', {
+      createStoryApiError('*/v1/entry-drafts/*/commit', 503, 'POST', {
         detail: 'Storybook forced save outage.',
       }),
     ],

@@ -9,7 +9,10 @@ import { computed, watchEffect } from 'vue';
 import type {
   BlocklistEntryResponse,
   DownloadURLResponse,
+  DraftImageResponse,
+  DraftImageSlotResponse,
   EntryContentResponse,
+  EntryDraftResponse,
   EntryResponse,
   ExportJobResponse,
   ImageDownloadResponse,
@@ -548,17 +551,67 @@ function createMockHandlers(
   const state = clone(inputState);
   const exportPolls: Record<string, number> = {};
   const exportRequests: Record<string, string[]> = {};
-  const pendingUploads = new Map<
-    string,
-    {
-      pathId: string;
-      entryId: string;
-      filename: string;
-      contentType: string | null;
-      stripMetadata: boolean;
+
+  // ─── Draft store ────────────────────────────────────────────────────────
+  // Keyed by draft id string. Tracks in-progress draft state for both create
+  // and edit flows.
+  interface StorybookDraft {
+    id: string;
+    mode: 'create' | 'edit';
+    pathId: string;
+    entryId: string | null;
+    day: string;
+    content: string;
+    based_on_edit_id: number | null;
+    images: DraftImageResponse[];
+    state: 'open' | 'committed';
+  }
+
+  // Index: `create:${pathId}:${day}` or `edit:${pathId}:${entryId}` → draftId
+  const draftIndex = new Map<string, string>();
+  const drafts = new Map<string, StorybookDraft>();
+
+  // Pending draft image uploads: draftImageId → slot info
+  interface PendingDraftUpload {
+    draftId: string;
+    filename: string;
+    contentType: string | null;
+    stripMetadata: boolean;
+    clientImageId: string | null;
+  }
+  const pendingDraftUploads = new Map<string, PendingDraftUpload>();
+  let draftCounter = 0;
+  let draftImageCounter = 0;
+
+  function makeDraftResponse(draft: StorybookDraft): EntryDraftResponse {
+    return {
+      id: draft.id,
+      mode: draft.mode,
+      state: draft.state,
+      path_id: draft.pathId,
+      entry_id: draft.entryId,
+      day: draft.day,
+      content: draft.content,
+      based_on_edit_id: draft.based_on_edit_id,
+      images: draft.images,
+      expires_at: storyTimestampOffset(1),
+    };
+  }
+
+  function getOrCreateDraft(
+    key: string,
+    init: () => StorybookDraft,
+  ): StorybookDraft {
+    const existingId = draftIndex.get(key);
+    if (existingId) {
+      const existing = drafts.get(existingId);
+      if (existing && existing.state === 'open') return existing;
     }
-  >();
-  let uploadCounter = 0;
+    const draft = init();
+    drafts.set(draft.id, draft);
+    draftIndex.set(key, draft.id);
+    return draft;
+  }
 
   return [
     ...createOverrideHandlers(requestOverrides),
@@ -613,32 +666,25 @@ function createMockHandlers(
         { status: 200 },
       );
     }),
-    http.post('*/v1/paths/:pathCode/entries', async ({ params, request }) => {
-      const body = (await request.json()) as {
-        day: string;
-        content: string;
-        image_filenames?: string[];
-      };
+    // ─── Get-or-create create draft ────────────────────────────────────────
+    http.get('*/v1/paths/:pathCode/entries/drafts', ({ params, request }) => {
       const pathId = String(params.pathCode);
-      const existing = state.entriesByPath[pathId] ?? [];
-      const created = createStoryEntry({
-        id: `entry-${pathId}-${existing.length + 1}`,
-        path_id: pathId,
-        day: body.day,
-        edit_id: 1,
-        content: body.content,
-        images: (body.image_filenames ?? []).map((filename, index) =>
-          createImage({
-            id: `img-${slugify(filename)}-${index + 1}`,
-            entry_id: `entry-${pathId}-${existing.length + 1}`,
-            filename,
-            content_type: 'image/jpeg',
-            byte_size: 200_000,
-          }),
-        ),
-      });
-      state.entriesByPath[pathId] = [created, ...existing];
-      return HttpResponse.json(created.summary, { status: 201 });
+      const url = new URL(request.url);
+      const day = url.searchParams.get('day') ?? storyDateOffset(0);
+      const key = `create:${pathId}:${day}`;
+      draftCounter += 1;
+      const draft = getOrCreateDraft(key, () => ({
+        id: `draft-create-${draftCounter}`,
+        mode: 'create',
+        pathId,
+        entryId: null,
+        day,
+        content: '',
+        based_on_edit_id: null,
+        images: [],
+        state: 'open',
+      }));
+      return HttpResponse.json(makeDraftResponse(draft), { status: 200 });
     }),
     http.get('*/v1/paths/:pathCode/entries/:entrySlug', ({ params }) => {
       const entry = findEntryRecord(
@@ -651,30 +697,50 @@ function createMockHandlers(
       }
       return HttpResponse.json(toEntryContent(entry.record), { status: 200 });
     }),
-    http.put(
-      '*/v1/paths/:pathCode/entries/:entrySlug',
-      async ({ params, request }) => {
-        const body = (await request.json()) as {
-          content: string;
-          expected_edit_id: number;
-          image_filenames?: string[];
-        };
-        const entry = findEntryRecord(
-          state,
-          String(params.entrySlug),
-          String(params.pathCode),
+    // ─── Get-or-create edit draft ───────────────────────────────────────────
+    http.get(
+      '*/v1/paths/:pathCode/entries/:entrySlug/draft',
+      ({ params, request }) => {
+        const pathId = String(params.pathCode);
+        const entrySlug = String(params.entrySlug);
+        const url = new URL(request.url);
+        const basedOnEditId = parseInt(
+          url.searchParams.get('based_on_edit_id') ?? '0',
+          10,
         );
+
+        const entry = findEntryRecord(state, entrySlug, pathId);
         if (!entry) {
           return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
         }
-        entry.record.content = body.content;
-        entry.record.summary.edit_id = body.expected_edit_id + 1;
-        if (body.image_filenames) {
-          entry.record.images = entry.record.images.filter((image) =>
-            body.image_filenames?.includes(image.filename),
+
+        // Check for edit_id mismatch (simulate 409 if stale)
+        if (
+          basedOnEditId !== 0 &&
+          basedOnEditId !== entry.record.summary.edit_id
+        ) {
+          return HttpResponse.json(
+            { detail: 'Edit ID mismatch.' },
+            { status: 409 },
           );
         }
-        return HttpResponse.json(toEntryContent(entry.record), { status: 200 });
+
+        const key = `edit:${pathId}:${entrySlug}`;
+        draftCounter += 1;
+        const draft = getOrCreateDraft(key, () => ({
+          id: `draft-edit-${draftCounter}`,
+          mode: 'edit',
+          pathId,
+          entryId: entrySlug,
+          day: entry.record.summary.day,
+          content: entry.record.content,
+          based_on_edit_id: entry.record.summary.edit_id,
+          images: entry.record.images.map((img) =>
+            createDraftImageFromEntryImage(img),
+          ),
+          state: 'open',
+        }));
+        return HttpResponse.json(makeDraftResponse(draft), { status: 200 });
       },
     ),
     http.delete('*/v1/paths/:pathCode/entries/:entrySlug', ({ params }) => {
@@ -695,64 +761,218 @@ function createMockHandlers(
       }
       return HttpResponse.json(entry.record.images, { status: 200 });
     }),
+    // ─── Get / patch / abandon draft ───────────────────────────────────────
+    http.get('*/v1/entry-drafts/:draftId', ({ params }) => {
+      const draft = drafts.get(String(params.draftId));
+      if (!draft) {
+        return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+      }
+      return HttpResponse.json(makeDraftResponse(draft), { status: 200 });
+    }),
+    http.patch('*/v1/entry-drafts/:draftId', async ({ params, request }) => {
+      const draft = drafts.get(String(params.draftId));
+      if (!draft) {
+        return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+      }
+      const body = (await request.json()) as {
+        day?: string;
+        content?: string;
+      };
+      if (body.day !== undefined) draft.day = body.day;
+      if (body.content !== undefined) draft.content = body.content;
+      return HttpResponse.json(makeDraftResponse(draft), { status: 200 });
+    }),
+    http.delete('*/v1/entry-drafts/:draftId', ({ params }) => {
+      const draftId = String(params.draftId);
+      const draft = drafts.get(draftId);
+      if (draft) {
+        // Remove from index so a fresh draft can be created next time
+        const key =
+          draft.mode === 'create'
+            ? `create:${draft.pathId}:${draft.day}`
+            : `edit:${draft.pathId}:${draft.entryId}`;
+        draftIndex.delete(key);
+        drafts.delete(draftId);
+      }
+      return new HttpResponse(null, { status: 204 });
+    }),
+    // ─── Draft image upload (3-step) ───────────────────────────────────────
     http.post(
-      '*/v1/paths/:pathCode/entries/:entrySlug/images/upload-url',
+      '*/v1/entry-drafts/:draftId/images',
       async ({ params, request }) => {
+        const draftId = String(params.draftId);
+        const draft = drafts.get(draftId);
+        if (!draft) {
+          return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+        }
         const body = (await request.json()) as {
           filename: string;
           content_type?: string;
           strip_metadata?: boolean;
+          client_image_id?: string;
         };
-        uploadCounter += 1;
-        const imageId = `upload-${slugify(body.filename)}-${uploadCounter}`;
-        pendingUploads.set(imageId, {
-          pathId: String(params.pathCode),
-          entryId: String(params.entrySlug),
+        draftImageCounter += 1;
+        const draftImageId = `dimg-${draftImageCounter}`;
+        pendingDraftUploads.set(draftImageId, {
+          draftId,
           filename: body.filename,
           contentType: body.content_type ?? 'image/jpeg',
           stripMetadata: body.strip_metadata ?? false,
+          clientImageId: body.client_image_id ?? null,
         });
-        return HttpResponse.json(
-          {
-            image_id: imageId,
-            upload_url: `https://storybook.paths.local/uploads/${imageId}`,
-            expires_in_seconds: 600,
-          },
-          { status: 200 },
-        );
+        const slot: DraftImageSlotResponse = {
+          id: draftImageId,
+          draft_id: draftId,
+          source: 'upload',
+          filename: body.filename,
+          status: 'pending',
+          content_type: body.content_type ?? 'image/jpeg',
+          strip_metadata: body.strip_metadata ?? false,
+          client_image_id: body.client_image_id ?? null,
+          upload_url: `https://storybook.paths.local/uploads/${draftImageId}`,
+          expires_in_seconds: 600,
+        };
+        return HttpResponse.json(slot, { status: 201 });
       },
     ),
     http.put('https://storybook.paths.local/uploads/:imageId', () => {
       return new HttpResponse(null, { status: 200 });
     }),
-    http.post('*/v1/images/:imageId/complete', async ({ params, request }) => {
-      const imageId = String(params.imageId);
-      const upload = pendingUploads.get(imageId);
-      if (!upload) {
+    http.post(
+      '*/v1/entry-drafts/:draftId/images/:draftImageId/complete',
+      async ({ params, request }) => {
+        const draftId = String(params.draftId);
+        const draftImageId = String(params.draftImageId);
+        const pending = pendingDraftUploads.get(draftImageId);
+        if (!pending) {
+          return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+        }
+        const draft = drafts.get(draftId);
+        if (!draft) {
+          return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+        }
+        const body = (await request.json()) as { byte_size?: number };
+        const draftImage: DraftImageResponse = {
+          id: draftImageId,
+          draft_id: draftId,
+          source: 'upload',
+          live_image_id: null,
+          filename: pending.filename,
+          status: 'ready',
+          content_type: pending.contentType,
+          strip_metadata: pending.stripMetadata,
+          byte_size: body.byte_size ?? null,
+          client_image_id: pending.clientImageId,
+        };
+        draft.images = [
+          ...draft.images.filter((img) => img.id !== draftImageId),
+          draftImage,
+        ];
+        pendingDraftUploads.delete(draftImageId);
+        return HttpResponse.json(draftImage, { status: 200 });
+      },
+    ),
+    http.post(
+      '*/v1/entry-drafts/:draftId/images/:draftImageId/retry-upload',
+      ({ params }) => {
+        const draftId = String(params.draftId);
+        const draftImageId = String(params.draftImageId);
+        const draft = drafts.get(draftId);
+        const existing = draft?.images.find((img) => img.id === draftImageId);
+        if (!existing) {
+          return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+        }
+        const slot: DraftImageSlotResponse = {
+          id: draftImageId,
+          draft_id: draftId,
+          source: 'upload',
+          filename: existing.filename,
+          status: 'pending',
+          content_type: existing.content_type,
+          strip_metadata: existing.strip_metadata,
+          client_image_id: existing.client_image_id,
+          upload_url: `https://storybook.paths.local/uploads/${draftImageId}`,
+          expires_in_seconds: 600,
+        };
+        return HttpResponse.json(slot, { status: 200 });
+      },
+    ),
+    http.delete(
+      '*/v1/entry-drafts/:draftId/images/:draftImageId',
+      ({ params }) => {
+        const draftId = String(params.draftId);
+        const draftImageId = String(params.draftImageId);
+        const draft = drafts.get(draftId);
+        if (!draft) {
+          return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+        }
+        const removed = draft.images.find((img) => img.id === draftImageId);
+        if (!removed) {
+          return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+        }
+        draft.images = draft.images.filter((img) => img.id !== draftImageId);
+        return HttpResponse.json(removed, { status: 200 });
+      },
+    ),
+    // ─── Commit draft ───────────────────────────────────────────────────────
+    http.post('*/v1/entry-drafts/:draftId/commit', ({ params }) => {
+      const draftId = String(params.draftId);
+      const draft = drafts.get(draftId);
+      if (!draft) {
         return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
       }
 
-      const body = (await request.json()) as { byte_size?: number };
-      const entry = findEntryRecord(state, upload.entryId, upload.pathId);
-      if (!entry) {
-        return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+      const pathId = draft.pathId;
+
+      if (draft.mode === 'create') {
+        // Create a new entry in state
+        const existing = state.entriesByPath[pathId] ?? [];
+        const entryId = `entry-${pathId}-${existing.length + 1}`;
+        const created = createStoryEntry({
+          id: entryId,
+          path_id: pathId,
+          day: draft.day,
+          edit_id: 1,
+          content: draft.content,
+          images: draft.images.map((dimg) =>
+            createImage({
+              id: dimg.id,
+              entry_id: entryId,
+              filename: dimg.filename,
+              content_type: dimg.content_type,
+              byte_size: dimg.byte_size,
+            }),
+          ),
+        });
+        state.entriesByPath[pathId] = [created, ...existing];
+        draft.state = 'committed';
+        const key = `create:${pathId}:${draft.day}`;
+        draftIndex.delete(key);
+        return HttpResponse.json(toEntryContent(created), { status: 200 });
+      } else {
+        // Update existing entry
+        const entryRecord = findEntryRecord(state, draft.entryId ?? '', pathId);
+        if (!entryRecord) {
+          return HttpResponse.json({ detail: 'Not found' }, { status: 404 });
+        }
+        entryRecord.record.content = draft.content;
+        entryRecord.record.summary.edit_id += 1;
+        entryRecord.record.images = draft.images.map((dimg) =>
+          createImage({
+            id: dimg.id,
+            entry_id: entryRecord.record.summary.id,
+            filename: dimg.filename,
+            content_type: dimg.content_type,
+            byte_size: dimg.byte_size,
+          }),
+        );
+        draft.state = 'committed';
+        const key = `edit:${pathId}:${draft.entryId}`;
+        draftIndex.delete(key);
+        return HttpResponse.json(toEntryContent(entryRecord.record), {
+          status: 200,
+        });
       }
-
-      const image = createImage({
-        id: imageId,
-        entry_id: upload.entryId,
-        filename: upload.filename,
-        content_type: upload.contentType,
-        byte_size: body.byte_size ?? null,
-      });
-      image.strip_metadata = upload.stripMetadata;
-      entry.record.images = [
-        ...entry.record.images.filter((candidate) => candidate.id !== image.id),
-        image,
-      ];
-      pendingUploads.delete(imageId);
-
-      return HttpResponse.json(image, { status: 200 });
     }),
     http.get('*/v1/images/:imageId/download-url', ({ params }) => {
       const imageId = String(params.imageId);
@@ -1003,6 +1223,23 @@ function createImage(input: {
     ...input,
     status: 'ready',
     strip_metadata: true,
+  };
+}
+
+function createDraftImageFromEntryImage(
+  image: ImageResponse,
+): DraftImageResponse {
+  return {
+    id: image.id,
+    draft_id: '',
+    source: 'live',
+    live_image_id: image.id,
+    filename: image.filename,
+    status: 'ready',
+    content_type: image.content_type,
+    strip_metadata: image.strip_metadata,
+    byte_size: image.byte_size,
+    client_image_id: null,
   };
 }
 

@@ -5,12 +5,15 @@
  * OpenAPI spec version: 0.3.4
  */
 
-export interface ImageResponse {
+export interface DraftImageResponse {
   id: string;
-  entry_id: string;
+  draft_id: string;
+  source: string;
+  live_image_id: string | null;
   filename: string;
   status: string;
-  strip_metadata: boolean;
   content_type: string | null;
+  strip_metadata: boolean;
   byte_size: number | null;
+  client_image_id: string | null;
 }

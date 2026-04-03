@@ -5,6 +5,6 @@
  * OpenAPI spec version: 0.3.4
  */
 
-export interface OAuthLoginResponse {
-  authorization_url: string;
+export interface StartCreateDraftRequest {
+  day: string;
 }

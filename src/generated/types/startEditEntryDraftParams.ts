@@ -5,9 +5,10 @@
  * OpenAPI spec version: 0.3.4
  */
 
-export type AuthLoginParams = {
+export type StartEditEntryDraftParams = {
   /**
-   * URI that Google will redirect to after login
+   * Current edit ID for optimistic locking
+   * @minimum 1
    */
-  callback_uri: string;
+  based_on_edit_id: number;
 };

@@ -13,6 +13,15 @@
       :linked="false"
     />
     <span v-else class="entry-image-draft-preview__placeholder">🖼️</span>
+
+    <!-- Uploading overlay -->
+    <div
+      v-if="uploading"
+      class="entry-image-draft-preview__overlay"
+      aria-hidden="true"
+    >
+      <span class="entry-image-draft-preview__spinner" />
+    </div>
   </div>
 </template>
 
@@ -24,6 +33,8 @@ defineProps<{
   previewUrl?: string | null;
   filename: string;
   alt?: string;
+  /** When true, show a loading overlay over the preview box */
+  uploading?: boolean;
 }>();
 </script>
 
@@ -32,6 +43,7 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .entry-image-draft-preview__image {
@@ -52,5 +64,31 @@ defineProps<{
   background: var(--ion-color-light, #f4f4f4);
   border: 1px solid var(--ion-color-light-shade, #e0e0e0);
   font-size: 1.5rem;
+}
+
+.entry-image-draft-preview__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.entry-image-draft-preview__spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255, 255, 255, 0.6);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: draft-preview-spin 0.75s linear infinite;
+}
+
+@keyframes draft-preview-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

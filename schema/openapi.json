@@ -268,6 +268,616 @@
         }
       }
     },
+    "/v1/paths/{path_code}/entries/drafts": {
+      "get": {
+        "tags": [
+          "entry-drafts"
+        ],
+        "summary": "Start Create Entry Draft",
+        "description": "Get or create an open 'create' draft for the given path and day. Returns the existing open draft for this user/path/day if one exists, otherwise creates a new one.",
+        "operationId": "start_create_entry_draft",
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path Code"
+            }
+          },
+          {
+            "name": "day",
+            "in": "query",
+            "required": true,
+            "description": "Calendar date for the new entry",
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Day"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryDraftResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/paths/{path_code}/entries/{entry_slug}/draft": {
+      "get": {
+        "tags": [
+          "entry-drafts"
+        ],
+        "summary": "Start Edit Entry Draft",
+        "description": "Get or create an open 'edit' draft for the given entry. Returns the existing open draft for this user/entry if one exists, otherwise creates a new one.",
+        "operationId": "start_edit_entry_draft",
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Path Code"
+            }
+          },
+          {
+            "name": "entry_slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Entry Slug"
+            }
+          },
+          {
+            "name": "based_on_edit_id",
+            "in": "query",
+            "required": true,
+            "description": "Current edit ID for optimistic locking",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Based On Edit Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryDraftResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Optimistic lock mismatch.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptimisticLockHTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entry-drafts/{draft_id}": {
+      "get": {
+        "tags": [
+          "entry-drafts"
+        ],
+        "summary": "Get Entry Draft",
+        "operationId": "get_entry_draft",
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryDraftResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "entry-drafts"
+        ],
+        "summary": "Patch Entry Draft",
+        "operationId": "patch_entry_draft",
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchDraftRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryDraftResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "entry-drafts"
+        ],
+        "summary": "Abandon Entry Draft",
+        "operationId": "abandon_entry_draft",
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entry-drafts/{draft_id}/images": {
+      "post": {
+        "tags": [
+          "entry-drafts"
+        ],
+        "summary": "Create Draft Image Slot",
+        "operationId": "create_draft_image_slot",
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraftImageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftImageSlotResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entry-drafts/{draft_id}/images/{draft_image_id}/complete": {
+      "post": {
+        "tags": [
+          "entry-drafts"
+        ],
+        "summary": "Complete Draft Image Upload",
+        "operationId": "complete_draft_image_upload",
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Id"
+            }
+          },
+          {
+            "name": "draft_image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Image Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteDraftImageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftImageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entry-drafts/{draft_id}/images/{draft_image_id}/retry-upload": {
+      "post": {
+        "tags": [
+          "entry-drafts"
+        ],
+        "summary": "Retry Draft Image Upload",
+        "operationId": "retry_draft_image_upload",
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Id"
+            }
+          },
+          {
+            "name": "draft_image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftImageSlotResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entry-drafts/{draft_id}/images/{draft_image_id}": {
+      "delete": {
+        "tags": [
+          "entry-drafts"
+        ],
+        "summary": "Remove Draft Image",
+        "operationId": "remove_draft_image",
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Id"
+            }
+          },
+          {
+            "name": "draft_image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Image Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftImageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entry-drafts/{draft_id}/commit": {
+      "post": {
+        "tags": [
+          "entry-drafts"
+        ],
+        "summary": "Commit Entry Draft",
+        "operationId": "commit_entry_draft",
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryContentResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Optimistic lock mismatch or draft validation failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptimisticLockHTTPErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/paths/{path_code}/entries": {
       "get": {
         "tags": [
@@ -1858,6 +2468,430 @@
   },
   "components": {
     "schemas": {
+      "CompleteDraftImageRequest": {
+        "properties": {
+          "byte_size": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Byte Size"
+          }
+        },
+        "type": "object",
+        "title": "CompleteDraftImageRequest",
+        "example": {
+          "byte_size": 204800
+        }
+      },
+      "CreateDraftImageRequest": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Content Type",
+            "default": "image/jpeg"
+          },
+          "strip_metadata": {
+            "type": "boolean",
+            "title": "Strip Metadata",
+            "default": false
+          },
+          "client_image_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Image Id"
+          },
+          "replace_draft_image_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replace Draft Image Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename"
+        ],
+        "title": "CreateDraftImageRequest",
+        "example": {
+          "filename": "morning-walk.jpg",
+          "content_type": "image/jpeg",
+          "strip_metadata": true,
+          "client_image_id": "client-ref-001"
+        }
+      },
+      "DraftImageResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "draft_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Draft Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "live_image_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Live Image Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "strip_metadata": {
+            "type": "boolean",
+            "title": "Strip Metadata"
+          },
+          "byte_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Byte Size"
+          },
+          "client_image_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Image Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "draft_id",
+          "source",
+          "live_image_id",
+          "filename",
+          "status",
+          "content_type",
+          "strip_metadata",
+          "byte_size",
+          "client_image_id"
+        ],
+        "title": "DraftImageResponse",
+        "example": {
+          "id": "aabb1122-0000-0000-0000-000000000000",
+          "draft_id": "1122aabb-0000-0000-0000-000000000000",
+          "source": "new",
+          "live_image_id": null,
+          "filename": "morning-walk.jpg",
+          "status": "ready",
+          "content_type": "image/jpeg",
+          "strip_metadata": false,
+          "byte_size": 204800,
+          "client_image_id": "client-ref-001"
+        }
+      },
+      "DraftImageSlotResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "draft_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Draft Id"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "strip_metadata": {
+            "type": "boolean",
+            "title": "Strip Metadata"
+          },
+          "client_image_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Image Id"
+          },
+          "upload_url": {
+            "type": "string",
+            "title": "Upload Url"
+          },
+          "expires_in_seconds": {
+            "type": "integer",
+            "title": "Expires In Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "draft_id",
+          "source",
+          "filename",
+          "status",
+          "content_type",
+          "strip_metadata",
+          "client_image_id",
+          "upload_url",
+          "expires_in_seconds"
+        ],
+        "title": "DraftImageSlotResponse",
+        "example": {
+          "id": "img-uuid-0000-0000-0000-000000000000",
+          "draft_id": "draft-uuid-0000-0000-0000-000000000000",
+          "source": "new",
+          "filename": "photo.jpg",
+          "status": "awaiting_upload",
+          "content_type": "image/jpeg",
+          "strip_metadata": true,
+          "client_image_id": "client-ref-001",
+          "upload_url": "https://storage.example.com/drafts/draft-id/photo.jpg?X-Amz-Expires=300",
+          "expires_in_seconds": 300
+        }
+      },
+      "EntryDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "path_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Path Id"
+          },
+          "entry_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Id"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "based_on_edit_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Based On Edit Id"
+          },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/DraftImageResponse"
+            },
+            "type": "array",
+            "title": "Images"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "mode",
+          "state",
+          "path_id",
+          "entry_id",
+          "day",
+          "content",
+          "based_on_edit_id",
+          "images",
+          "expires_at"
+        ],
+        "title": "EntryDraftResponse",
+        "example": {
+          "id": "draft-uuid-0000-0000-0000-000000000000",
+          "mode": "create",
+          "state": "open",
+          "path_id": "ab3x7k00-0000-0000-0000-000000000000",
+          "entry_id": null,
+          "day": "2024-03-15",
+          "content": "",
+          "based_on_edit_id": null,
+          "images": [],
+          "expires_at": "2024-03-16T10:00:00Z"
+        }
+      },
+      "PatchDraftRequest": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "title": "PatchDraftRequest",
+        "example": {
+          "day": "2024-03-16",
+          "content": "Feeling stronger today."
+        }
+      },
+      "StartCreateDraftRequest": {
+        "properties": {
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day"
+        ],
+        "title": "StartCreateDraftRequest",
+        "example": {
+          "day": "2024-03-15"
+        }
+      },
+      "StartEditDraftRequest": {
+        "properties": {
+          "based_on_edit_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Based On Edit Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "based_on_edit_id"
+        ],
+        "title": "StartEditDraftRequest",
+        "example": {
+          "based_on_edit_id": 3
+        }
+      },
       "AdminLoginRequest": {
         "properties": {
           "username": {

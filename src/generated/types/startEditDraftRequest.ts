@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.3.4
  */
 
-export interface OAuthLoginResponse {
-  authorization_url: string;
+export interface StartEditDraftRequest {
+  /** @minimum 1 */
+  based_on_edit_id: number;
 }

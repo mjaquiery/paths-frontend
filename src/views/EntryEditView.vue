@@ -16,8 +16,15 @@
           <span v-else>Edit Entry</span>
         </ion-title>
         <ion-buttons slot="end">
-          <ion-button :disabled="saving || !canSave" @click="save">
-            {{ saving ? 'Saving...' : 'Save' }}
+          <span
+            v-if="contentSaving"
+            class="autosave-indicator"
+            aria-label="Saving..."
+          >
+            <span class="autosave-spinner" />
+          </span>
+          <ion-button :disabled="committing || !canCommit" @click="commitDraft">
+            {{ committing ? 'Saving...' : 'Save' }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -25,7 +32,9 @@
 
     <ion-content class="entry-editor-content">
       <div class="entry-form">
-        <div v-if="!entry" class="edit-loading">Loading entry...</div>
+        <div v-if="!entry || !draftReady" class="edit-loading">
+          {{ draftInitError || 'Loading entry...' }}
+        </div>
         <template v-else>
           <section class="editor-section">
             <div class="editor-header">
@@ -37,13 +46,13 @@
                   accept="image/*"
                   class="image-upload-input"
                   multiple
-                  :disabled="saving"
+                  :disabled="committing || !draftId"
                   @change="onImageSelected"
                 />
                 <ion-button
                   size="small"
                   fill="outline"
-                  :disabled="saving"
+                  :disabled="committing || !draftId"
                   @click="openImagePicker"
                 >
                   + Image
@@ -103,23 +112,16 @@
             </div>
           </section>
 
-          <div
-            v-if="saveProgress"
-            class="save-progress"
-            role="status"
-            aria-live="polite"
-          >
-            <strong>{{ saveProgress }}</strong>
-            <span>Please keep this page open until you are redirected.</span>
-          </div>
-
           <p v-if="imageError" class="save-error">{{ imageError }}</p>
-          <p v-else-if="uploadError" class="save-error">{{ uploadError }}</p>
-          <p v-else-if="saveError" class="save-error">{{ saveError }}</p>
+          <p v-else-if="commitError" class="save-error">{{ commitError }}</p>
+          <p v-else-if="autosaveOffline" class="autosave-offline-note">
+            Currently offline — your changes will be saved when you reconnect.
+          </p>
         </template>
       </div>
     </ion-content>
 
+    <!-- Caption insert modal -->
     <ion-modal :is-open="isCaptionModalOpen" @didDismiss="closeCaptionModal">
       <ion-header>
         <ion-toolbar>
@@ -141,6 +143,10 @@
             :image-id="selectedImage.image?.id ?? null"
             :preview-url="selectedImage.previewUrl"
             :filename="selectedImage.filename"
+            :uploading="
+              selectedImage.status === 'uploading' ||
+              selectedImage.status === 'draft-uploading'
+            "
           />
         </div>
         <ion-item lines="none" class="image-caption-field">
@@ -160,6 +166,58 @@
             >
             <ion-button :disabled="!selectedImage" @click="confirmImageInsert">
               Insert markdown
+            </ion-button>
+          </div>
+        </ion-toolbar>
+      </ion-footer>
+    </ion-modal>
+
+    <!-- Edit conflict resolution modal -->
+    <ion-modal :is-open="isConflictModalOpen" :can-dismiss="false">
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Edit Conflict</ion-title>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding conflict-modal-content">
+        <p class="conflict-description">
+          This entry was edited on another device since you started editing.
+          Choose which version to keep:
+        </p>
+        <div class="conflict-versions">
+          <div class="conflict-version">
+            <h3 class="conflict-version-title">Your version</h3>
+            <div class="conflict-version-body">
+              <pre class="conflict-content-preview">{{
+                conflictLocalContent
+              }}</pre>
+            </div>
+          </div>
+          <div class="conflict-version">
+            <h3 class="conflict-version-title">Remote version (current)</h3>
+            <div class="conflict-version-body">
+              <pre class="conflict-content-preview">{{
+                conflictRemoteContent
+              }}</pre>
+            </div>
+          </div>
+        </div>
+      </ion-content>
+      <ion-footer>
+        <ion-toolbar>
+          <div class="conflict-actions">
+            <ion-button
+              fill="outline"
+              :disabled="resolvingConflict"
+              @click="resolveConflict('remote')"
+            >
+              Use remote
+            </ion-button>
+            <ion-button
+              :disabled="resolvingConflict"
+              @click="resolveConflict('local')"
+            >
+              {{ resolvingConflict ? 'Saving...' : 'Keep mine' }}
             </ion-button>
           </div>
         </ion-toolbar>
@@ -187,6 +245,10 @@
                 :image-id="image.image?.id ?? null"
                 :preview-url="image.previewUrl"
                 :filename="image.filename"
+                :uploading="
+                  image.status === 'uploading' ||
+                  image.status === 'draft-uploading'
+                "
               />
               <span class="editor-image-chip-name">{{ image.filename }}</span>
               <span class="editor-image-chip-status">{{
@@ -196,7 +258,11 @@
             <button
               type="button"
               class="editor-image-chip-remove"
-              :disabled="saving"
+              :disabled="
+                committing ||
+                image.status === 'uploading' ||
+                image.status === 'draft-uploading'
+              "
               :aria-label="`Remove ${image.filename}`"
               @click="removeImage(image.localId)"
             >
@@ -232,27 +298,34 @@ import {
   IonTextarea,
 } from '@ionic/vue';
 import { useQueryClient } from '@tanstack/vue-query';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import EntryImageDraftPreview from '../components/EntryImageDraftPreview.vue';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import RefreshStatus from '../components/RefreshStatus.vue';
-import { useImageUpload } from '../composables/useImageUpload';
+import { useDraftImageUpload } from '../composables/useDraftImageUpload';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { usePaths } from '../composables/usePaths';
 import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { useUpdateEntry } from '../generated/apiClient';
-import type { EntryResponse } from '../generated/types';
+import {
+  startEditEntryDraft,
+  useAbandonEntryDraft,
+  usePatchEntryDraft,
+  useCommitEntryDraft,
+  useRemoveDraftImage,
+  getEntry,
+} from '../generated/apiClient';
+import type { EntryContentResponse } from '../generated/types';
 import { extractErrorMessage } from '../lib/errors';
 import { db } from '../lib/db';
 import {
   appendMissingImageMarkdown,
   buildLocalImageUrlMap,
+  createDraftServerImageDraft,
   createLocalImageDraft,
   createServerImageDraft,
-  getAttachedImageFilenames,
   getAttachedImageResponses,
   revokeDraftPreviewUrl,
   syncDraftCaptionsFromContent,
@@ -260,6 +333,7 @@ import {
 } from '../utils/entryImageDrafts';
 import { removeImageMarkdownReferences } from '../utils/markdown';
 
+const AUTOSAVE_DEBOUNCE_MS = 5000;
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
@@ -297,8 +371,11 @@ const entry = computed(() => {
   );
 });
 
-const { mutateAsync: updateEntry } = useUpdateEntry();
-const { uploadError, uploadImage } = useImageUpload();
+const { mutateAsync: abandonDraft } = useAbandonEntryDraft();
+const { mutateAsync: patchDraft } = usePatchEntryDraft();
+const { mutateAsync: commitDraftApi } = useCommitEntryDraft();
+const { mutateAsync: removeDraftImageApi } = useRemoveDraftImage();
+const { uploadError, uploadDraftImage } = useDraftImageUpload();
 
 const {
   statusType: refreshStatusType,
@@ -308,26 +385,65 @@ const {
 
 const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
-const saving = ref(false);
-const saveProgress = ref('');
-const saveError = ref('');
+const committing = ref(false);
+const commitError = ref('');
 const imageError = ref('');
+const draftInitError = ref('');
 const imageDrafts = ref<EntryImageDraft[]>([]);
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
 const isCaptionModalOpen = ref(false);
 const captionDraft = ref('');
 const selectedImage = ref<EntryImageDraft | null>(null);
+
+/** The server-side draft id — set once the edit draft is started */
+const draftId = ref('');
+
+/** True once the draft has been initialised and form is ready */
+const draftReady = ref(false);
+
+/** Whether content is being auto-saved */
+const contentSaving = ref(false);
+
+/** True when autosave has failed and the device appears to be offline */
+const autosaveOffline = ref(false);
+
+/** Timer handle for autosave debounce */
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Last content value successfully PATCHed */
+let lastSavedContent = '';
+
+/** Tracks which entry id we've already initialised, to avoid re-init on reactive re-runs */
 const initializedEntryId = ref('');
 
-const canSave = computed(() => !!content.value.trim());
+// ─── Conflict resolution state ───────────────────────────────────────────
+
+const isConflictModalOpen = ref(false);
+const resolvingConflict = ref(false);
+const conflictLocalContent = ref('');
+const conflictRemoteContent = ref('');
+/** The new edit_id fetched from the server during conflict resolution */
+let conflictRemoteEditId = 0;
+
+// ─── Derived ─────────────────────────────────────────────────────────────
+
+const canCommit = computed(() => !!content.value.trim() && !!draftId.value);
 const attachedImages = computed(() =>
   getAttachedImageResponses(imageDrafts.value),
 );
 const localImageUrls = computed(() => buildLocalImageUrlMap(imageDrafts.value));
 
-const { onTextareaInput, insertImageMarkdown, rememberSelection } =
-  useMarkdownEditor(content, textareaRef, contentTab);
+const {
+  onTextareaInput: _onTextareaInput,
+  insertImageMarkdown,
+  rememberSelection,
+} = useMarkdownEditor(content, textareaRef, contentTab);
+
+function onTextareaInput(event: CustomEvent) {
+  _onTextareaInput(event);
+  scheduleContentAutosave();
+}
 
 const formattedEntryDay = computed(() => {
   if (!entry.value?.day) return '';
@@ -339,59 +455,211 @@ const formattedEntryDay = computed(() => {
   });
 });
 
-function imageStatusText(image: EntryImageDraft) {
-  if (image.status === 'uploading') return 'Uploading';
-  if (image.status === 'failed') return image.error || 'Failed';
-  if (image.source === 'local') return 'Uploads on save';
-  return 'Attached';
-}
+// ─── Draft Initialisation ─────────────────────────────────────────────────
 
-function entryFromResponse(value: unknown): EntryResponse {
-  if (
-    value &&
-    typeof value === 'object' &&
-    'id' in value &&
-    'edit_id' in value &&
-    typeof (value as { id?: unknown }).id === 'string' &&
-    typeof (value as { edit_id?: unknown }).edit_id === 'number'
-  ) {
-    return value as EntryResponse;
-  }
-
-  throw new Error('Unexpected entry response.');
-}
-
-watch(
-  entry,
-  (nextEntry) => {
-    if (!nextEntry || initializedEntryId.value === nextEntry.id) return;
-
-    initializedEntryId.value = nextEntry.id;
-    content.value = nextEntry.content ?? '';
+async function initEditDraft(editId: number) {
+  draftInitError.value = '';
+  draftReady.value = false;
+  try {
+    const response = await startEditEntryDraft(pathId.value, entryId.value, {
+      based_on_edit_id: editId,
+    });
+    if (response.status !== 200)
+      throw new Error('Failed to get or create edit draft.');
+    const draft = response.data;
+    draftId.value = String(draft.id);
+    lastSavedContent = draft.content ?? '';
+    content.value = lastSavedContent;
     contentTab.value = 'write';
+    // Hydrate images from the draft
     imageDrafts.value.forEach(revokeDraftPreviewUrl);
-    imageDrafts.value = (nextEntry.images ?? []).map((image) =>
-      createServerImageDraft(image),
+    imageDrafts.value = (draft.images ?? []).map((img) =>
+      createDraftServerImageDraft(img),
     );
     imageDrafts.value = syncDraftCaptionsFromContent(
       imageDrafts.value,
       content.value,
     );
-    saveError.value = '';
-    imageError.value = '';
+    draftReady.value = true;
+  } catch (err: unknown) {
+    const status =
+      err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { status?: number } }).response?.status
+        : undefined;
+    if (status === 409) {
+      draftInitError.value =
+        'This entry has been edited on another device. Please reload before editing.';
+    } else {
+      draftInitError.value =
+        extractErrorMessage(err) ??
+        'Failed to start editing. Please try again.';
+    }
+  }
+}
+
+// Watch for entry to load, then initialise the draft once
+watch(
+  entry,
+  async (nextEntry) => {
+    if (!nextEntry || initializedEntryId.value === nextEntry.id) return;
+    initializedEntryId.value = nextEntry.id;
+
+    // Populate legacy server images while draft loads (show them as ready)
+    imageDrafts.value.forEach(revokeDraftPreviewUrl);
+    imageDrafts.value = (nextEntry.images ?? []).map((image) =>
+      createServerImageDraft(image),
+    );
+
+    await initEditDraft(nextEntry.edit_id ?? 0);
   },
   { immediate: true },
 );
 
-onBeforeUnmount(() => {
-  for (const draft of imageDrafts.value) {
-    revokeDraftPreviewUrl(draft);
+// ─── Content Autosave ─────────────────────────────────────────────────────
+
+function scheduleContentAutosave() {
+  if (!draftId.value) return;
+
+  contentSaving.value = true;
+  if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+
+  autosaveTimer = setTimeout(() => {
+    void flushContentAutosave();
+  }, AUTOSAVE_DEBOUNCE_MS);
+}
+
+async function flushContentAutosave() {
+  autosaveTimer = null;
+  const currentContent = content.value;
+  if (!draftId.value || currentContent === lastSavedContent) {
+    contentSaving.value = false;
+    return;
   }
-});
+
+  try {
+    await patchDraft({
+      draftId: draftId.value,
+      data: { content: currentContent },
+    });
+    lastSavedContent = currentContent;
+    autosaveOffline.value = false;
+  } catch {
+    // Show an offline note if the device appears to be offline
+    if (!navigator.onLine) {
+      autosaveOffline.value = true;
+    }
+  } finally {
+    contentSaving.value = false;
+  }
+}
+
+// ─── Image helpers ────────────────────────────────────────────────────────
+
+function imageStatusText(image: EntryImageDraft) {
+  if (image.status === 'uploading' || image.status === 'draft-uploading')
+    return 'Uploading...';
+  if (image.status === 'failed') return image.error || 'Failed';
+  return 'Attached';
+}
 
 function openImagePicker() {
   imageInputRef.value?.click();
 }
+
+function onImageSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const files = input.files ? Array.from(input.files) : [];
+  input.value = '';
+  if (files.length === 0) return;
+
+  const errors: string[] = [];
+  const activeNames = new Set(imageDrafts.value.map((draft) => draft.filename));
+  const acceptedFiles: File[] = [];
+
+  for (const file of files) {
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      errors.push(`Not an image: ${file.name}`);
+      continue;
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      errors.push(`Exceeds 10 MB: ${file.name}`);
+      continue;
+    }
+    if (activeNames.has(file.name)) {
+      errors.push(`Duplicate filename: ${file.name}`);
+      continue;
+    }
+    activeNames.add(file.name);
+    acceptedFiles.push(file);
+  }
+
+  if (acceptedFiles.length > 0) {
+    const newDrafts = acceptedFiles.map(createLocalImageDraft);
+    imageDrafts.value = [...imageDrafts.value, ...newDrafts];
+    for (const draft of newDrafts) {
+      void uploadImageToDraft(draft.localId, draft.file!);
+    }
+  }
+
+  imageError.value = errors.join('; ');
+}
+
+async function uploadImageToDraft(localId: string, file: File) {
+  if (!draftId.value) return;
+
+  imageDrafts.value = imageDrafts.value.map((d) =>
+    d.localId === localId ? { ...d, status: 'uploading' as const } : d,
+  );
+
+  const result = await uploadDraftImage(draftId.value, file, localId);
+
+  if (!result) {
+    imageDrafts.value = imageDrafts.value.map((d) =>
+      d.localId === localId
+        ? { ...d, status: 'failed' as const, error: uploadError.value }
+        : d,
+    );
+    return;
+  }
+
+  imageDrafts.value = imageDrafts.value.map((d) =>
+    d.localId === localId
+      ? {
+          ...d,
+          status: 'draft-uploading' as const,
+          draftImageId: String(result.id),
+          error: '',
+        }
+      : d,
+  );
+}
+
+async function removeImage(localId: string) {
+  const target = imageDrafts.value.find((draft) => draft.localId === localId);
+  if (!target) return;
+
+  if (target.draftImageId && draftId.value) {
+    try {
+      await removeDraftImageApi({
+        draftId: draftId.value,
+        draftImageId: target.draftImageId,
+      });
+    } catch {
+      // Best-effort; still remove locally
+    }
+  }
+
+  revokeDraftPreviewUrl(target);
+  imageDrafts.value = imageDrafts.value.filter(
+    (draft) => draft.localId !== localId,
+  );
+  content.value = removeImageMarkdownReferences(content.value, target.filename);
+  if (selectedImage.value?.localId === localId) {
+    closeCaptionModal();
+  }
+}
+
+// ─── Caption Modal ────────────────────────────────────────────────────────
 
 function openCaptionModal(image: EntryImageDraft) {
   rememberSelection();
@@ -418,132 +686,37 @@ async function confirmImageInsert() {
   closeCaptionModal();
 }
 
-function onImageSelected(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const files = input.files ? Array.from(input.files) : [];
-  input.value = '';
-  if (files.length === 0) return;
+// ─── Commit ───────────────────────────────────────────────────────────────
 
-  const errors: string[] = [];
-  const activeNames = new Set(imageDrafts.value.map((draft) => draft.filename));
-  const acceptedFiles: File[] = [];
+async function commitDraft() {
+  if (!canCommit.value) return;
 
-  for (const file of files) {
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      errors.push(`Not an image: ${file.name}`);
-      continue;
-    }
-    if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      errors.push(`Exceeds 10 MB: ${file.name}`);
-      continue;
-    }
-    if (activeNames.has(file.name)) {
-      errors.push(`Duplicate filename: ${file.name}`);
-      continue;
-    }
-
-    activeNames.add(file.name);
-    acceptedFiles.push(file);
-  }
-
-  if (acceptedFiles.length > 0) {
-    imageDrafts.value = [
-      ...imageDrafts.value,
-      ...acceptedFiles.map(createLocalImageDraft),
-    ];
-  }
-
-  imageError.value = errors.join('; ');
-}
-
-function removeImage(localId: string) {
-  const target = imageDrafts.value.find((draft) => draft.localId === localId);
-  if (!target) return;
-
-  revokeDraftPreviewUrl(target);
-  imageDrafts.value = imageDrafts.value.filter(
-    (draft) => draft.localId !== localId,
-  );
-  content.value = removeImageMarkdownReferences(content.value, target.filename);
-  if (selectedImage.value?.localId === localId) {
-    closeCaptionModal();
-  }
-}
-
-async function uploadPendingImages() {
-  for (const draft of imageDrafts.value) {
-    if (draft.source !== 'local' || !draft.file) continue;
-
-    draft.status = 'uploading';
-    draft.error = '';
-    saveProgress.value = `Uploading ${draft.filename}...`;
-
-    const uploadedImage = await uploadImage(
-      pathId.value,
-      entryId.value,
-      draft.file,
-    );
-    if (!uploadedImage) {
-      draft.status = 'failed';
-      draft.error = uploadError.value;
-      throw new Error(
-        uploadError.value || `Failed to upload ${draft.filename}.`,
-      );
-    }
-
-    revokeDraftPreviewUrl(draft);
-
-    imageDrafts.value = imageDrafts.value.map((candidate) =>
-      candidate.localId === draft.localId
-        ? {
-            ...createServerImageDraft(uploadedImage, candidate.captionDraft),
-            localId: candidate.localId,
-          }
-        : candidate,
-    );
-  }
-}
-
-async function save() {
-  if (!canSave.value || !entry.value) return;
-
-  saving.value = true;
-  saveError.value = '';
-  imageError.value = '';
-  saveProgress.value = '';
+  committing.value = true;
+  commitError.value = '';
+  let finalContent = content.value;
 
   try {
-    imageDrafts.value = syncDraftCaptionsFromContent(
-      imageDrafts.value,
-      content.value,
-    );
-
-    if (imageDrafts.value.some((draft) => draft.source === 'local')) {
-      await uploadPendingImages();
+    if (autosaveTimer !== null) {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = null;
     }
 
     imageDrafts.value = syncDraftCaptionsFromContent(
       imageDrafts.value,
       content.value,
     );
-    const finalContent = appendMissingImageMarkdown(
-      content.value,
-      imageDrafts.value,
-    );
+    finalContent = appendMissingImageMarkdown(content.value, imageDrafts.value);
     content.value = finalContent;
 
-    saveProgress.value = 'Updating entry...';
-    const updateResponse = await updateEntry({
-      pathCode: pathId.value,
-      entrySlug: entryId.value,
-      data: {
-        expected_edit_id: entry.value.edit_id ?? 0,
-        content: finalContent,
-        image_filenames: getAttachedImageFilenames(imageDrafts.value),
-      },
-    });
+    if (finalContent !== lastSavedContent) {
+      await patchDraft({
+        draftId: draftId.value,
+        data: { content: finalContent },
+      });
+      lastSavedContent = finalContent;
+    }
 
-    const updatedEntry = entryFromResponse(updateResponse.data);
+    await commitDraftApi({ draftId: draftId.value });
 
     await Promise.all([
       queryClient.invalidateQueries({
@@ -561,7 +734,8 @@ async function save() {
       /* IndexedDB may be unavailable */
     }
 
-    initializedEntryId.value = updatedEntry.id;
+    // Draft committed — skip abandon on unmount
+    draftId.value = '';
     router.back();
   } catch (err: unknown) {
     const status =
@@ -570,17 +744,146 @@ async function save() {
         : undefined;
 
     if (status === 409) {
-      saveError.value =
-        'This entry was edited on another device. Reload to see the latest version before editing.';
+      await openConflictModal(finalContent ?? content.value);
+    } else if (status === 422) {
+      const detail = (
+        err as { response?: { data?: { detail?: { code?: string } } } }
+      ).response?.data?.detail;
+      if (detail?.code === 'images_not_ready') {
+        commitError.value =
+          'Some images are still uploading. Please wait a moment and try again.';
+      } else {
+        commitError.value =
+          extractErrorMessage(err) ?? 'Failed to save. Please try again.';
+      }
     } else {
-      saveError.value =
+      commitError.value =
         extractErrorMessage(err) ?? 'Failed to save. Please try again.';
     }
   } finally {
-    saveProgress.value = '';
-    saving.value = false;
+    committing.value = false;
   }
 }
+
+// ─── Conflict Resolution ──────────────────────────────────────────────────
+
+async function openConflictModal(localContent: string) {
+  conflictLocalContent.value = localContent;
+  conflictRemoteContent.value = '';
+  conflictRemoteEditId = 0;
+
+  try {
+    const response = await getEntry(pathId.value, entryId.value);
+    if (response.status === 200) {
+      const remoteEntry = response.data as EntryContentResponse;
+      conflictRemoteContent.value = remoteEntry.content ?? '';
+      conflictRemoteEditId = (remoteEntry as { edit_id?: number }).edit_id ?? 0;
+    }
+  } catch {
+    // Couldn't fetch remote — user can still keep local
+  }
+
+  isConflictModalOpen.value = true;
+}
+
+async function resolveConflict(choice: 'local' | 'remote') {
+  resolvingConflict.value = true;
+  commitError.value = '';
+
+  try {
+    const chosenContent =
+      choice === 'local'
+        ? conflictLocalContent.value
+        : conflictRemoteContent.value;
+
+    // Abandon the current (stale) draft
+    if (draftId.value) {
+      try {
+        await abandonDraft({ draftId: draftId.value });
+      } catch {
+        // Best-effort
+      }
+      draftId.value = '';
+    }
+
+    // Re-open a fresh edit draft against the current remote edit_id
+    const newEditId = conflictRemoteEditId || (entry.value?.edit_id ?? 0);
+    const response = await startEditEntryDraft(pathId.value, entryId.value, {
+      based_on_edit_id: newEditId,
+    });
+    if (response.status !== 200) throw new Error('Failed to re-open draft.');
+
+    const newDraft = response.data;
+    draftId.value = String(newDraft.id);
+
+    // Patch with the chosen content
+    await patchDraft({
+      draftId: draftId.value,
+      data: { content: chosenContent },
+    });
+    lastSavedContent = chosenContent;
+
+    // Commit
+    await commitDraftApi({ draftId: draftId.value });
+
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ['v1', 'paths', pathId.value, 'entries'],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['v1', 'paths', pathId.value, 'entries', entryId.value],
+      }),
+    ]);
+
+    try {
+      await db.entryContent.delete(`${pathId.value}:${entryId.value}`);
+      await db.entryImages.where('entry_id').equals(entryId.value).delete();
+    } catch {
+      /* IndexedDB may be unavailable */
+    }
+
+    draftId.value = '';
+    isConflictModalOpen.value = false;
+    router.back();
+  } catch (err: unknown) {
+    commitError.value =
+      extractErrorMessage(err) ??
+      'Failed to resolve conflict. Please try again.';
+    isConflictModalOpen.value = false;
+  } finally {
+    resolvingConflict.value = false;
+  }
+}
+
+// ─── Cleanup ─────────────────────────────────────────────────────────────
+
+function handleOnline() {
+  if (autosaveOffline.value) {
+    autosaveOffline.value = false;
+    scheduleContentAutosave();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('online', handleOnline);
+});
+
+onBeforeUnmount(async () => {
+  if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+  window.removeEventListener('online', handleOnline);
+
+  for (const draft of imageDrafts.value) {
+    revokeDraftPreviewUrl(draft);
+  }
+
+  if (draftId.value) {
+    try {
+      await abandonDraft({ draftId: draftId.value });
+    } catch {
+      // Best-effort cleanup
+    }
+  }
+});
 </script>
 
 <style scoped>
@@ -694,28 +997,17 @@ async function save() {
   margin: 0;
 }
 
-.save-progress {
-  display: grid;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--ion-color-primary) 12%, white);
-  color: var(--ion-text-color);
-}
-
-.save-progress strong {
-  font-size: 0.92rem;
-}
-
-.save-progress span {
-  font-size: 0.82rem;
-  color: var(--ion-color-medium-shade, #556);
-}
-
 .save-error {
   color: var(--ion-color-danger);
   font-size: 0.85rem;
   margin: 0 4px;
+}
+
+.autosave-offline-note {
+  color: var(--ion-color-medium);
+  font-size: 0.82rem;
+  margin: 0 4px;
+  font-style: italic;
 }
 
 .edit-path-dot {
@@ -726,6 +1018,31 @@ async function save() {
   margin-right: 6px;
   vertical-align: middle;
   flex-shrink: 0;
+}
+
+.autosave-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  opacity: 0.5;
+}
+
+.autosave-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: autosave-spin 0.8s linear infinite;
+}
+
+@keyframes autosave-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .editor-image-tray {
@@ -834,6 +1151,61 @@ async function save() {
 }
 
 .image-caption-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+/* Conflict resolution modal */
+.conflict-modal-content {
+  --padding-top: 16px;
+}
+
+.conflict-description {
+  font-size: 0.92rem;
+  color: var(--ion-color-medium-shade, #556);
+  margin: 0 0 16px;
+}
+
+.conflict-versions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.conflict-version {
+  border: 1px solid var(--ion-border-color);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.conflict-version-title {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--ion-color-primary) 8%, transparent);
+  border-bottom: 1px solid var(--ion-border-color);
+}
+
+.conflict-version-body {
+  padding: 12px 14px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.conflict-content-preview {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  color: var(--ion-text-color);
+}
+
+.conflict-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;

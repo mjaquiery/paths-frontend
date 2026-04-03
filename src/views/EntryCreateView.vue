@@ -7,8 +7,15 @@
         </ion-buttons>
         <ion-title>New Entry</ion-title>
         <ion-buttons slot="end">
-          <ion-button :disabled="saving || !canSave" @click="save">
-            {{ saving ? 'Saving...' : 'Save' }}
+          <span
+            v-if="contentSaving"
+            class="autosave-indicator"
+            aria-label="Saving..."
+          >
+            <span class="autosave-spinner" />
+          </span>
+          <ion-button :disabled="committing || !canCommit" @click="commitDraft">
+            {{ committing ? 'Saving...' : 'Save' }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -25,7 +32,7 @@
             v-model="selectedPathId"
             placeholder="Select a path"
             interface="action-sheet"
-            :disabled="!!draftEntryId"
+            :disabled="!!draftId"
           >
             <ion-select-option v-if="ownedPaths.length === 0" disabled value=""
               >You don't own any paths yet.</ion-select-option
@@ -43,7 +50,7 @@
         <ion-item class="entry-field">
           <ion-label position="stacked">Day *</ion-label>
           <ion-note slot="helper">The date this entry is for</ion-note>
-          <ion-input v-model="day" type="date" :disabled="!!draftEntryId" />
+          <ion-input v-model="day" type="date" :disabled="!!draftId" />
         </ion-item>
 
         <section class="editor-section">
@@ -56,13 +63,13 @@
                 accept="image/*"
                 class="image-upload-input"
                 multiple
-                :disabled="saving"
+                :disabled="committing || !draftId"
                 @change="onImageSelected"
               />
               <ion-button
                 size="small"
                 fill="outline"
-                :disabled="!selectedPathId || saving"
+                :disabled="!selectedPathId || committing || !draftId"
                 @click="openImagePicker"
               >
                 + Image
@@ -118,22 +125,18 @@
           </div>
         </section>
 
-        <div
-          v-if="saveProgress"
-          class="save-progress"
-          role="status"
-          aria-live="polite"
-        >
-          <strong>{{ saveProgress }}</strong>
-          <span>Please keep this page open until you are redirected.</span>
-        </div>
-
         <p v-if="imageError" class="save-error">{{ imageError }}</p>
-        <p v-else-if="uploadError" class="save-error">{{ uploadError }}</p>
-        <p v-else-if="saveError" class="save-error">{{ saveError }}</p>
+        <p v-else-if="commitError" class="save-error">{{ commitError }}</p>
+        <p v-else-if="draftInitError" class="save-error">
+          {{ draftInitError }}
+        </p>
+        <p v-else-if="autosaveOffline" class="autosave-offline-note">
+          Currently offline — your changes will be saved when you reconnect.
+        </p>
       </div>
     </ion-content>
 
+    <!-- Caption insert modal -->
     <ion-modal :is-open="isCaptionModalOpen" @didDismiss="closeCaptionModal">
       <ion-header>
         <ion-toolbar>
@@ -155,6 +158,10 @@
             :image-id="selectedImage.image?.id ?? null"
             :preview-url="selectedImage.previewUrl"
             :filename="selectedImage.filename"
+            :uploading="
+              selectedImage.status === 'uploading' ||
+              selectedImage.status === 'draft-uploading'
+            "
           />
         </div>
         <ion-item lines="none" class="image-caption-field">
@@ -201,6 +208,10 @@
                 :image-id="image.image?.id ?? null"
                 :preview-url="image.previewUrl"
                 :filename="image.filename"
+                :uploading="
+                  image.status === 'uploading' ||
+                  image.status === 'draft-uploading'
+                "
               />
               <span class="editor-image-chip-name">{{ image.filename }}</span>
               <span class="editor-image-chip-status">{{
@@ -210,7 +221,11 @@
             <button
               type="button"
               class="editor-image-chip-remove"
-              :disabled="saving"
+              :disabled="
+                committing ||
+                image.status === 'uploading' ||
+                image.status === 'draft-uploading'
+              "
               :aria-label="`Remove ${image.filename}`"
               @click="removeImage(image.localId)"
             >
@@ -257,27 +272,32 @@ import EntryImageDraftPreview from '../components/EntryImageDraftPreview.vue';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import RefreshStatus from '../components/RefreshStatus.vue';
 import { useCurrentUser } from '../composables/useCurrentUser';
-import { useImageUpload } from '../composables/useImageUpload';
+import { useDraftImageUpload } from '../composables/useDraftImageUpload';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { usePaths } from '../composables/usePaths';
 import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { useCreateEntry, useUpdateEntry } from '../generated/apiClient';
-import type { EntryResponse } from '../generated/types';
+import {
+  startCreateEntryDraft,
+  useAbandonEntryDraft,
+  usePatchEntryDraft,
+  useCommitEntryDraft,
+  useRemoveDraftImage,
+} from '../generated/apiClient';
 import { extractErrorMessage } from '../lib/errors';
 import { getPathOrder, isPathHidden } from '../lib/db';
 import { removeImageMarkdownReferences } from '../utils/markdown';
 import {
   appendMissingImageMarkdown,
   buildLocalImageUrlMap,
+  createDraftServerImageDraft,
   createLocalImageDraft,
-  createServerImageDraft,
-  getAttachedImageFilenames,
   getAttachedImageResponses,
   revokeDraftPreviewUrl,
   syncDraftCaptionsFromContent,
   type EntryImageDraft,
 } from '../utils/entryImageDrafts';
 
+const AUTOSAVE_DEBOUNCE_MS = 5000;
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
@@ -294,9 +314,11 @@ const queryClient = useQueryClient();
 
 const { data: paths, error: pathsError } = usePaths();
 const { currentUserId } = useCurrentUser();
-const { mutateAsync: createEntry } = useCreateEntry();
-const { mutateAsync: updateEntry } = useUpdateEntry();
-const { uploadError, uploadImage } = useImageUpload();
+const { mutateAsync: abandonDraft } = useAbandonEntryDraft();
+const { mutateAsync: patchDraft } = usePatchEntryDraft();
+const { mutateAsync: commitDraftApi } = useCommitEntryDraft();
+const { mutateAsync: removeDraftImageApi } = useRemoveDraftImage();
+const { uploadError, uploadDraftImage } = useDraftImageUpload();
 
 const ownedPaths = computed(() =>
   (paths.value ?? []).filter(
@@ -319,51 +341,354 @@ const day = ref(
 const selectedPathId = ref(String(route.params.pathId ?? ''));
 const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
-const saving = ref(false);
-const saveProgress = ref('');
-const saveError = ref('');
+const committing = ref(false);
+const commitError = ref('');
 const imageError = ref('');
+const draftInitError = ref('');
 const imageDrafts = ref<EntryImageDraft[]>([]);
-const draftEntryId = ref('');
-const draftEntryEditId = ref<number | null>(null);
+
+/** Server-side draft id — set once the draft has been created */
+const draftId = ref('');
+
+/** Whether content is being auto-saved (debounce in progress or PATCH in flight) */
+const contentSaving = ref(false);
+
+/** True when autosave has failed and the device appears to be offline */
+const autosaveOffline = ref(false);
+
+/** Timer handle for the content autosave debounce */
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Last content value that was successfully PATCHed to the server */
+let lastSavedContent = '';
+
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
 const isCaptionModalOpen = ref(false);
 const captionDraft = ref('');
 const selectedImage = ref<EntryImageDraft | null>(null);
 
-const canSave = computed(
-  () => !!selectedPathId.value && !!day.value && !!content.value.trim(),
+const canCommit = computed(
+  () =>
+    !!selectedPathId.value &&
+    !!day.value &&
+    !!content.value.trim() &&
+    !!draftId.value,
 );
 const attachedImages = computed(() =>
   getAttachedImageResponses(imageDrafts.value),
 );
 const localImageUrls = computed(() => buildLocalImageUrlMap(imageDrafts.value));
 
-const { onTextareaInput, insertImageMarkdown, rememberSelection } =
-  useMarkdownEditor(content, textareaRef, contentTab);
+const {
+  onTextareaInput: _onTextareaInput,
+  insertImageMarkdown,
+  rememberSelection,
+} = useMarkdownEditor(content, textareaRef, contentTab);
+
+function onTextareaInput(event: CustomEvent) {
+  _onTextareaInput(event);
+  scheduleContentAutosave();
+}
+
+// ─── Draft Initialisation ──────────────────────────────────────────────────
+
+async function ensureDraft() {
+  if (draftId.value) return draftId.value;
+  if (!selectedPathId.value || !day.value) return null;
+
+  draftInitError.value = '';
+  try {
+    const response = await startCreateEntryDraft(selectedPathId.value, {
+      day: day.value,
+    });
+    if (response.status !== 200)
+      throw new Error('Failed to get or create draft.');
+    const draft = response.data;
+    draftId.value = String(draft.id);
+    // Restore any previously saved content and images from the server draft
+    if (draft.content) {
+      content.value = draft.content;
+    }
+    lastSavedContent = draft.content ?? '';
+    if (draft.images && draft.images.length > 0) {
+      imageDrafts.value.forEach(revokeDraftPreviewUrl);
+      imageDrafts.value = draft.images.map((img) =>
+        createDraftServerImageDraft(img),
+      );
+      imageDrafts.value = syncDraftCaptionsFromContent(
+        imageDrafts.value,
+        content.value,
+      );
+    }
+    return draftId.value;
+  } catch (err: unknown) {
+    draftInitError.value =
+      extractErrorMessage(err) ?? 'Failed to start draft. Please try again.';
+    return null;
+  }
+}
+
+// Watch for path/day selection and create the draft immediately so images can be attached
+watch([selectedPathId, day], async ([pathId, dayVal]) => {
+  if (pathId && dayVal && !draftId.value) {
+    await ensureDraft();
+  }
+});
+
+// ─── Content Autosave ─────────────────────────────────────────────────────
+
+function scheduleContentAutosave() {
+  if (!draftId.value) return;
+
+  contentSaving.value = true;
+  if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+
+  autosaveTimer = setTimeout(() => {
+    void flushContentAutosave();
+  }, AUTOSAVE_DEBOUNCE_MS);
+}
+
+async function flushContentAutosave() {
+  autosaveTimer = null;
+  const currentContent = content.value;
+  if (!draftId.value || currentContent === lastSavedContent) {
+    contentSaving.value = false;
+    return;
+  }
+
+  try {
+    await patchDraft({
+      draftId: draftId.value,
+      data: { content: currentContent },
+    });
+    lastSavedContent = currentContent;
+    autosaveOffline.value = false;
+  } catch {
+    // Show an offline note if the device appears to be offline
+    if (!navigator.onLine) {
+      autosaveOffline.value = true;
+    }
+  } finally {
+    contentSaving.value = false;
+  }
+}
+
+// ─── Image Upload ─────────────────────────────────────────────────────────
 
 function imageStatusText(image: EntryImageDraft) {
-  if (image.status === 'uploading') return 'Uploading';
+  if (image.status === 'uploading' || image.status === 'draft-uploading')
+    return 'Uploading...';
   if (image.status === 'failed') return image.error || 'Failed';
-  if (image.source === 'local') return 'Uploads on save';
+  if (image.status === 'local') return 'Pending draft...';
   return 'Attached';
 }
 
-function entryFromResponse(value: unknown): EntryResponse {
-  if (
-    value &&
-    typeof value === 'object' &&
-    'id' in value &&
-    'edit_id' in value &&
-    typeof (value as { id?: unknown }).id === 'string' &&
-    typeof (value as { edit_id?: unknown }).edit_id === 'number'
-  ) {
-    return value as EntryResponse;
+function openImagePicker() {
+  imageInputRef.value?.click();
+}
+
+function onImageSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const files = input.files ? Array.from(input.files) : [];
+  input.value = '';
+  if (files.length === 0) return;
+
+  const errors: string[] = [];
+  const activeNames = new Set(imageDrafts.value.map((draft) => draft.filename));
+  const acceptedFiles: File[] = [];
+
+  for (const file of files) {
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      errors.push(`Not an image: ${file.name}`);
+      continue;
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      errors.push(`Exceeds 10 MB: ${file.name}`);
+      continue;
+    }
+    if (activeNames.has(file.name)) {
+      errors.push(`Duplicate filename: ${file.name}`);
+      continue;
+    }
+
+    activeNames.add(file.name);
+    acceptedFiles.push(file);
   }
 
-  throw new Error('Unexpected entry response.');
+  if (acceptedFiles.length > 0) {
+    const newDrafts = acceptedFiles.map(createLocalImageDraft);
+    imageDrafts.value = [...imageDrafts.value, ...newDrafts];
+    // Upload each image immediately
+    for (const draft of newDrafts) {
+      void uploadImageToDraft(draft.localId, draft.file!);
+    }
+  }
+
+  imageError.value = errors.join('; ');
 }
+
+async function uploadImageToDraft(localId: string, file: File) {
+  const currentDraftId = draftId.value || (await ensureDraft());
+  if (!currentDraftId) return;
+
+  // Mark as uploading
+  imageDrafts.value = imageDrafts.value.map((d) =>
+    d.localId === localId ? { ...d, status: 'uploading' as const } : d,
+  );
+
+  const result = await uploadDraftImage(currentDraftId, file, localId);
+
+  if (!result) {
+    imageDrafts.value = imageDrafts.value.map((d) =>
+      d.localId === localId
+        ? { ...d, status: 'failed' as const, error: uploadError.value }
+        : d,
+    );
+    return;
+  }
+
+  // Move to draft-uploading (background task processing on server)
+  imageDrafts.value = imageDrafts.value.map((d) =>
+    d.localId === localId
+      ? {
+          ...d,
+          status: 'draft-uploading' as const,
+          draftImageId: String(result.id),
+          error: '',
+        }
+      : d,
+  );
+}
+
+async function removeImage(localId: string) {
+  const target = imageDrafts.value.find((draft) => draft.localId === localId);
+  if (!target) return;
+
+  // If it has a server-side draft image id, remove it on the server
+  if (target.draftImageId && draftId.value) {
+    try {
+      await removeDraftImageApi({
+        draftId: draftId.value,
+        draftImageId: target.draftImageId,
+      });
+    } catch {
+      // Best-effort; still remove locally
+    }
+  }
+
+  revokeDraftPreviewUrl(target);
+  imageDrafts.value = imageDrafts.value.filter(
+    (draft) => draft.localId !== localId,
+  );
+  content.value = removeImageMarkdownReferences(content.value, target.filename);
+
+  if (selectedImage.value?.localId === localId) {
+    closeCaptionModal();
+  }
+}
+
+// ─── Caption Modal ────────────────────────────────────────────────────────
+
+function openCaptionModal(image: EntryImageDraft) {
+  rememberSelection();
+  selectedImage.value = image;
+  captionDraft.value = image.captionDraft;
+  isCaptionModalOpen.value = true;
+}
+
+function closeCaptionModal() {
+  isCaptionModalOpen.value = false;
+  selectedImage.value = null;
+  captionDraft.value = '';
+}
+
+async function confirmImageInsert() {
+  if (!selectedImage.value) return;
+  const nextCaption = captionDraft.value.trim() || selectedImage.value.filename;
+  imageDrafts.value = imageDrafts.value.map((draft) =>
+    draft.localId === selectedImage.value?.localId
+      ? { ...draft, captionDraft: nextCaption }
+      : draft,
+  );
+  await insertImageMarkdown(selectedImage.value.filename, nextCaption);
+  closeCaptionModal();
+}
+
+// ─── Commit ───────────────────────────────────────────────────────────────
+
+async function commitDraft() {
+  if (!canCommit.value) return;
+
+  committing.value = true;
+  commitError.value = '';
+
+  try {
+    // Flush any pending autosave first
+    if (autosaveTimer !== null) {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = null;
+    }
+
+    imageDrafts.value = syncDraftCaptionsFromContent(
+      imageDrafts.value,
+      content.value,
+    );
+    const finalContent = appendMissingImageMarkdown(
+      content.value,
+      imageDrafts.value,
+    );
+    content.value = finalContent;
+
+    // Patch the final content to the draft
+    if (finalContent !== lastSavedContent) {
+      await patchDraft({
+        draftId: draftId.value,
+        data: { content: finalContent },
+      });
+      lastSavedContent = finalContent;
+    }
+
+    // Commit the draft
+    await commitDraftApi({ draftId: draftId.value });
+
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] }),
+      queryClient.invalidateQueries({
+        queryKey: ['v1', 'paths', selectedPathId.value, 'entries'],
+      }),
+    ]);
+
+    // Draft committed — no need to abandon on unmount
+    draftId.value = '';
+    router.back();
+  } catch (err: unknown) {
+    const status =
+      err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { status?: number } }).response?.status
+        : undefined;
+
+    if (status === 422) {
+      const detail = (
+        err as { response?: { data?: { detail?: { code?: string } } } }
+      ).response?.data?.detail;
+      if (detail?.code === 'images_not_ready') {
+        commitError.value =
+          'Some images are still uploading. Please wait a moment and try again.';
+      } else {
+        commitError.value =
+          extractErrorMessage(err) ?? 'Failed to save. Please try again.';
+      }
+    } else {
+      commitError.value =
+        extractErrorMessage(err) ?? 'Failed to save. Please try again.';
+    }
+  } finally {
+    committing.value = false;
+  }
+}
+
+// ─── Default Path Selection ───────────────────────────────────────────────
 
 async function pickDefaultPath() {
   if (ownedPaths.value.length === 0) {
@@ -398,7 +723,15 @@ onMounted(() => {
   if (ownedPaths.value.length > 0 || paths.value !== undefined) {
     void pickDefaultPath();
   }
+  window.addEventListener('online', handleOnline);
 });
+
+function handleOnline() {
+  if (autosaveOffline.value) {
+    autosaveOffline.value = false;
+    scheduleContentAutosave();
+  }
+}
 
 watch(ownedPaths, (nextPaths, previousPaths) => {
   if (
@@ -412,222 +745,25 @@ watch(ownedPaths, (nextPaths, previousPaths) => {
   }
 });
 
-onBeforeUnmount(() => {
+// ─── Cleanup ─────────────────────────────────────────────────────────────
+
+onBeforeUnmount(async () => {
+  if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+  window.removeEventListener('online', handleOnline);
+
   for (const draft of imageDrafts.value) {
     revokeDraftPreviewUrl(draft);
+  }
+
+  // Abandon the server draft if we navigated away without committing
+  if (draftId.value) {
+    try {
+      await abandonDraft({ draftId: draftId.value });
+    } catch {
+      // Best-effort cleanup
+    }
   }
 });
-
-function openImagePicker() {
-  imageInputRef.value?.click();
-}
-
-function openCaptionModal(image: EntryImageDraft) {
-  rememberSelection();
-  selectedImage.value = image;
-  captionDraft.value = image.captionDraft;
-  isCaptionModalOpen.value = true;
-}
-
-function closeCaptionModal() {
-  isCaptionModalOpen.value = false;
-  selectedImage.value = null;
-  captionDraft.value = '';
-}
-
-async function confirmImageInsert() {
-  if (!selectedImage.value) return;
-  const nextCaption = captionDraft.value.trim() || selectedImage.value.filename;
-  imageDrafts.value = imageDrafts.value.map((draft) =>
-    draft.localId === selectedImage.value?.localId
-      ? { ...draft, captionDraft: nextCaption }
-      : draft,
-  );
-  await insertImageMarkdown(selectedImage.value.filename, nextCaption);
-  closeCaptionModal();
-}
-
-function onImageSelected(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const files = input.files ? Array.from(input.files) : [];
-  input.value = '';
-  if (files.length === 0) return;
-
-  const errors: string[] = [];
-  const activeNames = new Set(imageDrafts.value.map((draft) => draft.filename));
-  const acceptedFiles: File[] = [];
-
-  for (const file of files) {
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      errors.push(`Not an image: ${file.name}`);
-      continue;
-    }
-    if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      errors.push(`Exceeds 10 MB: ${file.name}`);
-      continue;
-    }
-    if (activeNames.has(file.name)) {
-      errors.push(`Duplicate filename: ${file.name}`);
-      continue;
-    }
-
-    activeNames.add(file.name);
-    acceptedFiles.push(file);
-  }
-
-  if (acceptedFiles.length > 0) {
-    imageDrafts.value = [
-      ...imageDrafts.value,
-      ...acceptedFiles.map(createLocalImageDraft),
-    ];
-  }
-
-  imageError.value = errors.join('; ');
-}
-
-function removeImage(localId: string) {
-  const target = imageDrafts.value.find((draft) => draft.localId === localId);
-  if (!target) return;
-
-  revokeDraftPreviewUrl(target);
-  imageDrafts.value = imageDrafts.value.filter(
-    (draft) => draft.localId !== localId,
-  );
-  content.value = removeImageMarkdownReferences(content.value, target.filename);
-
-  if (selectedImage.value?.localId === localId) {
-    closeCaptionModal();
-  }
-}
-
-async function ensureDraftEntry() {
-  if (draftEntryId.value && draftEntryEditId.value !== null) {
-    return { id: draftEntryId.value, editId: draftEntryEditId.value };
-  }
-
-  saveProgress.value = 'Creating entry...';
-  const response = await createEntry({
-    pathCode: selectedPathId.value,
-    data: { day: day.value, content: content.value.trim() },
-  });
-  const createdEntry = entryFromResponse(response.data);
-  draftEntryId.value = createdEntry.id;
-  draftEntryEditId.value = createdEntry.edit_id;
-
-  return { id: createdEntry.id, editId: createdEntry.edit_id };
-}
-
-async function uploadPendingImages(pathCode: string, entrySlug: string) {
-  for (const draft of imageDrafts.value) {
-    if (draft.source !== 'local' || !draft.file) continue;
-
-    draft.status = 'uploading';
-    draft.error = '';
-    saveProgress.value = `Uploading ${draft.filename}...`;
-
-    const uploadedImage = await uploadImage(pathCode, entrySlug, draft.file);
-    if (!uploadedImage) {
-      draft.status = 'failed';
-      draft.error = uploadError.value;
-      throw new Error(
-        uploadError.value || `Failed to upload ${draft.filename}.`,
-      );
-    }
-
-    revokeDraftPreviewUrl(draft);
-
-    imageDrafts.value = imageDrafts.value.map((candidate) =>
-      candidate.localId === draft.localId
-        ? {
-            ...createServerImageDraft(uploadedImage, candidate.captionDraft),
-            localId: candidate.localId,
-          }
-        : candidate,
-    );
-  }
-}
-
-async function save() {
-  if (!canSave.value) return;
-
-  saving.value = true;
-  saveError.value = '';
-  imageError.value = '';
-  saveProgress.value = '';
-
-  try {
-    imageDrafts.value = syncDraftCaptionsFromContent(
-      imageDrafts.value,
-      content.value,
-    );
-
-    const hasLocalImages = imageDrafts.value.some(
-      (draft) => draft.source === 'local',
-    );
-    const imageFilenames = getAttachedImageFilenames(imageDrafts.value);
-
-    if (!hasLocalImages && !draftEntryId.value) {
-      const finalContent = appendMissingImageMarkdown(
-        content.value,
-        imageDrafts.value,
-      );
-      content.value = finalContent;
-      saveProgress.value = 'Creating entry...';
-      await createEntry({
-        pathCode: selectedPathId.value,
-        data: {
-          day: day.value,
-          content: finalContent,
-          image_filenames: imageFilenames,
-        },
-      });
-    } else {
-      const draftEntry = await ensureDraftEntry();
-      if (hasLocalImages) {
-        await uploadPendingImages(selectedPathId.value, draftEntry.id);
-      }
-
-      imageDrafts.value = syncDraftCaptionsFromContent(
-        imageDrafts.value,
-        content.value,
-      );
-      const finalContent = appendMissingImageMarkdown(
-        content.value,
-        imageDrafts.value,
-      );
-      content.value = finalContent;
-
-      saveProgress.value = 'Finishing entry...';
-      const updateResponse = await updateEntry({
-        pathCode: selectedPathId.value,
-        entrySlug: draftEntry.id,
-        data: {
-          expected_edit_id: draftEntry.editId,
-          content: finalContent,
-          image_filenames: getAttachedImageFilenames(imageDrafts.value),
-        },
-      });
-
-      const updatedEntry = entryFromResponse(updateResponse.data);
-      draftEntryEditId.value = updatedEntry.edit_id;
-    }
-
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] }),
-      queryClient.invalidateQueries({
-        queryKey: ['v1', 'paths', selectedPathId.value, 'entries'],
-      }),
-    ]);
-
-    router.back();
-  } catch (err: unknown) {
-    saveError.value =
-      extractErrorMessage(err) ?? 'Failed to save. Please try again.';
-  } finally {
-    saveProgress.value = '';
-    saving.value = false;
-  }
-}
 </script>
 
 <style scoped>
@@ -661,6 +797,31 @@ async function save() {
   display: block;
   margin: 0 4px;
   font-size: 0.9rem;
+}
+
+.autosave-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  opacity: 0.5;
+}
+
+.autosave-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: autosave-spin 0.8s linear infinite;
+}
+
+@keyframes autosave-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .editor-section {
@@ -751,28 +912,17 @@ async function save() {
   margin: 0;
 }
 
-.save-progress {
-  display: grid;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--ion-color-primary) 12%, white);
-  color: var(--ion-text-color);
-}
-
-.save-progress strong {
-  font-size: 0.92rem;
-}
-
-.save-progress span {
-  font-size: 0.82rem;
-  color: var(--ion-color-medium-shade, #556);
-}
-
 .save-error {
   color: var(--ion-color-danger);
   font-size: 0.85rem;
   margin: 0 4px;
+}
+
+.autosave-offline-note {
+  color: var(--ion-color-medium);
+  font-size: 0.82rem;
+  margin: 0 4px;
+  font-style: italic;
 }
 
 .editor-image-tray {

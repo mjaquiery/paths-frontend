@@ -5,7 +5,7 @@
  * OpenAPI spec version: 0.3.4
  */
 
-export interface ImageUploadRequest {
+export interface CreateDraftImageRequest {
   /**
    * @minLength 1
    * @maxLength 512
@@ -17,4 +17,6 @@ export interface ImageUploadRequest {
    */
   content_type?: string;
   strip_metadata?: boolean;
+  client_image_id?: string | null;
+  replace_draft_image_id?: string | null;
 }

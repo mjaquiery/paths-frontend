@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.3.4
  */
 
-export interface OAuthLoginResponse {
-  authorization_url: string;
+export interface PatchDraftRequest {
+  day?: string | null;
+  content?: string | null;
 }
