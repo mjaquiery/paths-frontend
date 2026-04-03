@@ -18,6 +18,12 @@ export interface PendingSaveEntry {
 const _pendingSaves = ref<PendingSaveEntry[]>([]);
 const _savedNotification = ref<string | null>(null);
 
+/** Keys of views currently autosaving content */
+const _contentSavingKeys = ref<Set<string>>(new Set());
+
+/** Map of draft-init errors keyed by a view key */
+const _draftInitErrors = ref<Map<string, string>>(new Map());
+
 /**
  * Composable that tracks background commit-retry attempts and shows a
  * "saved" notification when a retry eventually succeeds.
@@ -29,6 +35,14 @@ export function usePendingSaves() {
   const pendingSaves = computed(() => _pendingSaves.value);
   const pendingSavesCount = computed(() => _pendingSaves.value.length);
   const savedNotification = computed(() => _savedNotification.value);
+
+  /** True when any view is currently autosaving */
+  const isContentSaving = computed(() => _contentSavingKeys.value.size > 0);
+
+  /** All current draft-init error messages (values of the map) */
+  const draftInitErrors = computed(() =>
+    Array.from(_draftInitErrors.value.values()),
+  );
 
   /**
    * Register a pending save retry. If an entry with this key already exists
@@ -64,12 +78,43 @@ export function usePendingSaves() {
     _savedNotification.value = null;
   }
 
+  /** Mark a view key as currently autosaving content. */
+  function setContentSaving(key: string, saving: boolean) {
+    const next = new Set(_contentSavingKeys.value);
+    if (saving) {
+      next.add(key);
+    } else {
+      next.delete(key);
+    }
+    _contentSavingKeys.value = next;
+  }
+
+  /** Register or update a draft-init error for a given view key. */
+  function registerDraftInitError(key: string, message: string) {
+    const next = new Map(_draftInitErrors.value);
+    next.set(key, message);
+    _draftInitErrors.value = next;
+  }
+
+  /** Clear the draft-init error for a given view key. */
+  function clearDraftInitError(key: string) {
+    if (!_draftInitErrors.value.has(key)) return;
+    const next = new Map(_draftInitErrors.value);
+    next.delete(key);
+    _draftInitErrors.value = next;
+  }
+
   return {
     pendingSaves,
     pendingSavesCount,
     savedNotification,
+    isContentSaving,
+    draftInitErrors,
     registerPendingSave,
     removePendingSave,
     clearSavedNotification,
+    setContentSaving,
+    registerDraftInitError,
+    clearDraftInitError,
   };
 }

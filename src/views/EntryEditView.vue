@@ -16,13 +16,6 @@
           <span v-else>Edit Entry</span>
         </ion-title>
         <ion-buttons slot="end">
-          <span
-            v-if="contentSaving"
-            class="autosave-indicator"
-            aria-label="Saving..."
-          >
-            <span class="autosave-spinner" />
-          </span>
           <ion-button :disabled="committing || !canCommit" @click="commitDraft">
             {{ committing ? 'Saving...' : 'Save' }}
           </ion-button>
@@ -63,13 +56,18 @@
                   accept="image/*"
                   class="image-upload-input"
                   multiple
-                  :disabled="committing || !draftId"
+                  :disabled="committing || !draftId || autosaveOffline"
                   @change="onImageSelected"
                 />
                 <ion-button
                   size="small"
                   fill="outline"
-                  :disabled="committing || !draftId"
+                  :disabled="committing || !draftId || autosaveOffline"
+                  :title="
+                    autosaveOffline
+                      ? 'Image upload is unavailable while offline'
+                      : undefined
+                  "
                   @click="openImagePicker"
                 >
                   + Image
@@ -130,17 +128,20 @@
           </section>
 
           <p v-if="imageError" class="save-error">{{ imageError }}</p>
-          <p v-else-if="draftInitError" class="autosave-offline-note">
-            {{ draftInitError }} — retrying in background.
-          </p>
           <p v-else-if="autosaveOffline" class="autosave-offline-note">
             Currently offline — your changes will be saved when you reconnect.
+          </p>
+          <p
+            v-if="autosaveOffline"
+            class="autosave-offline-note image-offline-note"
+          >
+            Image upload is unavailable while offline.
           </p>
         </template>
       </div>
     </ion-content>
 
-    <!-- Commit-fail inform dialog (save failed, retrying in background) -->
+    <!-- Commit-fail dialog (save failed, retrying in background) -->
     <ion-modal
       :is-open="commitFailDialogOpen"
       @didDismiss="commitFailDialogOpen = false"
@@ -160,7 +161,12 @@
       <ion-footer>
         <ion-toolbar>
           <div class="commit-fail-dialog-actions">
-            <ion-button @click="commitFailDialogOpen = false">OK</ion-button>
+            <ion-button fill="outline" @click="commitFailDialogOpen = false"
+              >Cancel</ion-button
+            >
+            <ion-button @click="commitFailDialogOpen = false"
+              >OK — keep retrying</ion-button
+            >
           </div>
         </ion-toolbar>
       </ion-footer>
@@ -429,15 +435,20 @@ const {
   lastCheckedAt: refreshLastCheckedAt,
 } = useRefreshStatus();
 
-const { registerPendingSave, removePendingSave, clearSavedNotification } =
-  usePendingSaves();
+const {
+  registerPendingSave,
+  removePendingSave,
+  clearSavedNotification,
+  setContentSaving,
+  registerDraftInitError,
+  clearDraftInitError,
+} = usePendingSaves();
 
 const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
 const committing = ref(false);
 const commitError = ref('');
 const imageError = ref('');
-const draftInitError = ref('');
 const imageDrafts = ref<EntryImageDraft[]>([]);
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
@@ -450,9 +461,6 @@ const draftId = ref('');
 
 /** True when a 409 is returned on draft init (stale edit_id) */
 const draftInitConflict = ref(false);
-
-/** Whether content is being auto-saved */
-const contentSaving = ref(false);
 
 /** True when autosave has failed and the device appears to be offline */
 const autosaveOffline = ref(false);
@@ -523,7 +531,7 @@ const formattedEntryDay = computed(() => {
 
 async function loadRemoteAndContinue() {
   draftInitConflict.value = false;
-  draftInitError.value = '';
+  clearDraftInitError(pendingSaveKey());
 
   try {
     // Fetch the current remote entry to get its edit_id
@@ -542,16 +550,18 @@ async function loadRemoteAndContinue() {
     // Start a fresh draft based on the remote edit_id
     await initEditDraft(remoteEditId);
   } catch (err: unknown) {
-    draftInitError.value =
+    registerDraftInitError(
+      pendingSaveKey(),
       extractErrorMessage(err) ??
-      'Failed to load the latest version. Please try again.';
+        'Failed to load the latest version. Please try again.',
+    );
   }
 }
 
 // ─── Draft Initialisation ─────────────────────────────────────────────────
 
 async function initEditDraft(editId: number) {
-  draftInitError.value = '';
+  clearDraftInitError(pendingSaveKey());
   draftInitConflict.value = false;
   if (draftInitRetryTimer !== null) {
     clearTimeout(draftInitRetryTimer);
@@ -587,9 +597,11 @@ async function initEditDraft(editId: number) {
       draftInitConflict.value = true;
     } else {
       // Any other error: keep the editor open with existing content; retry in background
-      draftInitError.value =
+      registerDraftInitError(
+        pendingSaveKey(),
         extractErrorMessage(err) ??
-        'Failed to start editing. Retrying in background.';
+          'Failed to start editing. Retrying in background.',
+      );
       draftInitRetryTimer = setTimeout(() => {
         draftInitRetryTimer = null;
         void initEditDraft(entry.value?.edit_id ?? 0);
@@ -628,7 +640,7 @@ watch(
 function scheduleContentAutosave() {
   if (!draftId.value) return;
 
-  contentSaving.value = true;
+  setContentSaving(pendingSaveKey(), true);
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
 
   autosaveTimer = setTimeout(() => {
@@ -640,7 +652,7 @@ async function flushContentAutosave() {
   autosaveTimer = null;
   const currentContent = content.value;
   if (!draftId.value || currentContent === lastSavedContent) {
-    contentSaving.value = false;
+    setContentSaving(pendingSaveKey(), false);
     return;
   }
 
@@ -657,7 +669,7 @@ async function flushContentAutosave() {
       autosaveOffline.value = true;
     }
   } finally {
-    contentSaving.value = false;
+    setContentSaving(pendingSaveKey(), false);
   }
 }
 
@@ -862,8 +874,9 @@ async function attemptCommitRetry() {
 
     // Success — deregister pending save and signal success
     removePendingSave(pendingSaveKey(), true);
+    clearDraftInitError(pendingSaveKey());
     draftId.value = '';
-    router.back();
+    await router.replace(`/entry/${pathId.value}/${entryId.value}`);
   } catch (err: unknown) {
     const status =
       err && typeof err === 'object' && 'response' in err
@@ -944,8 +957,9 @@ async function commitDraft() {
 
     // Draft committed — skip abandon on unmount
     clearSavedNotification();
+    clearDraftInitError(pendingSaveKey());
     draftId.value = '';
-    router.back();
+    await router.replace(`/entry/${pathId.value}/${entryId.value}`);
   } catch (err: unknown) {
     const status =
       err && typeof err === 'object' && 'response' in err
@@ -1065,7 +1079,7 @@ async function resolveConflict(choice: 'local' | 'remote') {
 
     draftId.value = '';
     isConflictModalOpen.value = false;
-    router.back();
+    await router.replace(`/entry/${pathId.value}/${entryId.value}`);
   } catch (err: unknown) {
     commitError.value =
       extractErrorMessage(err) ??
@@ -1100,6 +1114,8 @@ onBeforeUnmount(async () => {
 
   // Deregister any pending save entry (not succeeded — just navigating away)
   removePendingSave(pendingSaveKey(), false);
+  setContentSaving(pendingSaveKey(), false);
+  clearDraftInitError(pendingSaveKey());
 
   for (const draft of imageDrafts.value) {
     revokeDraftPreviewUrl(draft);
@@ -1265,6 +1281,10 @@ onBeforeUnmount(async () => {
   font-style: italic;
 }
 
+.image-offline-note {
+  margin-top: 0;
+}
+
 .edit-path-dot {
   display: inline-block;
   width: 8px;
@@ -1273,31 +1293,6 @@ onBeforeUnmount(async () => {
   margin-right: 6px;
   vertical-align: middle;
   flex-shrink: 0;
-}
-
-.autosave-indicator {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  opacity: 0.5;
-}
-
-.autosave-spinner {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: autosave-spin 0.8s linear infinite;
-}
-
-@keyframes autosave-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .editor-image-tray {

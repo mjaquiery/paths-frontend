@@ -7,13 +7,6 @@
         </ion-buttons>
         <ion-title>New Entry</ion-title>
         <ion-buttons slot="end">
-          <span
-            v-if="contentSaving"
-            class="autosave-indicator"
-            aria-label="Saving..."
-          >
-            <span class="autosave-spinner" />
-          </span>
           <ion-button :disabled="committing || !canCommit" @click="commitDraft">
             {{ committing ? 'Saving...' : 'Save' }}
           </ion-button>
@@ -84,13 +77,20 @@
                   accept="image/*"
                   class="image-upload-input"
                   multiple
-                  :disabled="committing || !draftId"
+                  :disabled="committing || !draftId || autosaveOffline"
                   @change="onImageSelected"
                 />
                 <ion-button
                   size="small"
                   fill="outline"
-                  :disabled="!selectedPathId || committing || !draftId"
+                  :disabled="
+                    !selectedPathId || committing || !draftId || autosaveOffline
+                  "
+                  :title="
+                    autosaveOffline
+                      ? 'Image upload is unavailable while offline'
+                      : undefined
+                  "
                   @click="openImagePicker"
                 >
                   + Image
@@ -151,17 +151,20 @@
           </section>
 
           <p v-if="imageError" class="save-error">{{ imageError }}</p>
-          <p v-else-if="draftInitError" class="autosave-offline-note">
-            {{ draftInitError }} — retrying in background.
-          </p>
           <p v-else-if="autosaveOffline" class="autosave-offline-note">
             Currently offline — your changes will be saved when you reconnect.
+          </p>
+          <p
+            v-if="autosaveOffline"
+            class="autosave-offline-note image-offline-note"
+          >
+            Image upload is unavailable while offline.
           </p>
         </template>
       </div>
     </ion-content>
 
-    <!-- Commit-fail inform dialog (save failed, retrying in background) -->
+    <!-- Commit-fail dialog (save failed, retrying in background) -->
     <ion-modal
       :is-open="commitFailDialogOpen"
       @didDismiss="commitFailDialogOpen = false"
@@ -181,7 +184,12 @@
       <ion-footer>
         <ion-toolbar>
           <div class="commit-fail-dialog-actions">
-            <ion-button @click="commitFailDialogOpen = false">OK</ion-button>
+            <ion-button fill="outline" @click="commitFailDialogOpen = false"
+              >Cancel</ion-button
+            >
+            <ion-button @click="commitFailDialogOpen = false"
+              >OK — keep retrying</ion-button
+            >
           </div>
         </ion-toolbar>
       </ion-footer>
@@ -386,8 +394,14 @@ const {
   lastCheckedAt: refreshLastCheckedAt,
 } = useRefreshStatus();
 
-const { registerPendingSave, removePendingSave, clearSavedNotification } =
-  usePendingSaves();
+const {
+  registerPendingSave,
+  removePendingSave,
+  clearSavedNotification,
+  setContentSaving,
+  registerDraftInitError,
+  clearDraftInitError,
+} = usePendingSaves();
 
 const day = ref(
   String(route.query.date ?? new Date().toISOString().slice(0, 10)),
@@ -398,14 +412,10 @@ const contentTab = ref<'write' | 'preview'>('write');
 const committing = ref(false);
 const commitError = ref('');
 const imageError = ref('');
-const draftInitError = ref('');
 const imageDrafts = ref<EntryImageDraft[]>([]);
 
 /** Server-side draft id — set once the draft has been created */
 const draftId = ref('');
-
-/** Whether content is being auto-saved (debounce in progress or PATCH in flight) */
-const contentSaving = ref(false);
 
 /** True when autosave has failed and the device appears to be offline */
 const autosaveOffline = ref(false);
@@ -460,7 +470,7 @@ async function ensureDraft() {
   if (draftId.value) return draftId.value;
   if (!selectedPathId.value || !day.value) return null;
 
-  draftInitError.value = '';
+  clearDraftInitError(pendingSaveKey());
   if (draftInitRetryTimer !== null) {
     clearTimeout(draftInitRetryTimer);
     draftInitRetryTimer = null;
@@ -490,8 +500,10 @@ async function ensureDraft() {
     }
     return draftId.value;
   } catch (err: unknown) {
-    draftInitError.value =
-      extractErrorMessage(err) ?? 'Failed to start draft. Please try again.';
+    registerDraftInitError(
+      pendingSaveKey(),
+      extractErrorMessage(err) ?? 'Failed to start draft. Please try again.',
+    );
     // Schedule a background retry
     draftInitRetryTimer = setTimeout(() => {
       draftInitRetryTimer = null;
@@ -529,7 +541,7 @@ watch(
 function scheduleContentAutosave() {
   if (!draftId.value) return;
 
-  contentSaving.value = true;
+  setContentSaving(pendingSaveKey(), true);
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
 
   autosaveTimer = setTimeout(() => {
@@ -541,7 +553,7 @@ async function flushContentAutosave() {
   autosaveTimer = null;
   const currentContent = content.value;
   if (!draftId.value || currentContent === lastSavedContent) {
-    contentSaving.value = false;
+    setContentSaving(pendingSaveKey(), false);
     return;
   }
 
@@ -558,7 +570,7 @@ async function flushContentAutosave() {
       autosaveOffline.value = true;
     }
   } finally {
-    contentSaving.value = false;
+    setContentSaving(pendingSaveKey(), false);
   }
 }
 
@@ -756,7 +768,7 @@ async function attemptCommitRetry() {
       lastSavedContent = finalContent;
     }
 
-    await commitDraftApi({ draftId: currentDraftId });
+    const commitResponse = await commitDraftApi({ draftId: currentDraftId });
 
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] }),
@@ -767,8 +779,15 @@ async function attemptCommitRetry() {
 
     // Success — deregister pending save and signal success
     removePendingSave(pendingSaveKey(), true);
+    clearDraftInitError(pendingSaveKey());
     draftId.value = '';
-    router.back();
+    const newEntryId =
+      commitResponse.status === 200 ? commitResponse.data.id : null;
+    if (newEntryId && selectedPathId.value) {
+      await router.replace(`/entry/${selectedPathId.value}/${newEntryId}`);
+    } else {
+      router.back();
+    }
   } catch {
     // Still failing — schedule another retry
     commitRetryTimer = setTimeout(
@@ -821,7 +840,7 @@ async function commitDraft() {
     }
 
     // Commit the draft
-    await commitDraftApi({ draftId: currentDraftId });
+    const commitResponse = await commitDraftApi({ draftId: currentDraftId });
 
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] }),
@@ -832,8 +851,15 @@ async function commitDraft() {
 
     // Draft committed — no need to abandon on unmount
     clearSavedNotification();
+    clearDraftInitError(pendingSaveKey());
     draftId.value = '';
-    router.back();
+    const newEntryId =
+      commitResponse.status === 200 ? commitResponse.data.id : null;
+    if (newEntryId && selectedPathId.value) {
+      await router.replace(`/entry/${selectedPathId.value}/${newEntryId}`);
+    } else {
+      router.back();
+    }
   } catch (err: unknown) {
     const status =
       err && typeof err === 'object' && 'response' in err
@@ -935,6 +961,8 @@ onBeforeUnmount(async () => {
 
   // Deregister any pending save entry (not succeeded — just navigating away)
   removePendingSave(pendingSaveKey(), false);
+  setContentSaving(pendingSaveKey(), false);
+  clearDraftInitError(pendingSaveKey());
 
   for (const draft of imageDrafts.value) {
     revokeDraftPreviewUrl(draft);
@@ -1009,29 +1037,15 @@ onBeforeUnmount(async () => {
   flex-wrap: wrap;
 }
 
-.autosave-indicator {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  opacity: 0.5;
+.autosave-offline-note {
+  color: var(--ion-color-medium);
+  font-size: 0.82rem;
+  margin: 0 4px;
+  font-style: italic;
 }
 
-.autosave-spinner {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: autosave-spin 0.8s linear infinite;
-}
-
-@keyframes autosave-spin {
-  to {
-    transform: rotate(360deg);
-  }
+.image-offline-note {
+  margin-top: 0;
 }
 
 .editor-section {

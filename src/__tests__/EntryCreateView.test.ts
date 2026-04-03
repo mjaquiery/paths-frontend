@@ -73,9 +73,14 @@ vi.mock('../composables/usePendingSaves', () => ({
     registerPendingSave: vi.fn(),
     removePendingSave: vi.fn(),
     clearSavedNotification: vi.fn(),
+    setContentSaving: vi.fn(),
+    registerDraftInitError: vi.fn(),
+    clearDraftInitError: vi.fn(),
     pendingSaves: { value: [] },
     pendingSavesCount: { value: 0 },
     savedNotification: { value: null },
+    isContentSaving: { value: false },
+    draftInitErrors: { value: [] },
   }),
 }));
 
@@ -212,7 +217,16 @@ describe('EntryCreateView', () => {
     vi.clearAllMocks();
     mockStartCreateEntryDraft.mockResolvedValue(draftResponse());
     mockPatchDraft.mockResolvedValue({ status: 200, data: {} });
-    mockCommitDraft.mockResolvedValue({ status: 200, data: {} });
+    mockCommitDraft.mockResolvedValue({
+      status: 200,
+      data: {
+        id: 'new-entry-1',
+        path_id: 'p1',
+        day: '2024-01-15',
+        edit_id: 1,
+        content: '',
+      },
+    });
     mockAbandonDraft.mockResolvedValue({ status: 204, data: null });
     // Reset shared mutable mock state
     mockPaths.data.value = [
@@ -290,8 +304,8 @@ describe('EntryCreateView', () => {
     await flushPromises();
     // Form fields should still be present (not replaced by a full error state)
     expect(wrapper.html()).toContain('Content');
-    // An inline error note should be present
-    expect(wrapper.html()).toMatch(/retrying in background/i);
+    // The draft-init error is now surfaced via usePendingSaves/RefreshStatus
+    // (which is stubbed in tests), so there is no inline error text to assert.
   });
 
   it('shows a full-state error when the paths API fails', async () => {
@@ -356,7 +370,7 @@ describe('EntryCreateView', () => {
     await saveBtn?.trigger('click');
     await flushPromises();
     expect(mockCommitDraft).toHaveBeenCalled();
-    expect(mockRouterBack).toHaveBeenCalled();
+    expect(mockRouterReplace).toHaveBeenCalledWith('/entry/p1/new-entry-1');
   });
 
   it('shows commit-fail dialog when commit fails', async () => {

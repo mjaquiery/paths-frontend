@@ -33,13 +33,13 @@ export const Default: Story = {
 };
 
 /**
- * Form opened via /entry/new (no path param) — auto-selects the first owned
- * path from the cached path order.
+ * Form opened via /entry/studio-notes/new (explicit path param) — pre-selects
+ * studio-notes, visually distinct from Default which uses daily-river.
  */
 export const FilledIn: Story = {
   parameters: createStoryParameters({
     state: populatedState,
-    route: '/entry/new?date=2025-03-15',
+    route: '/entry/studio-notes/new?date=2025-03-15',
     seedCacheFromState: true,
   }),
 };

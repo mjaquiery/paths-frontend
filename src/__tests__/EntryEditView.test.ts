@@ -6,6 +6,7 @@ import EntryEditView from '../views/EntryEditView.vue';
 // ─── Route / router mocks ────────────────────────────────────────────────────
 
 const mockRouterBack = vi.fn();
+const mockRouterReplace = vi.fn();
 
 vi.mock('vue-router', () => ({
   useRoute: () => ({
@@ -15,7 +16,7 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: vi.fn(),
     back: mockRouterBack,
-    replace: vi.fn(),
+    replace: mockRouterReplace,
   }),
 }));
 
@@ -74,9 +75,14 @@ vi.mock('../composables/usePendingSaves', () => ({
     registerPendingSave: vi.fn(),
     removePendingSave: vi.fn(),
     clearSavedNotification: vi.fn(),
+    setContentSaving: vi.fn(),
+    registerDraftInitError: vi.fn(),
+    clearDraftInitError: vi.fn(),
     pendingSaves: { value: [] },
     pendingSavesCount: { value: 0 },
     savedNotification: { value: null },
+    isContentSaving: { value: false },
+    draftInitErrors: { value: [] },
   }),
 }));
 
@@ -209,7 +215,16 @@ describe('EntryEditView', () => {
     vi.clearAllMocks();
     mockStartEditEntryDraft.mockResolvedValue(draftResponse());
     mockPatchDraft.mockResolvedValue({ status: 200, data: {} });
-    mockCommitDraft.mockResolvedValue({ status: 200, data: {} });
+    mockCommitDraft.mockResolvedValue({
+      status: 200,
+      data: {
+        id: 'e1',
+        path_id: 'p1',
+        day: '2024-01-15',
+        edit_id: 6,
+        content: 'Original entry content.',
+      },
+    });
     mockAbandonDraft.mockResolvedValue({ status: 204, data: null });
     mockGetEntry.mockResolvedValue({
       status: 200,
@@ -255,7 +270,9 @@ describe('EntryEditView', () => {
     mockStartEditEntryDraft.mockRejectedValue(networkError());
     const wrapper = mountEditView();
     await flushPromises();
-    expect(wrapper.html()).toMatch(/retrying in background/i);
+    // The draft-init error is now surfaced via usePendingSaves/RefreshStatus
+    // (which is stubbed in tests). The editor should still be accessible.
+    expect(wrapper.html()).toContain('Original entry content.');
   });
 
   it('shows conflict banner when draft init returns 409', async () => {
@@ -304,7 +321,7 @@ describe('EntryEditView', () => {
     await saveBtn?.trigger('click');
     await flushPromises();
     expect(mockCommitDraft).toHaveBeenCalled();
-    expect(mockRouterBack).toHaveBeenCalled();
+    expect(mockRouterReplace).toHaveBeenCalledWith('/entry/p1/e1');
   });
 
   it('shows commit-fail dialog when commit fails', async () => {

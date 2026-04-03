@@ -4,6 +4,17 @@
       <span class="refresh-status__dot" aria-hidden="true" />
       <span class="refresh-status__text">{{ statusText }}</span>
 
+      <!-- Autosave-in-progress indicator -->
+      <span
+        v-if="isContentSaving"
+        class="refresh-status__autosave-indicator"
+        aria-label="Saving…"
+        aria-live="polite"
+      >
+        <span class="refresh-status__autosave-spinner" aria-hidden="true" />
+        <span class="refresh-status__autosave-label">Saving…</span>
+      </span>
+
       <!-- Pending-saves indicator -->
       <span
         v-if="pendingSavesCount > 0"
@@ -22,6 +33,20 @@
       <p v-if="savedNotification" class="refresh-status__saved-note">
         ✓ {{ savedNotification }}
       </p>
+
+      <!-- Draft-init error(s) -->
+      <div
+        v-if="draftInitErrors.length > 0"
+        class="refresh-status__draft-init-errors"
+      >
+        <p
+          v-for="(msg, idx) in draftInitErrors"
+          :key="idx"
+          class="refresh-status__draft-init-error"
+        >
+          ⚠ {{ msg }} — retrying in background.
+        </p>
+      </div>
 
       <!-- Pending-saves list -->
       <div
@@ -123,8 +148,13 @@ const props = defineProps<{
 const queryClient = useQueryClient();
 const confirmingDelete = ref(false);
 
-const { pendingSaves, pendingSavesCount, savedNotification } =
-  usePendingSaves();
+const {
+  pendingSaves,
+  pendingSavesCount,
+  savedNotification,
+  isContentSaving,
+  draftInitErrors,
+} = usePendingSaves();
 
 const summaryAriaLabel = computed(() => {
   const base = `Refresh status: ${props.statusText || 'unknown'}.`;
@@ -206,6 +236,37 @@ async function confirmDeleteCache() {
   text-overflow: ellipsis;
 }
 
+/* ── Autosave indicator ── */
+.refresh-status__autosave-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.refresh-status__autosave-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: refresh-autosave-spin 0.8s linear infinite;
+}
+
+.refresh-status__autosave-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+@keyframes refresh-autosave-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ── Pending-saves badge ── */
 .refresh-status__pending-badge {
   display: inline-flex;
@@ -264,6 +325,21 @@ details[open] .refresh-status__chevron {
   margin: 0;
   font-size: 0.75rem;
   color: var(--ion-color-success, #2dd36f);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ── Draft-init errors ── */
+.refresh-status__draft-init-errors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.refresh-status__draft-init-error {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ion-color-warning, #f57c00);
   font-weight: 600;
   line-height: 1.4;
 }
