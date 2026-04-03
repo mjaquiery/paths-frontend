@@ -32,10 +32,27 @@
 
     <ion-content class="entry-editor-content">
       <div class="entry-form">
-        <div v-if="!entry || !draftReady" class="edit-loading">
-          {{ draftInitError || 'Loading entry...' }}
-        </div>
+        <!-- Entry not yet loaded (network fetch in progress) -->
+        <div v-if="!entry" class="edit-loading">Loading entry...</div>
         <template v-else>
+          <!-- 409 init conflict: offer to reload with remote content -->
+          <div v-if="draftInitConflict" class="edit-conflict-banner">
+            <p class="edit-conflict-banner-title">
+              This entry was edited on another device.
+            </p>
+            <p class="edit-conflict-banner-body">
+              You can load the latest version and continue editing from there.
+            </p>
+            <div class="edit-conflict-banner-actions">
+              <ion-button fill="outline" @click="$router.back()"
+                >Go back</ion-button
+              >
+              <ion-button @click="loadRemoteAndContinue"
+                >Load latest version</ion-button
+              >
+            </div>
+          </div>
+
           <section class="editor-section">
             <div class="editor-header">
               <label class="editor-label">Content *</label>
@@ -114,6 +131,9 @@
 
           <p v-if="imageError" class="save-error">{{ imageError }}</p>
           <p v-else-if="commitError" class="save-error">{{ commitError }}</p>
+          <p v-else-if="draftInitError" class="autosave-offline-note">
+            {{ draftInitError }} — retrying in background.
+          </p>
           <p v-else-if="autosaveOffline" class="autosave-offline-note">
             Currently offline — your changes will be saved when you reconnect.
           </p>
@@ -399,8 +419,8 @@ const selectedImage = ref<EntryImageDraft | null>(null);
 /** The server-side draft id — set once the edit draft is started */
 const draftId = ref('');
 
-/** True once the draft has been initialised and form is ready */
-const draftReady = ref(false);
+/** True when a 409 is returned on draft init (stale edit_id) */
+const draftInitConflict = ref(false);
 
 /** Whether content is being auto-saved */
 const contentSaving = ref(false);
@@ -410,6 +430,9 @@ const autosaveOffline = ref(false);
 
 /** Timer handle for autosave debounce */
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Timer handle for background draft-init retry */
+let draftInitRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Last content value successfully PATCHed */
 let lastSavedContent = '';
@@ -428,7 +451,9 @@ let conflictRemoteEditId = 0;
 
 // ─── Derived ─────────────────────────────────────────────────────────────
 
-const canCommit = computed(() => !!content.value.trim() && !!draftId.value);
+const canCommit = computed(
+  () => !!content.value.trim() && !draftInitConflict.value,
+);
 const attachedImages = computed(() =>
   getAttachedImageResponses(imageDrafts.value),
 );
@@ -455,11 +480,44 @@ const formattedEntryDay = computed(() => {
   });
 });
 
+// ─── Load Remote Version (after 409 conflict on init) ────────────────────
+
+async function loadRemoteAndContinue() {
+  draftInitConflict.value = false;
+  draftInitError.value = '';
+
+  try {
+    // Fetch the current remote entry to get its edit_id
+    const response = await getEntry(pathId.value, entryId.value);
+    if (response.status !== 200)
+      throw new Error('Failed to load remote entry.');
+    const remoteEntry = response.data as EntryContentResponse;
+    const remoteEditId = (remoteEntry as { edit_id?: number }).edit_id ?? 0;
+
+    // Seed content and images from the remote entry
+    content.value = remoteEntry.content ?? '';
+    lastSavedContent = content.value;
+    imageDrafts.value.forEach(revokeDraftPreviewUrl);
+    imageDrafts.value = [];
+
+    // Start a fresh draft based on the remote edit_id
+    await initEditDraft(remoteEditId);
+  } catch (err: unknown) {
+    draftInitError.value =
+      extractErrorMessage(err) ??
+      'Failed to load the latest version. Please try again.';
+  }
+}
+
 // ─── Draft Initialisation ─────────────────────────────────────────────────
 
 async function initEditDraft(editId: number) {
   draftInitError.value = '';
-  draftReady.value = false;
+  draftInitConflict.value = false;
+  if (draftInitRetryTimer !== null) {
+    clearTimeout(draftInitRetryTimer);
+    draftInitRetryTimer = null;
+  }
   try {
     const response = await startEditEntryDraft(pathId.value, entryId.value, {
       based_on_edit_id: editId,
@@ -480,19 +538,23 @@ async function initEditDraft(editId: number) {
       imageDrafts.value,
       content.value,
     );
-    draftReady.value = true;
   } catch (err: unknown) {
     const status =
       err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { status?: number } }).response?.status
         : undefined;
     if (status === 409) {
-      draftInitError.value =
-        'This entry has been edited on another device. Please reload before editing.';
+      // 409 = stale edit_id — let the user choose to load the remote version
+      draftInitConflict.value = true;
     } else {
+      // Any other error: keep the editor open with existing content; retry in background
       draftInitError.value =
         extractErrorMessage(err) ??
-        'Failed to start editing. Please try again.';
+        'Failed to start editing. Retrying in background.';
+      draftInitRetryTimer = setTimeout(() => {
+        draftInitRetryTimer = null;
+        void initEditDraft(entry.value?.edit_id ?? 0);
+      }, AUTOSAVE_DEBOUNCE_MS);
     }
   }
 }
@@ -503,6 +565,13 @@ watch(
   async (nextEntry) => {
     if (!nextEntry || initializedEntryId.value === nextEntry.id) return;
     initializedEntryId.value = nextEntry.id;
+
+    // Populate the editor immediately from the cached entry so the user can
+    // start editing even if draft init fails or is slow.
+    if (!content.value) {
+      content.value = nextEntry.content ?? '';
+      lastSavedContent = content.value;
+    }
 
     // Populate legacy server images while draft loads (show them as ready)
     imageDrafts.value.forEach(revokeDraftPreviewUrl);
@@ -701,6 +770,16 @@ async function commitDraft() {
       autosaveTimer = null;
     }
 
+    // Ensure we have a draft — attempt init if it failed earlier
+    if (!draftId.value) {
+      await initEditDraft(entry.value?.edit_id ?? 0);
+      if (!draftId.value) {
+        commitError.value =
+          'Could not start a draft. Please check your connection and try again.';
+        return;
+      }
+    }
+
     imageDrafts.value = syncDraftCaptionsFromContent(
       imageDrafts.value,
       content.value,
@@ -858,8 +937,11 @@ async function resolveConflict(choice: 'local' | 'remote') {
 // ─── Cleanup ─────────────────────────────────────────────────────────────
 
 function handleOnline() {
-  if (autosaveOffline.value) {
-    autosaveOffline.value = false;
+  autosaveOffline.value = false;
+  if (!draftId.value && entry.value && !draftInitConflict.value) {
+    // Try to init the draft now that we're back online
+    void initEditDraft(entry.value.edit_id ?? 0);
+  } else if (content.value && content.value !== lastSavedContent) {
     scheduleContentAutosave();
   }
 }
@@ -870,6 +952,7 @@ onMounted(() => {
 
 onBeforeUnmount(async () => {
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+  if (draftInitRetryTimer !== null) clearTimeout(draftInitRetryTimer);
   window.removeEventListener('online', handleOnline);
 
   for (const draft of imageDrafts.value) {
@@ -908,6 +991,32 @@ onBeforeUnmount(async () => {
   color: var(--ion-color-medium);
   border: 1px dashed var(--ion-border-color);
   border-radius: 18px;
+}
+
+.edit-conflict-banner {
+  padding: 20px;
+  border: 1px solid var(--ion-color-warning);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ion-color-warning) 8%, transparent);
+}
+
+.edit-conflict-banner-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--ion-text-color);
+}
+
+.edit-conflict-banner-body {
+  font-size: 0.88rem;
+  color: var(--ion-color-medium);
+  margin: 0 0 16px;
+}
+
+.edit-conflict-banner-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .editor-section {

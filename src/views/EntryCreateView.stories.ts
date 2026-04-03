@@ -45,7 +45,8 @@ export const FilledIn: Story = {
 };
 
 /**
- * No owned paths — the view should redirect to /paths/new.
+ * No owned paths — shows an inline message with a "Create a path" button and
+ * a "Go back" button instead of redirecting.
  * Only a subscribed (not owned) path is present.
  */
 export const NoOwnedPaths: Story = {
@@ -55,6 +56,9 @@ export const NoOwnedPaths: Story = {
   }),
 };
 
+/**
+ * Paths API fails — a full-state error is shown with a Go back button.
+ */
 export const PathsApiError: Story = {
   parameters: createStoryParameters({
     state: populatedState,
@@ -68,8 +72,9 @@ export const PathsApiError: Story = {
 };
 
 /**
- * Draft init fails — the GET draft endpoint returns a server error so the
- * view shows the draftInitError message instead of the editor.
+ * Draft init fails — the GET draft endpoint returns a server error. The form
+ * still opens and shows a small inline error note while retrying in the
+ * background.
  */
 export const DraftInitError: Story = {
   parameters: createStoryParameters({
@@ -86,12 +91,19 @@ export const DraftInitError: Story = {
 /**
  * The user has typed content and clicks Save — the commit endpoint returns a
  * server error so the save-error message is shown below the editor.
+ * A pre-seeded draft is supplied so the Save button is enabled.
  */
 export const SaveError: Story = {
   parameters: createStoryParameters({
     state: populatedState,
-    route: '/entry/daily-river/new?date=2025-03-15',
+    route: `/entry/daily-river/new?date=${storyDateOffset(0)}`,
     seedCacheFromState: true,
+    draftSeeds: [
+      {
+        key: `create:daily-river:${storyDateOffset(0)}`,
+        content: 'Started writing a new entry for today.',
+      },
+    ],
     requestOverrides: [
       createStoryApiError(`*/v1/entry-drafts/*/commit`, 503, 'POST', {
         detail: 'Storybook forced save outage.',
@@ -101,40 +113,77 @@ export const SaveError: Story = {
 };
 
 /**
- * An existing open draft is resumed — the editor is pre-populated with the
- * draft content that was previously saved (simulated via a GET that returns
- * content). The user can continue editing and save.
- *
- * In Storybook the draft store always starts empty, so this story instead
- * demonstrates the normal editing flow after a draft is created.
+ * An existing open draft is resumed — the editor is pre-populated with
+ * content that was saved in a previous session.
  */
 export const DraftResumed: Story = {
   parameters: createStoryParameters({
     state: populatedState,
     route: `/entry/daily-river/new?date=${storyDateOffset(0)}`,
     seedCacheFromState: true,
+    draftSeeds: [
+      {
+        key: `create:daily-river:${storyDateOffset(0)}`,
+        content: [
+          'Started early — walked along the canal before it got hot.',
+          '',
+          'Want to come back to the part about the heron standing perfectly still.',
+        ].join('\n'),
+      },
+    ],
   }),
 };
 
 /**
- * Image in uploading state — demonstrated by adding an image immediately
- * after the draft is created. The PUT to storage is delayed so the chip
- * shows the loading overlay.
+ * A draft with an image already attached — the image chip shows in the
+ * footer tray and the draft content already contains the markdown reference.
  */
 export const WithImageUpload: Story = {
   parameters: createStoryParameters({
     state: populatedState,
-    route: '/entry/daily-river/new?date=2025-03-15',
+    route: `/entry/daily-river/new?date=${storyDateOffset(0)}`,
     seedCacheFromState: true,
+    draftSeeds: [
+      {
+        key: `create:daily-river:${storyDateOffset(0)}`,
+        content:
+          'Morning walk with a camera.\n\n![Sunrise over the river](sunrise-river.jpg)',
+        images: [
+          {
+            id: 'dimg-seeded-1',
+            draft_id: 'draft-seed-1',
+            source: 'upload',
+            live_image_id: null,
+            filename: 'sunrise-river.jpg',
+            status: 'ready',
+            content_type: 'image/jpeg',
+            strip_metadata: true,
+            byte_size: 310_442,
+            client_image_id: null,
+          },
+        ],
+      },
+    ],
   }),
 };
 
+/**
+ * Offline mode — MSW intercepts all API calls with a network error and
+ * navigator.onLine is set to false. The editor is still usable and shows an
+ * offline note at the bottom.
+ */
 export const Offline: Story = {
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/new?date=2025-03-15',
     networkMode: 'offline',
     seedCacheFromState: true,
+    draftSeeds: [
+      {
+        key: 'create:daily-river:2025-03-15',
+        content: 'Writing this offline. Will sync when I reconnect.',
+      },
+    ],
     requestOverrides: [createStoryNetworkError('*/v1/*')],
   }),
 };

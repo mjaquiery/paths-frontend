@@ -78,11 +78,42 @@ export const Loading: Story = {
   }),
 };
 
+/**
+ * Editing an entry that already has an image — the edit draft is seeded with
+ * the existing image so the chip shows in the footer tray. A new image can be
+ * added on top.
+ */
 export const WithImageUpload: Story = {
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
     seedCacheFromState: true,
+    draftSeeds: [
+      {
+        key: 'edit:daily-river:entry-daily-today',
+        content: [
+          'Swam before sunrise and the river was glassy quiet.',
+          '',
+          '![Sunrise over the river](sunrise-river.jpg)',
+          '',
+          'Picked up oranges on the walk back and cooked lentil soup for dinner.',
+        ].join('\n'),
+        images: [
+          {
+            id: 'img-sunrise-river',
+            draft_id: 'draft-seed-1',
+            source: 'live',
+            live_image_id: 'img-sunrise-river',
+            filename: 'sunrise-river.jpg',
+            status: 'ready',
+            content_type: 'image/jpeg',
+            strip_metadata: true,
+            byte_size: 310_442,
+            client_image_id: null,
+          },
+        ],
+      },
+    ],
   }),
 };
 
@@ -95,8 +126,8 @@ export const WithManyImages: Story = {
 };
 
 /**
- * Draft init fails with a 409 (stale edit_id) — the view shows the
- * "edited on another device" message instead of the editor.
+ * Draft init fails with a 409 (stale edit_id) — the view shows an inline
+ * conflict banner with options to load the latest version or go back.
  */
 export const DraftInitConflict: Story = {
   parameters: createStoryParameters({
@@ -112,8 +143,9 @@ export const DraftInitConflict: Story = {
 };
 
 /**
- * Draft init fails with a server error — the view shows a generic error
- * message instead of the editor.
+ * Draft init fails with a server error — the editor opens immediately with
+ * the existing cached entry content and shows an inline retry note. Once
+ * connectivity returns and the retry succeeds, autosave resumes normally.
  */
 export const DraftInitError: Story = {
   parameters: createStoryParameters({
@@ -131,12 +163,20 @@ export const DraftInitError: Story = {
 /**
  * Commit returns 409 — the conflict resolution modal is shown so the user
  * can choose between their local version and the current remote version.
+ * A pre-seeded draft is used so the Save button is enabled.
  */
 export const ConflictResolution: Story = {
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
     seedCacheFromState: true,
+    draftSeeds: [
+      {
+        key: 'edit:daily-river:entry-daily-today',
+        content:
+          'My local edit that conflicts with the remote version from another device.',
+      },
+    ],
     requestOverrides: [
       createStoryApiError('*/v1/entry-drafts/*/commit', 409, 'POST', {
         detail: 'Edit ID mismatch.',
@@ -147,12 +187,20 @@ export const ConflictResolution: Story = {
 
 /**
  * Commit returns a 503 — a save error message is shown below the editor.
+ * A pre-seeded draft is used so the Save button is enabled.
  */
 export const SaveError: Story = {
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
     seedCacheFromState: true,
+    draftSeeds: [
+      {
+        key: 'edit:daily-river:entry-daily-today',
+        content:
+          'Swam before sunrise and the river was glassy quiet. Added a new paragraph.',
+      },
+    ],
     requestOverrides: [
       createStoryApiError('*/v1/entry-drafts/*/commit', 503, 'POST', {
         detail: 'Storybook forced save outage.',
@@ -161,6 +209,10 @@ export const SaveError: Story = {
   }),
 };
 
+/**
+ * Offline mode — the editor opens with cached content and shows an offline
+ * note. Draft init retries in the background when connectivity returns.
+ */
 export const Offline: Story = {
   parameters: createStoryParameters({
     state: populatedState,

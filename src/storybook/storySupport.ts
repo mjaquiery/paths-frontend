@@ -66,6 +66,13 @@ export interface StoryState {
   } | null;
 }
 
+export interface StoryDraftSeed {
+  /** 'create:pathId:day' or 'edit:pathId:entryId' */
+  key: string;
+  content: string;
+  images?: DraftImageResponse[];
+}
+
 export interface StoryRequestOverride {
   method?: StoryRequestMethod;
   path: string;
@@ -422,6 +429,7 @@ export function createStoryParameters(
     networkMode?: StoryNetworkMode;
     seedCacheFromState?: boolean;
     requestOverrides?: StoryRequestOverride[];
+    draftSeeds?: StoryDraftSeed[];
   } = {},
 ) {
   const state = options.state ?? createPopulatedState();
@@ -434,9 +442,14 @@ export function createStoryParameters(
     networkMode: options.networkMode ?? 'online',
     seedCacheFromState: options.seedCacheFromState ?? false,
     requestOverrides: options.requestOverrides ?? [],
+    draftSeeds: options.draftSeeds ?? [],
     storyState: state,
     msw: {
-      handlers: createMockHandlers(state, options.requestOverrides ?? []),
+      handlers: createMockHandlers(
+        state,
+        options.requestOverrides ?? [],
+        options.draftSeeds ?? [],
+      ),
     },
   };
 }
@@ -547,6 +560,7 @@ export const withStorybookChrome = (
 function createMockHandlers(
   inputState: StoryState,
   requestOverrides: StoryRequestOverride[] = [],
+  draftSeeds: StoryDraftSeed[] = [],
 ) {
   const state = clone(inputState);
   const exportPolls: Record<string, number> = {};
@@ -571,6 +585,30 @@ function createMockHandlers(
   const draftIndex = new Map<string, string>();
   const drafts = new Map<string, StorybookDraft>();
 
+  // Pre-seed drafts from story seeds
+  let draftCounter = 0;
+  let draftImageCounter = 0;
+  for (const seed of draftSeeds) {
+    draftCounter += 1;
+    const parts = seed.key.split(':');
+    const mode = parts[0] as 'create' | 'edit';
+    const pathId = parts[1] ?? '';
+    const entryOrDay = parts[2] ?? '';
+    const seedDraft: StorybookDraft = {
+      id: `draft-seed-${draftCounter}`,
+      mode,
+      pathId,
+      entryId: mode === 'edit' ? entryOrDay : null,
+      day: mode === 'create' ? entryOrDay : storyDateOffset(0),
+      content: seed.content,
+      based_on_edit_id: null,
+      images: seed.images ?? [],
+      state: 'open',
+    };
+    drafts.set(seedDraft.id, seedDraft);
+    draftIndex.set(seed.key, seedDraft.id);
+  }
+
   // Pending draft image uploads: draftImageId → slot info
   interface PendingDraftUpload {
     draftId: string;
@@ -580,8 +618,6 @@ function createMockHandlers(
     clientImageId: string | null;
   }
   const pendingDraftUploads = new Map<string, PendingDraftUpload>();
-  let draftCounter = 0;
-  let draftImageCounter = 0;
 
   function makeDraftResponse(draft: StorybookDraft): EntryDraftResponse {
     return {

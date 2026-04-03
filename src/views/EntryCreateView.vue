@@ -22,117 +22,143 @@
     </ion-header>
     <ion-content class="entry-editor-content">
       <div class="entry-form">
-        <ion-text v-if="pathsError" color="danger" class="view-error-banner">
-          {{ pathsErrorMessage }}
-        </ion-text>
-
-        <ion-item class="entry-field">
-          <ion-label position="stacked">Path *</ion-label>
-          <ion-select
-            v-model="selectedPathId"
-            placeholder="Select a path"
-            interface="action-sheet"
-            :disabled="!!draftId"
-          >
-            <ion-select-option v-if="ownedPaths.length === 0" disabled value=""
-              >You don't own any paths yet.</ion-select-option
+        <!-- Paths API full-state error -->
+        <div v-if="pathsError && !paths" class="view-full-error">
+          <p class="view-full-error-title">Could not load your paths.</p>
+          <p class="view-full-error-body">{{ pathsErrorMessage }}</p>
+          <div class="view-full-error-actions">
+            <ion-button fill="outline" @click="$router.back()"
+              >Go back</ion-button
             >
-            <ion-select-option
-              v-for="path in ownedPaths"
-              :key="path.path_id"
-              :value="path.path_id"
+          </div>
+        </div>
+
+        <!-- No owned paths inline state -->
+        <div
+          v-else-if="paths !== undefined && ownedPaths.length === 0"
+          class="view-no-paths"
+        >
+          <p class="view-no-paths-title">You don't have any paths yet.</p>
+          <p class="view-no-paths-body">
+            Create a path first, then come back to write an entry.
+          </p>
+          <div class="view-no-paths-actions">
+            <ion-button fill="outline" @click="$router.back()"
+              >Go back</ion-button
             >
-              {{ path.title }}
-            </ion-select-option>
-          </ion-select>
-        </ion-item>
+            <ion-button router-link="/paths/new">Create a path</ion-button>
+          </div>
+        </div>
 
-        <ion-item class="entry-field">
-          <ion-label position="stacked">Day *</ion-label>
-          <ion-note slot="helper">The date this entry is for</ion-note>
-          <ion-input v-model="day" type="date" :disabled="!!draftId" />
-        </ion-item>
-
-        <section class="editor-section">
-          <div class="editor-header">
-            <label class="editor-label">Content *</label>
-            <div class="editor-header-controls">
-              <input
-                ref="imageInputRef"
-                type="file"
-                accept="image/*"
-                class="image-upload-input"
-                multiple
-                :disabled="committing || !draftId"
-                @change="onImageSelected"
-              />
-              <ion-button
-                size="small"
-                fill="outline"
-                :disabled="!selectedPathId || committing || !draftId"
-                @click="openImagePicker"
+        <template v-else-if="ownedPaths.length > 0">
+          <ion-item class="entry-field">
+            <ion-label position="stacked">Path *</ion-label>
+            <ion-select
+              v-model="selectedPathId"
+              placeholder="Select a path"
+              interface="action-sheet"
+            >
+              <ion-select-option
+                v-for="path in ownedPaths"
+                :key="path.path_id"
+                :value="path.path_id"
               >
-                + Image
-              </ion-button>
-              <div class="content-tabs" role="tablist" aria-label="Editor mode">
-                <button
-                  class="content-tab"
-                  :class="{ active: contentTab === 'write' }"
-                  type="button"
-                  @click="contentTab = 'write'"
+                {{ path.title }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item class="entry-field">
+            <ion-label position="stacked">Day *</ion-label>
+            <ion-note slot="helper">The date this entry is for</ion-note>
+            <ion-input v-model="day" type="date" />
+          </ion-item>
+
+          <section class="editor-section">
+            <div class="editor-header">
+              <label class="editor-label">Content *</label>
+              <div class="editor-header-controls">
+                <input
+                  ref="imageInputRef"
+                  type="file"
+                  accept="image/*"
+                  class="image-upload-input"
+                  multiple
+                  :disabled="committing || !draftId"
+                  @change="onImageSelected"
+                />
+                <ion-button
+                  size="small"
+                  fill="outline"
+                  :disabled="!selectedPathId || committing || !draftId"
+                  @click="openImagePicker"
                 >
-                  Write
-                </button>
-                <button
-                  class="content-tab"
-                  :class="{ active: contentTab === 'preview' }"
-                  type="button"
-                  @click="contentTab = 'preview'"
+                  + Image
+                </ion-button>
+                <div
+                  class="content-tabs"
+                  role="tablist"
+                  aria-label="Editor mode"
                 >
-                  Preview
-                </button>
+                  <button
+                    class="content-tab"
+                    :class="{ active: contentTab === 'write' }"
+                    type="button"
+                    @click="contentTab = 'write'"
+                  >
+                    Write
+                  </button>
+                  <button
+                    class="content-tab"
+                    :class="{ active: contentTab === 'preview' }"
+                    type="button"
+                    @click="contentTab = 'preview'"
+                  >
+                    Preview
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="editor-surface">
-            <ion-textarea
-              v-if="contentTab === 'write'"
-              ref="textareaRef"
-              v-model="content"
-              class="editor-textarea"
-              placeholder="Write your entry... (markdown supported)"
-              :rows="8"
-              auto-grow
-              autocapitalize="sentences"
-              autocorrect="on"
-              :spellcheck="true"
-              @ionInput="onTextareaInput"
-              @ionFocus="rememberSelection"
-              @ionBlur="rememberSelection"
-              @keyup="rememberSelection"
-              @click="rememberSelection"
-            />
-            <div v-else class="content-preview">
-              <MarkdownContent
-                v-if="content"
-                :content="content"
-                :images="attachedImages"
-                :local-image-urls="localImageUrls"
+            <div class="editor-surface">
+              <ion-textarea
+                v-if="contentTab === 'write'"
+                ref="textareaRef"
+                v-model="content"
+                class="editor-textarea"
+                placeholder="Write your entry... (markdown supported)"
+                :rows="8"
+                auto-grow
+                autocapitalize="sentences"
+                autocorrect="on"
+                :spellcheck="true"
+                @ionInput="onTextareaInput"
+                @ionFocus="rememberSelection"
+                @ionBlur="rememberSelection"
+                @keyup="rememberSelection"
+                @click="rememberSelection"
               />
-              <p v-else class="content-preview-empty">(nothing to preview)</p>
+              <div v-else class="content-preview">
+                <MarkdownContent
+                  v-if="content"
+                  :content="content"
+                  :images="attachedImages"
+                  :local-image-urls="localImageUrls"
+                />
+                <p v-else class="content-preview-empty">(nothing to preview)</p>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <p v-if="imageError" class="save-error">{{ imageError }}</p>
-        <p v-else-if="commitError" class="save-error">{{ commitError }}</p>
-        <p v-else-if="draftInitError" class="save-error">
-          {{ draftInitError }}
-        </p>
-        <p v-else-if="autosaveOffline" class="autosave-offline-note">
-          Currently offline — your changes will be saved when you reconnect.
-        </p>
+          <p v-if="imageError" class="save-error">{{ imageError }}</p>
+          <p v-else-if="commitError" class="save-error">{{ commitError }}</p>
+          <p v-else-if="draftInitError" class="save-error">
+            {{ draftInitError }} — retrying in background.
+          </p>
+          <p v-else-if="autosaveOffline" class="autosave-offline-note">
+            Currently offline — your changes will be saved when you reconnect.
+          </p>
+        </template>
       </div>
     </ion-content>
 
@@ -261,7 +287,6 @@ import {
   IonSelectOption,
   IonInput,
   IonTextarea,
-  IonText,
   IonNote,
 } from '@ionic/vue';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -369,11 +394,7 @@ const captionDraft = ref('');
 const selectedImage = ref<EntryImageDraft | null>(null);
 
 const canCommit = computed(
-  () =>
-    !!selectedPathId.value &&
-    !!day.value &&
-    !!content.value.trim() &&
-    !!draftId.value,
+  () => !!selectedPathId.value && !!day.value && !!content.value.trim(),
 );
 const attachedImages = computed(() =>
   getAttachedImageResponses(imageDrafts.value),
@@ -393,11 +414,18 @@ function onTextareaInput(event: CustomEvent) {
 
 // ─── Draft Initialisation ──────────────────────────────────────────────────
 
+/** Whether a background draft-init retry is pending */
+let draftInitRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
 async function ensureDraft() {
   if (draftId.value) return draftId.value;
   if (!selectedPathId.value || !day.value) return null;
 
   draftInitError.value = '';
+  if (draftInitRetryTimer !== null) {
+    clearTimeout(draftInitRetryTimer);
+    draftInitRetryTimer = null;
+  }
   try {
     const response = await startCreateEntryDraft(selectedPathId.value, {
       day: day.value,
@@ -425,16 +453,37 @@ async function ensureDraft() {
   } catch (err: unknown) {
     draftInitError.value =
       extractErrorMessage(err) ?? 'Failed to start draft. Please try again.';
+    // Schedule a background retry
+    draftInitRetryTimer = setTimeout(() => {
+      draftInitRetryTimer = null;
+      void ensureDraft();
+    }, AUTOSAVE_DEBOUNCE_MS);
     return null;
   }
 }
 
-// Watch for path/day selection and create the draft immediately so images can be attached
-watch([selectedPathId, day], async ([pathId, dayVal]) => {
-  if (pathId && dayVal && !draftId.value) {
+// Watch for path/day changes — abandon any existing draft and create a fresh one
+watch(
+  [selectedPathId, day],
+  async ([pathId, dayVal], [prevPathId, prevDay]) => {
+    const changed = pathId !== prevPathId || dayVal !== prevDay;
+    if (!changed || !pathId || !dayVal) return;
+
+    // Abandon the old draft if there is one
+    if (draftId.value) {
+      const oldDraftId = draftId.value;
+      draftId.value = '';
+      lastSavedContent = '';
+      try {
+        await abandonDraft({ draftId: oldDraftId });
+      } catch {
+        // Best-effort
+      }
+    }
+
     await ensureDraft();
-  }
-});
+  },
+);
 
 // ─── Content Autosave ─────────────────────────────────────────────────────
 
@@ -630,6 +679,14 @@ async function commitDraft() {
       autosaveTimer = null;
     }
 
+    // Ensure we have a draft — create one now if init failed earlier
+    const currentDraftId = draftId.value || (await ensureDraft());
+    if (!currentDraftId) {
+      commitError.value =
+        'Could not start a draft. Please check your connection and try again.';
+      return;
+    }
+
     imageDrafts.value = syncDraftCaptionsFromContent(
       imageDrafts.value,
       content.value,
@@ -643,14 +700,14 @@ async function commitDraft() {
     // Patch the final content to the draft
     if (finalContent !== lastSavedContent) {
       await patchDraft({
-        draftId: draftId.value,
+        draftId: currentDraftId,
         data: { content: finalContent },
       });
       lastSavedContent = finalContent;
     }
 
     // Commit the draft
-    await commitDraftApi({ draftId: draftId.value });
+    await commitDraftApi({ draftId: currentDraftId });
 
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] }),
@@ -691,11 +748,7 @@ async function commitDraft() {
 // ─── Default Path Selection ───────────────────────────────────────────────
 
 async function pickDefaultPath() {
-  if (ownedPaths.value.length === 0) {
-    const redirect = encodeURIComponent(`/entry/new?date=${day.value}`);
-    await router.replace(`/paths/new?redirect=${redirect}`);
-    return;
-  }
+  if (ownedPaths.value.length === 0) return;
 
   if (selectedPathId.value) return;
 
@@ -723,12 +776,17 @@ onMounted(() => {
   if (ownedPaths.value.length > 0 || paths.value !== undefined) {
     void pickDefaultPath();
   }
+  // If both path and day were pre-populated from route params, kick off draft
+  // init immediately (the watch only fires on *changes*, not on initial values).
+  if (selectedPathId.value && day.value) {
+    void ensureDraft();
+  }
   window.addEventListener('online', handleOnline);
 });
 
 function handleOnline() {
-  if (autosaveOffline.value) {
-    autosaveOffline.value = false;
+  autosaveOffline.value = false;
+  if (content.value && content.value !== lastSavedContent) {
     scheduleContentAutosave();
   }
 }
@@ -740,8 +798,6 @@ watch(ownedPaths, (nextPaths, previousPaths) => {
     !selectedPathId.value
   ) {
     void pickDefaultPath();
-  } else if (nextPaths.length === 0 && paths.value !== undefined) {
-    void pickDefaultPath();
   }
 });
 
@@ -749,6 +805,7 @@ watch(ownedPaths, (nextPaths, previousPaths) => {
 
 onBeforeUnmount(async () => {
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+  if (draftInitRetryTimer !== null) clearTimeout(draftInitRetryTimer);
   window.removeEventListener('online', handleOnline);
 
   for (const draft of imageDrafts.value) {
@@ -793,10 +850,35 @@ onBeforeUnmount(async () => {
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
-.view-error-banner {
-  display: block;
-  margin: 0 4px;
-  font-size: 0.9rem;
+.view-full-error,
+.view-no-paths {
+  padding: 28px 20px;
+  border: 1px dashed var(--ion-border-color);
+  border-radius: 18px;
+  text-align: center;
+}
+
+.view-full-error-title,
+.view-no-paths-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--ion-text-color);
+}
+
+.view-full-error-body,
+.view-no-paths-body {
+  font-size: 0.88rem;
+  color: var(--ion-color-medium);
+  margin: 0 0 20px;
+}
+
+.view-full-error-actions,
+.view-no-paths-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .autosave-indicator {
