@@ -7,7 +7,8 @@ export const customFetch = async <T>(
   ).replace(/\/$/, '');
 
   const storedToken =
-    typeof localStorage !== 'undefined'
+    typeof localStorage !== 'undefined' &&
+    typeof localStorage.getItem === 'function'
       ? localStorage.getItem('session_token')
       : null;
   const authHeader: Record<string, string> = storedToken

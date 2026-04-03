@@ -22,7 +22,11 @@ function resolvePreference(pref: DarkModePreference): boolean {
 }
 
 const storedRaw =
-  typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+  typeof window !== 'undefined' &&
+  typeof localStorage !== 'undefined' &&
+  typeof localStorage.getItem === 'function'
+    ? localStorage.getItem(STORAGE_KEY)
+    : null;
 const initialPreference: DarkModePreference =
   storedRaw === 'dark' || storedRaw === 'light' || storedRaw === 'system'
     ? storedRaw

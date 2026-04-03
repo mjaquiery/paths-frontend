@@ -38,10 +38,42 @@
       </div>
 
       <div class="paths-bar-actions">
+        <ion-button
+          size="small"
+          fill="clear"
+          @click="showCreateForm = !showCreateForm"
+        >
+          + New Path
+        </ion-button>
         <ion-button size="small" fill="clear" @click="showManageModal = true">
           Manage
         </ion-button>
       </div>
+    </div>
+
+    <!-- ── Inline create-path form ── -->
+    <div v-if="showCreateForm" class="create-path-form">
+      <ion-input
+        :model-value="newPathTitle"
+        placeholder="Path title"
+        class="create-path-input"
+        @update:model-value="newPathTitle = $event as string"
+      />
+      <div class="create-path-actions">
+        <ion-button
+          size="small"
+          :disabled="!newPathTitle.trim() || creatingPath"
+          @click="createPath"
+        >
+          {{ creatingPath ? 'Creating…' : 'Create' }}
+        </ion-button>
+        <ion-button size="small" fill="outline" @click="cancelCreatePath">
+          Cancel
+        </ion-button>
+      </div>
+      <p v-if="createPathError" class="create-path-error">
+        {{ createPathError }}
+      </p>
     </div>
 
     <!-- ── Invitations notification row ── -->
@@ -278,12 +310,14 @@ import {
   useIgnoreInvitation,
   useBlockInviter,
   useDeleteSubscription,
+  useCreatePath,
 } from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
 import PathSubscriptionManager from './PathSubscriptionManager.vue';
 import PathEditModal from './PathEditModal.vue';
 import PathDeleteModal from './PathDeleteModal.vue';
 import PathShareModal from './PathShareModal.vue';
+import { extractErrorMessage } from '../lib/errors';
 
 /** Maximum number of pills shown in the compact bar before the +N overflow chip. */
 const MAX_PILLS = 4;
@@ -328,6 +362,38 @@ const sharingPath = ref<PathResponse | null>(null);
 
 // Manage modal
 const showManageModal = ref(false);
+
+// Inline create-path form
+const showCreateForm = ref(false);
+const newPathTitle = ref('');
+const creatingPath = ref(false);
+const createPathError = ref('');
+const { mutateAsync: doCreatePath } = useCreatePath();
+
+async function createPath() {
+  if (!newPathTitle.value.trim() || creatingPath.value) return;
+  creatingPath.value = true;
+  createPathError.value = '';
+  try {
+    await doCreatePath({ data: { title: newPathTitle.value.trim() } });
+    void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+    showCreateForm.value = false;
+    newPathTitle.value = '';
+  } catch (err: unknown) {
+    const detail = extractErrorMessage(err);
+    createPathError.value = detail
+      ? `Failed to create path: ${detail}`
+      : 'Failed to create path. Please try again.';
+  } finally {
+    creatingPath.value = false;
+  }
+}
+
+function cancelCreatePath() {
+  showCreateForm.value = false;
+  newPathTitle.value = '';
+  createPathError.value = '';
+}
 
 const hiddenByPath = ref<Record<string, boolean>>({});
 const pathOrder = ref<string[]>([]);
@@ -664,5 +730,26 @@ function hexToRgba(hex: string, alpha: number): string {
 
 .paths-public-chip {
   font-size: 0.75rem;
+}
+
+/* ── Inline create-path form ── */
+.create-path-form {
+  padding: 6px 0 4px;
+  border-top: 1px solid var(--ion-color-light-shade, #e0e0e0);
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.create-path-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.create-path-error {
+  color: var(--ion-color-danger, red);
+  font-size: 0.8rem;
+  margin: 0;
 }
 </style>

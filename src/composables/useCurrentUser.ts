@@ -13,6 +13,12 @@ import type { OAuthCallbackResponse } from '../generated/types';
  */
 function readStoredUser(): OAuthCallbackResponse | null {
   try {
+    if (
+      typeof localStorage === 'undefined' ||
+      typeof localStorage.getItem !== 'function'
+    ) {
+      return null;
+    }
     const raw = localStorage.getItem('user');
     if (!raw) return null;
     return JSON.parse(raw) as OAuthCallbackResponse;
