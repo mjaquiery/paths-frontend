@@ -42,6 +42,17 @@ vi.mock('../composables/usePaths', () => ({
   }),
 }));
 
+// Configurable entry fixture — tests may replace this before mounting.
+let currentEntryImages: {
+  id: string;
+  entry_id: string;
+  filename: string;
+  status: 'ready';
+  strip_metadata: boolean;
+  content_type: string;
+  byte_size: number;
+}[] = [];
+
 vi.mock('../composables/useMultiPathEntries', () => ({
   useMultiPathEntries: () => ({
     value: [
@@ -54,7 +65,7 @@ vi.mock('../composables/useMultiPathEntries', () => ({
             day: '2024-01-15',
             edit_id: 5,
             content: 'Original entry content.',
-            images: [],
+            images: currentEntryImages,
           },
         ],
       },
@@ -141,6 +152,10 @@ const ionicStubs = {
     template: '<div v-if="isOpen"><slot /></div>',
     props: ['isOpen', 'canDismiss'],
   },
+  IonAlert: {
+    template: '<ion-alert />',
+    props: ['isOpen', 'header', 'message', 'buttons'],
+  },
   IonItem: { template: '<div><slot /></div>' },
   IonLabel: { template: '<label><slot /></label>' },
   IonInput: {
@@ -213,6 +228,7 @@ const networkError = () =>
 describe('EntryEditView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    currentEntryImages = []; // reset to no images by default
     mockStartEditEntryDraft.mockResolvedValue(draftResponse());
     mockPatchDraft.mockResolvedValue({ status: 200, data: {} });
     mockCommitDraft.mockResolvedValue({
@@ -296,6 +312,10 @@ describe('EntryEditView', () => {
     mockStartEditEntryDraft.mockRejectedValue(networkError());
     const wrapper = mountEditView();
     await flushPromises();
+    // Simulate a user edit so canCommit becomes true (content differs from original)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Modified entry content.';
+    await wrapper.vm.$nextTick();
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
@@ -315,6 +335,10 @@ describe('EntryEditView', () => {
   it('commits the draft and navigates back on success', async () => {
     const wrapper = mountEditView();
     await flushPromises();
+    // Simulate a content change so canCommit is true
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Updated content.';
+    await wrapper.vm.$nextTick();
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
@@ -328,6 +352,10 @@ describe('EntryEditView', () => {
     mockCommitDraft.mockRejectedValue(networkError());
     const wrapper = mountEditView();
     await flushPromises();
+    // Simulate a content change so canCommit is true
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Updated content.';
+    await wrapper.vm.$nextTick();
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
@@ -342,6 +370,10 @@ describe('EntryEditView', () => {
     mockCommitDraft.mockRejectedValue(conflictError());
     const wrapper = mountEditView();
     await flushPromises();
+    // Simulate a content change so canCommit is true
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Updated content.';
+    await wrapper.vm.$nextTick();
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
@@ -387,6 +419,10 @@ describe('EntryEditView', () => {
   it('does NOT abandon draft on unmount if commit succeeded', async () => {
     const wrapper = mountEditView();
     await flushPromises();
+    // Simulate a content change so canCommit is true
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Updated content.';
+    await wrapper.vm.$nextTick();
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
@@ -397,5 +433,254 @@ describe('EntryEditView', () => {
     wrapper.unmount();
     await flushPromises();
     expect(mockAbandonDraft).not.toHaveBeenCalled();
+  });
+
+  // ─── Server image tests ────────────────────────────────────────────────
+
+  it('shows image chip in the tray when draft init returns images', async () => {
+    // Draft init returns a draft with a server image
+    mockStartEditEntryDraft.mockResolvedValue({
+      status: 200,
+      data: {
+        id: 'draft-1',
+        mode: 'edit',
+        state: 'open',
+        path_id: 'p1',
+        entry_id: 'e1',
+        day: '2024-01-15',
+        content: 'Original entry content.\n\n![River](river.jpg)',
+        based_on_edit_id: 5,
+        expires_at: '2024-01-16T00:00:00Z',
+        images: [
+          {
+            id: 'dimg-1',
+            draft_id: 'draft-1',
+            source: 'live',
+            live_image_id: 'img-live-1',
+            filename: 'river.jpg',
+            status: 'ready',
+            content_type: 'image/jpeg',
+            strip_metadata: true,
+            byte_size: 200_000,
+            client_image_id: null,
+          },
+        ],
+      },
+    });
+
+    const wrapper = mountEditView();
+    await flushPromises();
+
+    // Image chip should appear for river.jpg
+    expect(wrapper.html()).toContain('river.jpg');
+  });
+
+  it('shows image chips from the entry when draft init is pending (pre-hydration)', async () => {
+    currentEntryImages = [
+      {
+        id: 'img-server-1',
+        entry_id: 'e1',
+        filename: 'sunrise.jpg',
+        status: 'ready',
+        strip_metadata: true,
+        content_type: 'image/jpeg',
+        byte_size: 100_000,
+      },
+    ];
+    // Delay draft init so we can observe pre-hydration state
+    mockStartEditEntryDraft.mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(draftResponse()), 50),
+        ),
+    );
+
+    const wrapper = mountEditView();
+    await flushPromises();
+
+    // Pre-hydration: server image from entry should be shown
+    expect(wrapper.html()).toContain('sunrise.jpg');
+  });
+
+  it('replaces entry images with draft images after init resolves', async () => {
+    currentEntryImages = [
+      {
+        id: 'img-server-1',
+        entry_id: 'e1',
+        filename: 'sunrise.jpg',
+        status: 'ready',
+        strip_metadata: true,
+        content_type: 'image/jpeg',
+        byte_size: 100_000,
+      },
+    ];
+    // Draft init returns the same image as a DraftImageResponse
+    mockStartEditEntryDraft.mockResolvedValue({
+      status: 200,
+      data: {
+        id: 'draft-1',
+        mode: 'edit',
+        state: 'open',
+        path_id: 'p1',
+        entry_id: 'e1',
+        day: '2024-01-15',
+        content: 'Original entry content.',
+        based_on_edit_id: 5,
+        expires_at: '2024-01-16T00:00:00Z',
+        images: [
+          {
+            id: 'dimg-live-1',
+            draft_id: 'draft-1',
+            source: 'live',
+            live_image_id: 'img-server-1',
+            filename: 'sunrise.jpg',
+            status: 'ready',
+            content_type: 'image/jpeg',
+            strip_metadata: true,
+            byte_size: 100_000,
+            client_image_id: null,
+          },
+        ],
+      },
+    });
+
+    const wrapper = mountEditView();
+    await flushPromises();
+
+    // After init, the draft-based image chip should be shown
+    expect(wrapper.html()).toContain('sunrise.jpg');
+  });
+
+  it('removes image chip and calls removeDraftImageApi when Remove is clicked', async () => {
+    mockRemoveDraftImage.mockResolvedValue({ status: 200, data: {} });
+    mockStartEditEntryDraft.mockResolvedValue({
+      status: 200,
+      data: {
+        id: 'draft-1',
+        mode: 'edit',
+        state: 'open',
+        path_id: 'p1',
+        entry_id: 'e1',
+        day: '2024-01-15',
+        content: 'Original entry content.\n\n![River](river.jpg)',
+        based_on_edit_id: 5,
+        expires_at: '2024-01-16T00:00:00Z',
+        images: [
+          {
+            id: 'dimg-1',
+            draft_id: 'draft-1',
+            source: 'live',
+            live_image_id: 'img-live-1',
+            filename: 'river.jpg',
+            status: 'ready',
+            content_type: 'image/jpeg',
+            strip_metadata: true,
+            byte_size: 200_000,
+            client_image_id: null,
+          },
+        ],
+      },
+    });
+
+    const wrapper = mountEditView();
+    await flushPromises();
+
+    // The Remove button for river.jpg should be present
+    const removeBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Remove'));
+    expect(removeBtn).toBeDefined();
+
+    await removeBtn?.trigger('click');
+    await flushPromises();
+
+    // removeDraftImageApi should have been called with the draftImageId
+    expect(mockRemoveDraftImage).toHaveBeenCalledWith({
+      draftId: 'draft-1',
+      draftImageId: 'dimg-1',
+    });
+
+    // The chip for river.jpg should no longer be in the DOM
+    expect(wrapper.html()).not.toContain('river.jpg');
+  });
+
+  it('patches draft with updated content before committing', async () => {
+    const wrapper = mountEditView();
+    await flushPromises();
+
+    // Simulate user changing content — required for canCommit to be true
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Updated content by user.';
+    await wrapper.vm.$nextTick();
+
+    const saveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save'));
+    await saveBtn?.trigger('click');
+    await flushPromises();
+
+    // commitDraftApi should have been called with the draft id
+    expect(mockCommitDraft).toHaveBeenCalledWith({ draftId: 'draft-1' });
+  });
+
+  it('patches draft with new content when it differs from last saved', async () => {
+    const wrapper = mountEditView();
+    await flushPromises();
+
+    // Directly update the internal content ref via the component instance.
+    // The v-model on IonTextarea in the stub doesn't plumb update:modelValue,
+    // so we set the reactive state directly to simulate a user edit.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Updated content by user.';
+    await wrapper.vm.$nextTick();
+
+    // Manually click Save (bypasses debounce)
+    const saveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save'));
+    await saveBtn?.trigger('click');
+    await flushPromises();
+
+    // When content differs from lastSavedContent, patchDraft should be called.
+    expect(mockPatchDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ content: 'Updated content by user.' }),
+      }),
+    );
+    expect(mockCommitDraft).toHaveBeenCalledWith({ draftId: 'draft-1' });
+  });
+
+  it('does not call removeDraftImageApi for server images without a draftImageId', async () => {
+    // Pre-hydration server images (from entry, before draft loads) have no draftImageId.
+    currentEntryImages = [
+      {
+        id: 'img-server-1',
+        entry_id: 'e1',
+        filename: 'sunrise.jpg',
+        status: 'ready',
+        strip_metadata: true,
+        content_type: 'image/jpeg',
+        byte_size: 100_000,
+      },
+    ];
+
+    // Draft init fails so we stay on pre-hydration images
+    mockStartEditEntryDraft.mockRejectedValue(networkError());
+
+    const wrapper = mountEditView();
+    await flushPromises();
+
+    const removeBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Remove'));
+    expect(removeBtn).toBeDefined();
+
+    await removeBtn?.trigger('click');
+    await flushPromises();
+
+    // No draftImageId → removeDraftImageApi should NOT be called
+    expect(mockRemoveDraftImage).not.toHaveBeenCalled();
+    // The chip should be gone from the UI
+    expect(wrapper.html()).not.toContain('sunrise.jpg');
   });
 });

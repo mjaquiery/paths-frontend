@@ -16,6 +16,14 @@
           <span v-else>Edit Entry</span>
         </ion-title>
         <ion-buttons slot="end">
+          <ion-button
+            fill="outline"
+            color="danger"
+            :disabled="committing || resolvingConflict || discarding"
+            @click="discardAlertOpen = true"
+          >
+            Discard
+          </ion-button>
           <ion-button :disabled="committing || !canCommit" @click="commitDraft">
             {{ committing ? 'Saving...' : 'Save' }}
           </ion-button>
@@ -141,6 +149,24 @@
         </template>
       </div>
     </ion-content>
+
+    <!-- Discard draft confirm alert -->
+    <ion-alert
+      :is-open="discardAlertOpen"
+      header="Discard draft?"
+      message="Your unsaved changes will be lost. This cannot be undone."
+      :buttons="[
+        {
+          text: 'Cancel',
+          role: 'cancel',
+          handler: () => {
+            discardAlertOpen = false;
+          },
+        },
+        { text: 'Discard', role: 'destructive', handler: discardDraft },
+      ]"
+      @didDismiss="discardAlertOpen = false"
+    />
 
     <!-- Commit-fail dialog (save failed, retrying in background) -->
     <ion-modal
@@ -372,6 +398,7 @@ import {
   IonButtons,
   IonBackButton,
   IonModal,
+  IonAlert,
   IonItem,
   IonLabel,
   IonInput,
@@ -413,6 +440,16 @@ import {
   type EntryImageDraft,
 } from '../utils/entryImageDrafts';
 import { removeImageMarkdownReferences } from '../utils/markdown';
+
+/**
+ * Internal/test-only prop: when set to true the conflict resolution modal is
+ * opened automatically as soon as the edit draft has been initialised.  This
+ * is used by the ConflictResolution Storybook story so the modal is visible
+ * without requiring the user to click Save.
+ */
+const props = withDefaults(defineProps<{ _openConflictOnMount?: boolean }>(), {
+  _openConflictOnMount: false,
+});
 
 const AUTOSAVE_DEBOUNCE_MS = 5000;
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -488,23 +525,49 @@ const selectedImage = ref<EntryImageDraft | null>(null);
 /** The server-side draft id — set once the edit draft is started */
 const draftId = ref('');
 
+// When the _openConflictOnMount prop is set (Storybook ConflictResolution
+// story), open the conflict modal as soon as the draft is ready.
+// { once: true } ensures the watcher does not re-fire when resolveConflict
+// sets a new draftId partway through the resolution flow.
+watch(
+  draftId,
+  (nextId) => {
+    if (props._openConflictOnMount && nextId) {
+      void openConflictModal(content.value);
+    }
+  },
+  { once: true },
+);
+
 /** True when a 409 is returned on draft init (stale edit_id) */
 const draftInitConflict = ref(false);
 
 /** True when autosave has failed and the device appears to be offline */
 const autosaveOffline = ref(false);
 
-/** Timer handle for autosave debounce */
-let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+/**
+ * The latest content value that should be saved.  Set whenever content
+ * changes and autosave needs to run.  null means nothing is pending.
+ */
+let pendingAutosaveContent: string | null = null;
 
-/** In-flight flush promise (set while flushContentAutosave is running) */
-let autosaveFlushPromise: Promise<void> | null = null;
+/** True while a PATCH is running so we don't start a second one. */
+let autosaveInFlight = false;
+
+/** Debounce timer before the first flush after a change. */
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Timer handle for background draft-init retry */
 let draftInitRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Last content value successfully PATCHed */
 let lastSavedContent = '';
+
+/**
+ * The content of the entry as it was when first loaded (before any editing).
+ * Used to determine whether the user has actually changed anything.
+ */
+let originalEntryContent = '';
 
 /** Tracks which entry id we've already initialised, to avoid re-init on reactive re-runs */
 const initializedEntryId = ref('');
@@ -519,6 +582,11 @@ let commitRetryTimer: ReturnType<typeof setTimeout> | null = null;
 /** Whether a commit retry is currently in progress */
 const commitRetrying = ref(false);
 
+/** Whether the discard-draft confirm alert is open */
+const discardAlertOpen = ref(false);
+/** Whether a discard operation is in progress */
+const discarding = ref(false);
+
 // ─── Conflict resolution state ───────────────────────────────────────────
 
 const isConflictModalOpen = ref(false);
@@ -531,7 +599,10 @@ let conflictRemoteEditId = 0;
 // ─── Derived ─────────────────────────────────────────────────────────────
 
 const canCommit = computed(
-  () => !!content.value.trim() && !draftInitConflict.value,
+  () =>
+    !!content.value.trim() &&
+    !draftInitConflict.value &&
+    content.value.trim() !== originalEntryContent.trim(),
 );
 const attachedImages = computed(() =>
   getAttachedImageResponses(imageDrafts.value),
@@ -546,7 +617,7 @@ const {
 
 function onTextareaInput(event: CustomEvent) {
   _onTextareaInput(event);
-  scheduleContentAutosave();
+  markContentDirty();
 }
 
 const formattedEntryDay = computed(() => {
@@ -576,6 +647,7 @@ async function loadRemoteAndContinue() {
     // Seed content and images from the remote entry
     content.value = remoteEntry.content ?? '';
     lastSavedContent = content.value;
+    originalEntryContent = content.value;
     imageDrafts.value.forEach(revokeDraftPreviewUrl);
     imageDrafts.value = [];
 
@@ -609,6 +681,10 @@ async function initEditDraft(editId: number) {
     draftId.value = String(draft.id);
     lastSavedContent = draft.content ?? '';
     content.value = lastSavedContent;
+    // Capture the original content once (first time we load the draft)
+    if (!originalEntryContent) {
+      originalEntryContent = lastSavedContent;
+    }
     contentTab.value = 'write';
     // Hydrate images from the draft
     imageDrafts.value.forEach(revokeDraftPreviewUrl);
@@ -654,6 +730,7 @@ watch(
     if (!content.value) {
       content.value = nextEntry.content ?? '';
       lastSavedContent = content.value;
+      originalEntryContent = content.value;
     }
 
     // Populate legacy server images while draft loads (show them as ready)
@@ -669,43 +746,93 @@ watch(
 
 // ─── Content Autosave ─────────────────────────────────────────────────────
 
-function scheduleContentAutosave() {
-  if (!draftId.value) return;
-
+/**
+ * Mark the current content as needing to be saved and kick off the
+ * autosave machinery.
+ *
+ * Replace-if-pending semantics:
+ *  - If nothing is in flight, start a debounced flush immediately.
+ *  - If a PATCH is in flight, just update `pendingAutosaveContent`; when
+ *    the in-flight PATCH finishes it will see the newer value and re-fire.
+ *  - If draftId is not yet available, store the pending content and watch
+ *    for draftId to become set (see watch below).
+ */
+function markContentDirty() {
+  pendingAutosaveContent = content.value;
   setContentSaving(pendingSaveKey(), true);
-  if (autosaveTimer !== null) clearTimeout(autosaveTimer);
 
+  if (!draftId.value) {
+    // Draft not ready yet — the watch(draftId) below will flush when it arrives
+    return;
+  }
+
+  if (autosaveInFlight) {
+    // A PATCH is already running; it will pick up pendingAutosaveContent when done
+    return;
+  }
+
+  // Schedule a debounced flush (reset timer if already pending)
+  if (autosaveTimer !== null) clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => {
-    autosaveFlushPromise = flushContentAutosave().finally(() => {
-      autosaveFlushPromise = null;
-    });
+    autosaveTimer = null;
+    void flushContentAutosave();
   }, AUTOSAVE_DEBOUNCE_MS);
 }
 
+/** Flush any pending autosave content to the server immediately. */
 async function flushContentAutosave() {
-  autosaveTimer = null;
-  const currentContent = content.value;
-  if (!draftId.value || currentContent === lastSavedContent) {
+  if (!draftId.value) return;
+
+  const contentToSave = pendingAutosaveContent;
+  if (contentToSave === null || contentToSave === lastSavedContent) {
+    pendingAutosaveContent = null;
     setContentSaving(pendingSaveKey(), false);
     return;
   }
 
+  autosaveInFlight = true;
+  pendingAutosaveContent = null; // consumed — will be re-set if content changes again while in flight
+
   try {
     await patchDraft({
       draftId: draftId.value,
-      data: { content: currentContent },
+      data: { content: contentToSave },
     });
-    lastSavedContent = currentContent;
+    lastSavedContent = contentToSave;
     autosaveOffline.value = false;
   } catch {
-    // Show an offline note if the device appears to be offline
     if (!navigator.onLine) {
       autosaveOffline.value = true;
     }
   } finally {
-    setContentSaving(pendingSaveKey(), false);
+    autosaveInFlight = false;
+    // If content changed again while we were in flight, flush again
+    if (
+      pendingAutosaveContent !== null &&
+      pendingAutosaveContent !== lastSavedContent
+    ) {
+      void flushContentAutosave();
+    } else {
+      setContentSaving(pendingSaveKey(), false);
+    }
   }
 }
+
+// When draftId becomes available, flush any content that was marked dirty
+// before the draft was ready.
+watch(draftId, (nextId) => {
+  if (
+    nextId &&
+    pendingAutosaveContent !== null &&
+    pendingAutosaveContent !== lastSavedContent
+  ) {
+    if (autosaveTimer !== null) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      autosaveTimer = null;
+      void flushContentAutosave();
+    }, AUTOSAVE_DEBOUNCE_MS);
+  }
+});
 
 // ─── Image helpers ────────────────────────────────────────────────────────
 
@@ -838,6 +965,34 @@ async function confirmImageInsert() {
   );
   await insertImageMarkdown(selectedImage.value.filename, nextCaption);
   closeCaptionModal();
+  // Content changed programmatically — trigger autosave
+  markContentDirty();
+}
+
+// ─── Discard Draft ────────────────────────────────────────────────────────
+
+async function discardDraft() {
+  discarding.value = true;
+  discardAlertOpen.value = false;
+  if (autosaveTimer !== null) {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+  }
+  pendingAutosaveContent = null;
+  setContentSaving(pendingSaveKey(), false);
+  clearDraftInitError(pendingSaveKey());
+
+  const currentDraftId = draftId.value;
+  draftId.value = '';
+  if (currentDraftId) {
+    try {
+      await abandonDraft({ draftId: currentDraftId });
+    } catch {
+      // Best-effort
+    }
+  }
+  discarding.value = false;
+  await router.replace(`/entry/${pathId.value}/${entryId.value}`);
 }
 
 // ─── Commit ───────────────────────────────────────────────────────────────
@@ -941,13 +1096,30 @@ async function commitDraft() {
   let finalContent = content.value;
 
   try {
-    // Cancel any pending debounce timer and await any in-flight autosave
+    // Cancel any pending debounce timer and flush any in-flight / pending autosave
     if (autosaveTimer !== null) {
       clearTimeout(autosaveTimer);
       autosaveTimer = null;
     }
-    if (autosaveFlushPromise) {
-      await autosaveFlushPromise;
+    // If a PATCH is in flight or we have pending content, flush it now before committing
+    if (autosaveInFlight || pendingAutosaveContent !== null) {
+      // Let any in-flight PATCH finish, then flush remaining if needed
+      await new Promise<void>((resolve) => {
+        const poll = () => {
+          if (!autosaveInFlight) {
+            resolve();
+          } else {
+            setTimeout(poll, 50);
+          }
+        };
+        poll();
+      });
+      if (
+        pendingAutosaveContent !== null &&
+        pendingAutosaveContent !== lastSavedContent
+      ) {
+        await flushContentAutosave();
+      }
     }
 
     // Ensure we have a draft — attempt init if it failed earlier
@@ -1136,7 +1308,7 @@ function handleOnline() {
     // Try to init the draft now that we're back online
     void initEditDraft(entry.value.edit_id ?? 0);
   } else if (content.value && content.value !== lastSavedContent) {
-    scheduleContentAutosave();
+    markContentDirty();
   }
 }
 

@@ -127,18 +127,42 @@ export const WithManyImages: Story = {
 };
 
 /**
- * Draft init fails with a 409 (stale edit_id) — the view shows an inline
- * conflict banner with options to load the latest version or go back.
+ * An existing open draft is resumed — the editor is pre-populated with
+ * content that was in progress from a previous session, different from the
+ * stored entry content.
  */
-export const DraftInitConflict: Story = {
+export const DraftResumed: Story = {
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
     seedCacheFromState: true,
-    requestOverrides: [
-      createStoryApiError('*/v1/paths/*/entries/*/draft', 409, 'GET', {
-        detail: 'Edit ID mismatch.',
-      }),
+    draftSeeds: [
+      {
+        key: 'edit:daily-river:entry-daily-today',
+        content: [
+          'Swam before sunrise and the river was glassy quiet.',
+          '',
+          '![Sunrise over the river](sunrise-river.jpg)',
+          '',
+          'Still working on the lentil soup paragraph — came back to finish it.',
+          '',
+          'The colour of the water changed around 6am, shifted from grey to a deep blue.',
+        ].join('\n'),
+        images: [
+          {
+            id: 'img-sunrise-river',
+            draft_id: 'draft-seed-1',
+            source: 'live',
+            live_image_id: 'img-sunrise-river',
+            filename: 'sunrise-river.jpg',
+            status: 'ready',
+            content_type: 'image/jpeg',
+            strip_metadata: true,
+            byte_size: 310_442,
+            client_image_id: null,
+          },
+        ],
+      },
     ],
   }),
 };
@@ -162,11 +186,16 @@ export const DraftInitError: Story = {
 };
 
 /**
- * Commit returns 409 — the conflict resolution modal is shown so the user
- * can choose between their local version and the current remote version.
- * A pre-seeded draft is used so the Save button is enabled.
+ * The conflict resolution modal opens immediately on load — the view detects
+ * that the local draft content differs from the current remote version and
+ * shows both side-by-side so the user can choose which to keep.
+ * A pre-seeded draft is used so the modal opens without requiring user
+ * interaction.
  */
 export const ConflictResolution: Story = {
+  args: {
+    _openConflictOnMount: true,
+  },
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
@@ -177,11 +206,6 @@ export const ConflictResolution: Story = {
         content:
           'My local edit that conflicts with the remote version from another device.',
       },
-    ],
-    requestOverrides: [
-      createStoryApiError('*/v1/entry-drafts/*/commit', 409, 'POST', {
-        detail: 'Edit ID mismatch.',
-      }),
     ],
   }),
 };
