@@ -48,3 +48,15 @@ npm run storybook
 ```bash
 npm run test
 ```
+
+## Fly.io deployment
+
+Frontend deployment is automated through `.github/workflows/fly-deploy.yml`.
+
+- Staging deploy: `fly deploy`
+- Production deploy: `fly deploy --config fly.prod.toml`
+
+`fly deploy` uses the default `fly.toml` configuration, which targets the staging app.
+`fly deploy --config fly.prod.toml` uses the production Fly app configuration.
+
+The GitHub workflow expects `FLY_API_TOKEN` in repository secrets.
