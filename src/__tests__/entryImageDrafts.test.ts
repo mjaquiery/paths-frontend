@@ -136,6 +136,20 @@ describe('syncDraftCaptionsFromContent', () => {
     expect(drafts[0]?.captionDraft).toBe('River mist');
   });
 
+  it('syncs captions from encoded markdown filenames', () => {
+    const drafts = syncDraftCaptionsFromContent(
+      [
+        createServerImageDraft(
+          makeImageResponse({
+            filename: 'ChatGPT Image Apr 29, 2025, 07_47_54 AM.png',
+          }),
+        ),
+      ],
+      '![Caption](ChatGPT%20Image%20Apr%2029%2C%202025%2C%2007_47_54%20AM.png)',
+    );
+    expect(drafts[0]?.captionDraft).toBe('Caption');
+  });
+
   it('preserves existing captionDraft when filename is not referenced in content', () => {
     const draft = createServerImageDraft(
       makeImageResponse({ filename: 'river.jpg' }),
@@ -171,6 +185,15 @@ describe('removeImageMarkdownReferences', () => {
   it('returns content unchanged when filename is not referenced', () => {
     const content = 'No images here.';
     expect(removeImageMarkdownReferences(content, 'river.jpg')).toBe(content);
+  });
+
+  it('removes an image markdown reference that uses an encoded filename', () => {
+    expect(
+      removeImageMarkdownReferences(
+        'Before\n\n![Caption](ChatGPT%20Image%20Apr%2029%2C%202025%2C%2007_47_54%20AM.png)\n\nAfter',
+        'ChatGPT Image Apr 29, 2025, 07_47_54 AM.png',
+      ),
+    ).toBe('Before\n\nAfter');
   });
 });
 

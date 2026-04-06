@@ -50,6 +50,7 @@
 import { ref } from 'vue';
 import { IonButton, IonItem, IonLabel, IonInput } from '@ionic/vue';
 import { useImageUpload } from '../composables/useImageUpload';
+import { encodeMarkdownImageFilename } from '../utils/markdown';
 
 const props = defineProps<{
   pathCode: string;
@@ -94,7 +95,7 @@ async function confirmInsert() {
   const result = await uploadImage(props.pathCode, props.entrySlug, file);
   if (!result) return; // uploadError is already set
 
-  const markdown = `![${altText}](${result.filename})`;
+  const markdown = `![${altText}](${encodeMarkdownImageFilename(result.filename)})`;
   emit('insert', markdown);
   pendingFile.value = null;
   caption.value = '';

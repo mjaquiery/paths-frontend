@@ -650,6 +650,43 @@ describe('EntryEditView', () => {
     expect(mockCommitDraft).toHaveBeenCalledWith({ draftId: 'draft-1' });
   });
 
+  it('does not auto-append image markdown for attached draft images on save', async () => {
+    const wrapper = mountEditView();
+    await flushPromises();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Updated content by user.';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).imageDrafts = [
+      {
+        localId: 'draft-image-1',
+        source: 'server',
+        status: 'draft-ready',
+        image: null,
+        draftImageId: 'dimg-1',
+        file: null,
+        filename: 'river.jpg',
+        previewUrl: null,
+        captionDraft: 'River',
+        removed: false,
+        error: '',
+      },
+    ];
+    await wrapper.vm.$nextTick();
+
+    const saveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save'));
+    await saveBtn?.trigger('click');
+    await flushPromises();
+
+    expect(mockPatchDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ content: 'Updated content by user.' }),
+      }),
+    );
+  });
+
   it('does not call removeDraftImageApi for server images without a draftImageId', async () => {
     // Pre-hydration server images (from entry, before draft loads) have no draftImageId.
     currentEntryImages = [

@@ -373,6 +373,43 @@ describe('EntryCreateView', () => {
     expect(mockRouterReplace).toHaveBeenCalledWith('/entry/p1/new-entry-1');
   });
 
+  it('does not auto-append image markdown for attached draft images on save', async () => {
+    const wrapper = mountCreateView();
+    await flushPromises();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'My entry content';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).imageDrafts = [
+      {
+        localId: 'draft-image-1',
+        source: 'server',
+        status: 'draft-ready',
+        image: null,
+        draftImageId: 'dimg-1',
+        file: null,
+        filename: 'river.jpg',
+        previewUrl: null,
+        captionDraft: 'River',
+        removed: false,
+        error: '',
+      },
+    ];
+    await wrapper.vm.$nextTick();
+
+    const saveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save'));
+    await saveBtn?.trigger('click');
+    await flushPromises();
+
+    expect(mockPatchDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ content: 'My entry content' }),
+      }),
+    );
+  });
+
   it('shows commit-fail dialog when commit fails', async () => {
     mockCommitDraft.mockRejectedValue({ response: { status: 503 } });
     const wrapper = mountCreateView();

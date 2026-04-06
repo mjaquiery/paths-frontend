@@ -1,5 +1,6 @@
 import type { Ref } from 'vue';
 import { nextTick } from 'vue';
+import { encodeMarkdownImageFilename } from '../utils/markdown';
 
 /**
  * Returns helper functions for inserting image markdown into an Ionic
@@ -54,7 +55,7 @@ export function useMarkdownEditor(
    * the write tab so the user can see the result.
    */
   async function insertImageMarkdown(filename: string, altText = 'caption') {
-    const snippet = `![${altText || 'caption'}](${filename})`;
+    const snippet = `![${altText || 'caption'}](${encodeMarkdownImageFilename(filename)})`;
     const nativeTextarea = getNativeTextarea();
     const start = nativeTextarea
       ? (nativeTextarea.selectionStart ?? content.value.length)

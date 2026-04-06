@@ -347,7 +347,6 @@ import { extractErrorMessage } from '../lib/errors';
 import { getPathOrder, isPathHidden } from '../lib/db';
 import { removeImageMarkdownReferences } from '../utils/markdown';
 import {
-  appendMissingImageMarkdown,
   buildLocalImageUrlMap,
   createDraftServerImageDraft,
   createLocalImageDraft,
@@ -760,11 +759,7 @@ async function attemptCommitRetry() {
       imageDrafts.value,
       content.value,
     );
-    const finalContent = appendMissingImageMarkdown(
-      content.value,
-      imageDrafts.value,
-    );
-    content.value = finalContent;
+    const finalContent = content.value;
 
     if (finalContent !== lastSavedContent) {
       await patchDraft({
@@ -833,11 +828,7 @@ async function commitDraft() {
       imageDrafts.value,
       content.value,
     );
-    const finalContent = appendMissingImageMarkdown(
-      content.value,
-      imageDrafts.value,
-    );
-    content.value = finalContent;
+    const finalContent = content.value;
 
     // Patch the final content to the draft
     if (finalContent !== lastSavedContent) {

@@ -3,15 +3,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { marked, Renderer } from 'marked';
 import DOMPurify from 'dompurify';
-import { useQueries } from '@tanstack/vue-query';
-import {
-  getGetImageDownloadUrlQueryKey,
-  getImageDownloadUrl,
-} from '../generated/apiClient';
+import { getImageDownloadUrl } from '../generated/apiClient';
 import type { ImageResponse, ImageDownloadResponse } from '../generated/types';
+import {
+  decodeMarkdownImageFilename,
+  normalizeMarkdownImageFilenames,
+} from '../utils/markdown';
 
 const props = defineProps<{
   content: string;
@@ -22,35 +22,96 @@ const props = defineProps<{
   localImageUrls?: Record<string, string>;
 }>();
 
-// Fetch download URLs for all provided images in parallel.
-const imageQueries = useQueries({
-  queries: computed(() =>
-    (props.images ?? []).map((img) => ({
-      queryKey: getGetImageDownloadUrlQueryKey(img.id),
-      queryFn: () => getImageDownloadUrl(img.id),
-      enabled: !!img.id,
-    })),
-  ),
-});
+function bytesToBase64(bytes: Uint8Array): string {
+  const alphabet =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let output = '';
 
-/**
- * Maps filename → resolved URL (thumbnail preferred, falls back to full URL).
- * `useQueries` preserves result order matching the input queries array, so
- * index-based pairing with `props.images` is reliable.
- */
-const imageUrlMap = computed<Map<string, string>>(() => {
-  const map = new Map<string, string>();
-  const images = props.images ?? [];
-  for (let i = 0; i < images.length; i++) {
-    const img = images[i];
-    const result = imageQueries.value[i];
-    if (!img || !result) continue;
-    const data = result.data?.data as ImageDownloadResponse | undefined;
-    const url = data?.thumbnail_url ?? data?.image_url;
-    if (url) map.set(img.filename, url);
+  for (let i = 0; i < bytes.length; i += 3) {
+    const a = bytes[i] ?? 0;
+    const b = bytes[i + 1] ?? 0;
+    const c = bytes[i + 2] ?? 0;
+    const chunk = (a << 16) | (b << 8) | c;
+
+    output += alphabet[(chunk >> 18) & 63];
+    output += alphabet[(chunk >> 12) & 63];
+    output += i + 1 < bytes.length ? alphabet[(chunk >> 6) & 63] : '=';
+    output += i + 2 < bytes.length ? alphabet[chunk & 63] : '=';
   }
-  return map;
-});
+
+  return output;
+}
+
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  if (typeof blob.arrayBuffer === 'function') {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    return `data:${blob.type || 'application/octet-stream'};base64,${bytesToBase64(bytes)}`;
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+        return;
+      }
+      reject(new Error('Failed to read image data.'));
+    };
+    reader.onerror = () => {
+      reject(reader.error ?? new Error('Failed to read image data.'));
+    };
+    reader.readAsDataURL(blob);
+  });
+}
+
+const downloadedImageUrls = ref<Record<string, string>>({});
+
+watch(
+  () => props.images ?? [],
+  async (images, _previousImages, onCleanup) => {
+    let cancelled = false;
+    onCleanup(() => {
+      cancelled = true;
+    });
+
+    const nextEntries = await Promise.all(
+      images.map(async (img) => {
+        if (!img.id) return null;
+
+        try {
+          const response = await getImageDownloadUrl(img.id);
+          const data = response.data as ImageDownloadResponse | undefined;
+          const src = data?.image_url ?? data?.thumbnail_url;
+          if (!src) return null;
+
+          const imageResponse = await fetch(src);
+          if (!imageResponse.ok) {
+            throw new Error(`Image request failed: ${imageResponse.status}`);
+          }
+
+          return [
+            img.filename,
+            await blobToDataUrl(await imageResponse.blob()),
+          ] as const;
+        } catch {
+          return null;
+        }
+      }),
+    );
+
+    if (cancelled) return;
+    downloadedImageUrls.value = Object.fromEntries(
+      nextEntries.filter(
+        (entry): entry is readonly [string, string] => entry !== null,
+      ),
+    );
+  },
+  { deep: true, immediate: true },
+);
+
+const imageUrlMap = computed(
+  () => new Map<string, string>(Object.entries(downloadedImageUrls.value)),
+);
 
 function escapeHtml(value: string) {
   return value
@@ -66,7 +127,13 @@ const renderedHtml = computed(() => {
   const localImageUrls = props.localImageUrls ?? {};
   const renderer = new Renderer();
   renderer.image = ({ href, title, text }) => {
-    const resolvedSrc = localImageUrls[href] ?? urlMap.get(href) ?? href;
+    const decodedHref = decodeMarkdownImageFilename(href);
+    const resolvedSrc =
+      localImageUrls[decodedHref] ??
+      localImageUrls[href] ??
+      urlMap.get(decodedHref) ??
+      urlMap.get(href) ??
+      href;
     const escapedSrc = resolvedSrc.replace(/"/g, '&quot;');
     const escapedAlt = escapeHtml(text ?? '');
     const titleAttr = title ? ` title="${title.replace(/"/g, '&quot;')}"` : '';
@@ -76,7 +143,9 @@ const renderedHtml = computed(() => {
     return `<figure class="markdown-image-figure"><img src="${escapedSrc}" alt="${escapedAlt}"${titleAttr} loading="lazy" class="markdown-inline-image" />${figureCaption}</figure>`;
   };
 
-  const raw = marked.parse(props.content, { renderer }) as string;
+  const raw = marked.parse(normalizeMarkdownImageFilenames(props.content), {
+    renderer,
+  }) as string;
   return DOMPurify.sanitize(raw, { ADD_ATTR: ['loading'] });
 });
 </script>

@@ -429,7 +429,6 @@ import type { EntryContentResponse } from '../generated/types';
 import { extractErrorMessage } from '../lib/errors';
 import { db } from '../lib/db';
 import {
-  appendMissingImageMarkdown,
   buildLocalImageUrlMap,
   createDraftServerImageDraft,
   createLocalImageDraft,
@@ -1032,8 +1031,7 @@ async function attemptCommitRetry() {
       imageDrafts.value,
       content.value,
     );
-    finalContent = appendMissingImageMarkdown(content.value, imageDrafts.value);
-    content.value = finalContent;
+    finalContent = content.value;
 
     if (finalContent !== lastSavedContent) {
       await patchDraft({
@@ -1136,8 +1134,7 @@ async function commitDraft() {
       imageDrafts.value,
       content.value,
     );
-    finalContent = appendMissingImageMarkdown(content.value, imageDrafts.value);
-    content.value = finalContent;
+    finalContent = content.value;
 
     if (finalContent !== lastSavedContent) {
       await patchDraft({
