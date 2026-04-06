@@ -27,6 +27,22 @@ export interface EntryImageDraft {
   error: string;
 }
 
+function imageResponseFromDraftImage(
+  draftImage: DraftImageResponse,
+): ImageResponse | null {
+  if (!draftImage.live_image_id) return null;
+
+  return {
+    id: draftImage.live_image_id,
+    entry_id: '',
+    filename: draftImage.filename,
+    status: draftImage.status,
+    strip_metadata: draftImage.strip_metadata,
+    content_type: draftImage.content_type,
+    byte_size: draftImage.byte_size,
+  };
+}
+
 function nextDraftId() {
   return `draft-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -79,7 +95,7 @@ export function createDraftServerImageDraft(
     localId: nextDraftId(),
     source: 'server',
     status: isDraftReady ? 'draft-ready' : 'draft-uploading',
-    image: null,
+    image: imageResponseFromDraftImage(draftImage),
     draftImageId: String(draftImage.id),
     file: null,
     filename: draftImage.filename,
@@ -87,6 +103,22 @@ export function createDraftServerImageDraft(
     captionDraft,
     removed: false,
     error: '',
+  };
+}
+
+export function mergeDraftImageFromServer(
+  draft: EntryImageDraft,
+  draftImage: DraftImageResponse,
+): EntryImageDraft {
+  const isDraftReady = draftImage.status === 'ready';
+  return {
+    ...draft,
+    image: imageResponseFromDraftImage(draftImage),
+    draftImageId: String(draftImage.id),
+    filename: draftImage.filename,
+    status: isDraftReady ? 'draft-ready' : 'draft-uploading',
+    error:
+      draftImage.status === 'failed' ? draft.error || 'Processing failed.' : '',
   };
 }
 

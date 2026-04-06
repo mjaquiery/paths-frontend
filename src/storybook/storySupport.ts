@@ -604,7 +604,11 @@ function createMockHandlers(
       day: mode === 'create' ? entryOrDay : storyDateOffset(0),
       content: seed.content,
       based_on_edit_id: null,
-      images: seed.images ?? [],
+      images: (seed.images ?? []).map((image) =>
+        image.status === 'ready' && !image.live_image_id
+          ? { ...image, live_image_id: image.id }
+          : image,
+      ),
       state: 'open',
     };
     drafts.set(seedDraft.id, seedDraft);
@@ -894,7 +898,7 @@ function createMockHandlers(
           id: draftImageId,
           draft_id: draftId,
           source: 'upload',
-          live_image_id: null,
+          live_image_id: draftImageId,
           filename: pending.filename,
           status: 'ready',
           content_type: pending.contentType,

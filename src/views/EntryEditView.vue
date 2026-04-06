@@ -424,6 +424,7 @@ import {
   useCommitEntryDraft,
   useRemoveDraftImage,
   getEntry,
+  getEntryDraft,
 } from '../generated/apiClient';
 import type { EntryContentResponse } from '../generated/types';
 import { extractErrorMessage } from '../lib/errors';
@@ -434,6 +435,7 @@ import {
   createLocalImageDraft,
   createServerImageDraft,
   getAttachedImageResponses,
+  mergeDraftImageFromServer,
   revokeDraftPreviewUrl,
   syncDraftCaptionsFromContent,
   type EntryImageDraft,
@@ -836,11 +838,74 @@ watch(draftId, (nextId) => {
 // ─── Image helpers ────────────────────────────────────────────────────────
 
 function imageStatusText(image: EntryImageDraft) {
-  if (image.status === 'uploading' || image.status === 'draft-uploading')
-    return 'Uploading...';
+  if (image.status === 'uploading') return 'Uploading...';
+  if (image.status === 'draft-uploading') return 'Processing...';
   if (image.status === 'failed') return image.error || 'Failed';
   return 'Attached';
 }
+
+let draftImageRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function refreshDraftImages() {
+  if (!draftId.value) return;
+
+  try {
+    const response = await getEntryDraft(draftId.value);
+    if (response.status !== 200) return;
+
+    const serverImages = response.data.images ?? [];
+    const imagesByDraftId = new Map(
+      serverImages.map((image) => [String(image.id), image]),
+    );
+    const imagesByClientId = new Map(
+      serverImages
+        .filter((image) => image.client_image_id)
+        .map((image) => [String(image.client_image_id), image]),
+    );
+
+    imageDrafts.value = imageDrafts.value.map((draft) => {
+      const matchingImage =
+        (draft.draftImageId && imagesByDraftId.get(draft.draftImageId)) ||
+        imagesByClientId.get(draft.localId);
+      return matchingImage
+        ? mergeDraftImageFromServer(draft, matchingImage)
+        : draft;
+    });
+  } catch {
+    // Best-effort polling only.
+  }
+}
+
+watch(
+  () => [
+    draftId.value,
+    imageDrafts.value.some((image) => image.status === 'draft-uploading'),
+  ],
+  ([nextDraftId, hasProcessingImages]) => {
+    if (draftImageRefreshTimer !== null) {
+      clearTimeout(draftImageRefreshTimer);
+      draftImageRefreshTimer = null;
+    }
+
+    if (!nextDraftId || !hasProcessingImages) return;
+
+    const tick = async () => {
+      await refreshDraftImages();
+      if (
+        imageDrafts.value.some((image) => image.status === 'draft-uploading')
+      ) {
+        draftImageRefreshTimer = setTimeout(() => {
+          void tick();
+        }, 2000);
+      } else {
+        draftImageRefreshTimer = null;
+      }
+    };
+
+    void tick();
+  },
+  { immediate: true },
+);
 
 function openImagePicker() {
   imageInputRef.value?.click();
@@ -1317,6 +1382,7 @@ onBeforeUnmount(async () => {
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
   if (draftInitRetryTimer !== null) clearTimeout(draftInitRetryTimer);
   if (commitRetryTimer !== null) clearTimeout(commitRetryTimer);
+  if (draftImageRefreshTimer !== null) clearTimeout(draftImageRefreshTimer);
   window.removeEventListener('online', handleOnline);
 
   // Deregister any pending save entry (not succeeded — just navigating away)

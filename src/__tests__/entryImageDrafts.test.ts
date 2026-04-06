@@ -220,6 +220,23 @@ describe('getAttachedImageResponses', () => {
     expect(getAttachedImageResponses([draft])).toHaveLength(0);
   });
 
+  it('returns a live image response for ready draft images', () => {
+    const draft = createDraftServerImageDraft(
+      makeDraftImageResponse({
+        filename: 'river.jpg',
+        status: 'ready',
+        live_image_id: 'img-live-1',
+      }),
+    );
+
+    expect(getAttachedImageResponses([draft])).toEqual([
+      expect.objectContaining({
+        id: 'img-live-1',
+        filename: 'river.jpg',
+      }),
+    ]);
+  });
+
   it('returns responses from multiple non-removed drafts', () => {
     const a = createServerImageDraft(
       makeImageResponse({ id: 'img-a', filename: 'a.jpg' }),

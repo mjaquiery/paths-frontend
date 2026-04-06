@@ -65,6 +65,7 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 const downloadedImageUrls = ref<Record<string, string>>({});
+const localDataImageUrls = ref<Record<string, string>>({});
 
 watch(
   () => props.images ?? [],
@@ -109,6 +110,47 @@ watch(
   { deep: true, immediate: true },
 );
 
+watch(
+  () => props.localImageUrls ?? {},
+  async (localImageUrls, _previousUrls, onCleanup) => {
+    let cancelled = false;
+    onCleanup(() => {
+      cancelled = true;
+    });
+
+    const nextEntries = await Promise.all(
+      Object.entries(localImageUrls).map(async ([filename, src]) => {
+        if (!src) return null;
+        if (src.startsWith('data:')) {
+          return [filename, src] as const;
+        }
+
+        try {
+          const imageResponse = await fetch(src);
+          if (!imageResponse.ok) {
+            throw new Error(`Image request failed: ${imageResponse.status}`);
+          }
+
+          return [
+            filename,
+            await blobToDataUrl(await imageResponse.blob()),
+          ] as const;
+        } catch {
+          return [filename, src] as const;
+        }
+      }),
+    );
+
+    if (cancelled) return;
+    localDataImageUrls.value = Object.fromEntries(
+      nextEntries.filter(
+        (entry): entry is readonly [string, string] => entry !== null,
+      ),
+    );
+  },
+  { deep: true, immediate: true },
+);
+
 const imageUrlMap = computed(
   () => new Map<string, string>(Object.entries(downloadedImageUrls.value)),
 );
@@ -124,7 +166,7 @@ function escapeHtml(value: string) {
 
 const renderedHtml = computed(() => {
   const urlMap = imageUrlMap.value;
-  const localImageUrls = props.localImageUrls ?? {};
+  const localImageUrls = localDataImageUrls.value;
   const renderer = new Renderer();
   renderer.image = ({ href, title, text }) => {
     const decodedHref = decodeMarkdownImageFilename(href);

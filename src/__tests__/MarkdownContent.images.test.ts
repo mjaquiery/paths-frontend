@@ -117,4 +117,78 @@ describe('MarkdownContent image rendering', () => {
       expect(image.attributes('src')).toMatch(/^data:image\/png;base64,/);
     });
   });
+
+  it('does not double-encode an already-encoded markdown filename', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(['image-bytes'], { type: 'image/png' }),
+    });
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    const filename = 'ChatGPT Image Apr 29, 2025, 07_47_54 AM.png';
+    const encodedFilename =
+      'ChatGPT%20Image%20Apr%2029%2C%202025%2C%2007_47_54%20AM.png';
+    const wrapper = mount(MarkdownContent, {
+      props: {
+        content: `![${filename}](${encodedFilename})`,
+        images: [
+          {
+            id: 'img-chatgpt-image-encoded',
+            entry_id: 'entry-1',
+            filename,
+            status: 'ready',
+            strip_metadata: true,
+            content_type: 'image/png',
+            byte_size: 1234,
+          },
+        ],
+      },
+      global: {
+        plugins: [[VueQueryPlugin, { queryClient }]],
+      },
+    });
+
+    await waitFor(() => {
+      const image = wrapper.find('img');
+      expect(image.exists()).toBe(true);
+      expect(image.attributes('src')).toMatch(/^data:image\/png;base64,/);
+    });
+  });
+
+  it('rewrites local preview URLs to data URLs for freshly uploaded images', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(['local-image-bytes'], { type: 'image/png' }),
+    });
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    const wrapper = mount(MarkdownContent, {
+      props: {
+        content: '![Fresh upload](fresh-upload.png)',
+        localImageUrls: {
+          'fresh-upload.png': 'blob:http://localhost/fresh-upload',
+        },
+      },
+      global: {
+        plugins: [[VueQueryPlugin, { queryClient }]],
+      },
+    });
+
+    await waitFor(() => {
+      const image = wrapper.find('img');
+      expect(image.exists()).toBe(true);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'blob:http://localhost/fresh-upload',
+      );
+      expect(image.attributes('src')).toMatch(/^data:image\/png;base64,/);
+    });
+  });
 });

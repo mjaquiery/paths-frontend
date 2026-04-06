@@ -153,7 +153,7 @@ export const WithImageUpload: Story = {
             id: 'dimg-seeded-1',
             draft_id: 'draft-seed-1',
             source: 'upload',
-            live_image_id: null,
+            live_image_id: 'dimg-seeded-1',
             filename: 'sunrise-river.jpg',
             status: 'ready',
             content_type: 'image/jpeg',

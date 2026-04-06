@@ -102,6 +102,7 @@ const mockAbandonDraft = vi.fn();
 const mockPatchDraft = vi.fn();
 const mockCommitDraft = vi.fn();
 const mockRemoveDraftImage = vi.fn();
+const mockGetEntryDraft = vi.fn();
 
 vi.mock('../generated/apiClient', () => ({
   startCreateEntryDraft: (...args: unknown[]) =>
@@ -110,6 +111,7 @@ vi.mock('../generated/apiClient', () => ({
   usePatchEntryDraft: () => ({ mutateAsync: mockPatchDraft }),
   useCommitEntryDraft: () => ({ mutateAsync: mockCommitDraft }),
   useRemoveDraftImage: () => ({ mutateAsync: mockRemoveDraftImage }),
+  getEntryDraft: (...args: unknown[]) => mockGetEntryDraft(...args),
 }));
 
 vi.mock('../composables/useDraftImageUpload', () => ({
@@ -228,6 +230,7 @@ describe('EntryCreateView', () => {
       },
     });
     mockAbandonDraft.mockResolvedValue({ status: 204, data: null });
+    mockGetEntryDraft.mockResolvedValue(draftResponse());
     // Reset shared mutable mock state
     mockPaths.data.value = [
       {

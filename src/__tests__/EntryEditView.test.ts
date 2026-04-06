@@ -114,6 +114,7 @@ const mockAbandonDraft = vi.fn();
 const mockPatchDraft = vi.fn();
 const mockCommitDraft = vi.fn();
 const mockRemoveDraftImage = vi.fn();
+const mockGetEntryDraft = vi.fn();
 
 vi.mock('../generated/apiClient', () => ({
   startEditEntryDraft: (...args: unknown[]) => mockStartEditEntryDraft(...args),
@@ -122,6 +123,7 @@ vi.mock('../generated/apiClient', () => ({
   usePatchEntryDraft: () => ({ mutateAsync: mockPatchDraft }),
   useCommitEntryDraft: () => ({ mutateAsync: mockCommitDraft }),
   useRemoveDraftImage: () => ({ mutateAsync: mockRemoveDraftImage }),
+  getEntryDraft: (...args: unknown[]) => mockGetEntryDraft(...args),
 }));
 
 vi.mock('../composables/useDraftImageUpload', () => ({
@@ -242,6 +244,7 @@ describe('EntryEditView', () => {
       },
     });
     mockAbandonDraft.mockResolvedValue({ status: 204, data: null });
+    mockGetEntryDraft.mockResolvedValue(draftResponse());
     mockGetEntry.mockResolvedValue({
       status: 200,
       data: {

@@ -27,7 +27,7 @@ function normalizeImageTarget(markdownTarget: string): string {
     return `${destination}${suffix}`;
   }
 
-  return `${encodeMarkdownImageFilename(destination)}${suffix}`;
+  return `${encodeMarkdownImageFilename(decodeMarkdownImageFilename(destination))}${suffix}`;
 }
 
 export function normalizeMarkdownImageFilenames(content: string): string {
