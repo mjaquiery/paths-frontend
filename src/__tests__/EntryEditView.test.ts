@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mount, flushPromises } from '@vue/test-utils';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import EntryEditView from '../views/EntryEditView.vue';
 
@@ -227,6 +227,8 @@ const networkError = () =>
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
+enableAutoUnmount(afterEach);
+
 describe('EntryEditView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -322,7 +324,9 @@ describe('EntryEditView', () => {
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
-    expect(saveBtn?.attributes('disabled')).toBeUndefined();
+    expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
+      false,
+    );
   });
 
   it('Save button is disabled when conflict banner is shown', async () => {
@@ -332,7 +336,9 @@ describe('EntryEditView', () => {
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
-    expect(saveBtn?.attributes('disabled')).toBeDefined();
+    expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
+      true,
+    );
   });
 
   it('Save button is disabled while an attached image is still processing', async () => {
@@ -361,7 +367,9 @@ describe('EntryEditView', () => {
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
-    expect(saveBtn?.attributes('disabled')).toBeDefined();
+    expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
+      true,
+    );
   });
 
   it('commits the draft and navigates back on success', async () => {

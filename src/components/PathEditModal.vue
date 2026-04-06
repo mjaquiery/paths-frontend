@@ -9,37 +9,16 @@
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-      <ion-item>
-        <ion-label position="stacked">Title *</ion-label>
-        <ion-input
-          v-model="form.title"
-          placeholder="Path title"
-          :maxlength="120"
-        />
-      </ion-item>
-      <ion-item>
-        <ion-label position="stacked">Description</ion-label>
-        <ion-input
-          v-model="form.description"
-          placeholder="Optional description"
-          :maxlength="1024"
-        />
-      </ion-item>
-      <ion-item>
-        <ion-label for="edit-path-colour-picker" position="stacked"
-          >Colour</ion-label
-        >
-        <div class="colour-picker-row">
-          <input
-            id="edit-path-colour-picker"
-            type="color"
-            v-model="form.color"
-            class="colour-picker-input"
-          />
-          <span class="colour-picker-hex">{{ form.color }}</span>
-        </div>
-      </ion-item>
-      <p v-if="errorMessage" class="path-edit-error">{{ errorMessage }}</p>
+      <PathFormFields
+        :title="form.title"
+        :description="form.description"
+        :color="form.color"
+        color-input-id="edit-path-colour-picker"
+        :error-message="errorMessage"
+        @update:title="form.title = $event"
+        @update:description="form.description = $event"
+        @update:color="form.color = $event"
+      />
     </ion-content>
     <ion-footer>
       <ion-toolbar>
@@ -67,13 +46,11 @@ import {
   IonButton,
   IonContent,
   IonFooter,
-  IonItem,
-  IonLabel,
-  IonInput,
 } from '@ionic/vue';
 import { ref, watch } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 
+import PathFormFields from './PathFormFields.vue';
 import type { PathResponse } from '../generated/types';
 import { useUpdatePath } from '../generated/apiClient';
 
@@ -145,35 +122,6 @@ function onDismiss() {
 </script>
 
 <style scoped>
-.colour-picker-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-}
-
-.colour-picker-input {
-  width: 44px;
-  height: 36px;
-  border: 1px solid var(--ion-color-light-shade, #ccc);
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 2px;
-  background: none;
-}
-
-.colour-picker-hex {
-  font-size: 0.875rem;
-  color: var(--ion-color-dark, #333);
-  font-family: monospace;
-}
-
-.path-edit-error {
-  color: var(--ion-color-danger, red);
-  font-size: 0.875rem;
-  margin-top: 8px;
-}
-
 .path-edit-actions {
   padding: 8px;
 }

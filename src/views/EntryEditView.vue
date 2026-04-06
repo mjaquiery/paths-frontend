@@ -54,98 +54,41 @@
             </div>
           </div>
 
-          <section class="editor-section">
-            <div class="editor-header">
-              <label class="editor-label">Content *</label>
-              <div class="editor-header-controls">
-                <input
-                  ref="imageInputRef"
-                  type="file"
-                  accept="image/*"
-                  class="image-upload-input"
-                  multiple
-                  :disabled="committing || !draftId || autosaveOffline"
-                  @change="onImageSelected"
-                />
-                <ion-button
-                  size="small"
-                  fill="outline"
-                  :disabled="committing || !draftId || autosaveOffline"
-                  :title="
-                    autosaveOffline
-                      ? 'Image upload is unavailable while offline'
-                      : undefined
-                  "
-                  @click="openImagePicker"
-                >
-                  + Image
-                </ion-button>
-                <div
-                  class="content-tabs"
-                  role="tablist"
-                  aria-label="Editor mode"
-                >
-                  <button
-                    class="content-tab"
-                    :class="{ active: contentTab === 'write' }"
-                    type="button"
-                    @click="contentTab = 'write'"
-                  >
-                    Write
-                  </button>
-                  <button
-                    class="content-tab"
-                    :class="{ active: contentTab === 'preview' }"
-                    type="button"
-                    @click="contentTab = 'preview'"
-                  >
-                    Preview
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <p
-              v-if="autosaveOffline"
-              class="autosave-offline-note image-offline-note"
-            >
-              Image upload is unavailable while offline.
-            </p>
-
-            <div class="editor-surface">
-              <ion-textarea
-                v-if="contentTab === 'write'"
-                ref="textareaRef"
-                v-model="content"
-                class="editor-textarea"
-                placeholder="Write your entry... (markdown supported)"
-                :rows="8"
-                auto-grow
-                autocapitalize="sentences"
-                autocorrect="on"
-                :spellcheck="true"
-                @ionInput="onTextareaInput"
-                @ionFocus="rememberSelection"
-                @ionBlur="rememberSelection"
-                @keyup="rememberSelection"
-                @click="rememberSelection"
-              />
-              <div v-else class="content-preview">
-                <MarkdownContent
-                  v-if="content"
-                  :content="content"
-                  :images="attachedImages"
-                  :local-image-urls="localImageUrls"
-                />
-                <p v-else class="content-preview-empty">(nothing to preview)</p>
-              </div>
-            </div>
-          </section>
-
-          <p v-if="imageError" class="save-error">{{ imageError }}</p>
-          <p v-else-if="autosaveOffline" class="autosave-offline-note">
-            Currently offline — your changes will be saved when you reconnect.
-          </p>
+          <EntryEditorPanel
+            :bind-textarea-ref="bindTextareaRef"
+            :bind-image-input-ref="bindImageInputRef"
+            :content="content"
+            :content-tab="contentTab"
+            :committing="committing"
+            :autosave-offline="autosaveOffline"
+            :upload-disabled="committing || !draftId || autosaveOffline"
+            :upload-button-title="
+              autosaveOffline ? 'Image upload is unavailable while offline' : undefined
+            "
+            :image-error="imageError"
+            :attached-images="attachedImages"
+            :local-image-urls="localImageUrls"
+            :image-drafts="imageDrafts"
+            :selected-image="selectedImage"
+            :is-caption-modal-open="isCaptionModalOpen"
+            :caption-draft="captionDraft"
+            :commit-fail-dialog-open="commitFailDialogOpen"
+            :commit-fail-dialog-message="commitFailDialogMessage"
+            :commit-fail-will-retry="commitFailWillRetry"
+            @update:content="content = $event"
+            @update:content-tab="contentTab = $event"
+            @update:caption-draft="captionDraft = $event"
+            @textarea-input="onTextareaInput"
+            @remember-selection="rememberSelection"
+            @open-image-picker="openImagePicker"
+            @image-selected="onImageSelected"
+            @close-commit-fail="commitFailDialogOpen = false"
+            @acknowledge-commit-failure="acknowledgeCommitFailure"
+            @close-caption="closeCaptionModal"
+            @confirm-image-insert="confirmImageInsert"
+            @open-caption="openCaptionModal"
+            @remove-image="removeImage"
+          />
         </template>
       </div>
     </ion-content>
@@ -167,89 +110,6 @@
       ]"
       @didDismiss="discardAlertOpen = false"
     />
-
-    <!-- Commit-fail dialog (save failed, retrying in background) -->
-    <ion-modal
-      :is-open="commitFailDialogOpen"
-      @didDismiss="commitFailDialogOpen = false"
-    >
-      <ion-header>
-        <ion-toolbar>
-          <ion-title>Save failed</ion-title>
-        </ion-toolbar>
-      </ion-header>
-      <ion-content class="ion-padding commit-fail-dialog-content">
-        <p class="commit-fail-dialog-message">{{ commitFailDialogMessage }}</p>
-        <p v-if="commitFailWillRetry" class="commit-fail-dialog-note">
-          Your entry will keep retrying to save in the background. You can watch
-          the status bar at the bottom of the screen for updates.
-        </p>
-        <p v-else class="commit-fail-dialog-note">
-          Fix the issue above, then try saving again.
-        </p>
-      </ion-content>
-      <ion-footer>
-        <ion-toolbar>
-          <div class="commit-fail-dialog-actions">
-            <ion-button fill="outline" @click="commitFailDialogOpen = false"
-              >Cancel</ion-button
-            >
-            <ion-button @click="acknowledgeCommitFailure">OK</ion-button>
-          </div>
-        </ion-toolbar>
-      </ion-footer>
-    </ion-modal>
-
-    <!-- Caption insert modal -->
-    <ion-modal :is-open="isCaptionModalOpen" @didDismiss="closeCaptionModal">
-      <ion-header>
-        <ion-toolbar>
-          <ion-title>
-            {{
-              selectedImage
-                ? `Insert ${selectedImage.filename}`
-                : 'Insert image'
-            }}
-          </ion-title>
-          <ion-buttons slot="end">
-            <ion-button @click="closeCaptionModal">Cancel</ion-button>
-          </ion-buttons>
-        </ion-toolbar>
-      </ion-header>
-      <ion-content class="ion-padding image-caption-modal-content">
-        <div v-if="selectedImage" class="image-caption-preview">
-          <EntryImageDraftPreview
-            :image-id="selectedImage.image?.id ?? null"
-            :preview-url="selectedImage.previewUrl"
-            :filename="selectedImage.filename"
-            :uploading="
-              selectedImage.status === 'uploading' ||
-              selectedImage.status === 'draft-uploading'
-            "
-          />
-        </div>
-        <ion-item lines="none" class="image-caption-field">
-          <ion-label position="stacked">Caption</ion-label>
-          <ion-input
-            v-model="captionDraft"
-            :placeholder="selectedImage?.filename ?? ''"
-            @keydown.enter.prevent="confirmImageInsert"
-          />
-        </ion-item>
-      </ion-content>
-      <ion-footer>
-        <ion-toolbar>
-          <div class="image-caption-actions">
-            <ion-button fill="outline" @click="closeCaptionModal"
-              >Cancel</ion-button
-            >
-            <ion-button :disabled="!selectedImage" @click="confirmImageInsert">
-              Insert markdown
-            </ion-button>
-          </div>
-        </ion-toolbar>
-      </ion-footer>
-    </ion-modal>
 
     <!-- Edit conflict resolution modal -->
     <ion-modal :is-open="isConflictModalOpen" :can-dismiss="false">
@@ -331,59 +191,6 @@
       </ion-footer>
     </ion-modal>
 
-    <ion-footer>
-      <div v-if="imageDrafts.length > 0" class="editor-image-tray">
-        <p class="editor-image-tray-hint">
-          Select an image to insert it into the text.
-        </p>
-        <div class="editor-image-tray-scroll">
-          <div
-            v-for="image in imageDrafts"
-            :key="image.localId"
-            class="editor-image-chip"
-          >
-            <button
-              type="button"
-              class="editor-image-chip-main"
-              :aria-label="`Add caption for ${image.filename}`"
-              @click="openCaptionModal(image)"
-            >
-              <EntryImageDraftPreview
-                :image-id="image.image?.id ?? null"
-                :preview-url="image.previewUrl"
-                :filename="image.filename"
-                :uploading="
-                  image.status === 'uploading' ||
-                  image.status === 'draft-uploading'
-                "
-              />
-              <span class="editor-image-chip-name">{{ image.filename }}</span>
-              <span class="editor-image-chip-status">{{
-                imageStatusText(image)
-              }}</span>
-            </button>
-            <button
-              type="button"
-              class="editor-image-chip-remove"
-              :disabled="
-                committing ||
-                image.status === 'uploading' ||
-                image.status === 'draft-uploading'
-              "
-              :aria-label="`Remove ${image.filename}`"
-              @click="removeImage(image.localId)"
-            >
-              Remove
-            </button>
-          </div>
-        </div>
-      </div>
-      <RefreshStatus
-        :status-type="refreshStatusType"
-        :status-text="refreshStatusText"
-        :last-checked-at="refreshLastCheckedAt"
-      />
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -398,25 +205,20 @@ import {
   IonButton,
   IonButtons,
   IonBackButton,
-  IonModal,
   IonAlert,
-  IonItem,
-  IonLabel,
-  IonInput,
+  IonModal,
   IonTextarea,
 } from '@ionic/vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import EntryImageDraftPreview from '../components/EntryImageDraftPreview.vue';
+import EntryEditorPanel from '../components/EntryEditorPanel.vue';
 import MarkdownContent from '../components/MarkdownContent.vue';
-import RefreshStatus from '../components/RefreshStatus.vue';
 import { useDraftImageUpload } from '../composables/useDraftImageUpload';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { usePaths } from '../composables/usePaths';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { usePendingSaves } from '../composables/usePendingSaves';
 import {
   startEditEntryDraft,
@@ -499,12 +301,6 @@ const { mutateAsync: removeDraftImageApi } = useRemoveDraftImage();
 const { uploadError, uploadDraftImage } = useDraftImageUpload();
 
 const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
-
-const {
   registerPendingSave,
   removePendingSave,
   clearSavedNotification,
@@ -524,6 +320,14 @@ const imageInputRef = ref<HTMLInputElement | null>(null);
 const isCaptionModalOpen = ref(false);
 const captionDraft = ref('');
 const selectedImage = ref<EntryImageDraft | null>(null);
+
+function bindTextareaRef(el: unknown) {
+  textareaRef.value = el as InstanceType<typeof IonTextarea> | null;
+}
+
+function bindImageInputRef(el: unknown) {
+  imageInputRef.value = el as HTMLInputElement | null;
+}
 
 /** The server-side draft id — set once the edit draft is started */
 const draftId = ref('');
@@ -854,13 +658,6 @@ watch(draftId, (nextId) => {
 });
 
 // ─── Image helpers ────────────────────────────────────────────────────────
-
-function imageStatusText(image: EntryImageDraft) {
-  if (image.status === 'uploading') return 'Uploading...';
-  if (image.status === 'draft-uploading') return 'Processing...';
-  if (image.status === 'failed') return image.error || 'Failed';
-  return 'Attached';
-}
 
 let draftImageRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -1560,110 +1357,6 @@ onBeforeUnmount(async () => {
   flex-wrap: wrap;
 }
 
-.editor-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--ion-border-color);
-  border-radius: 18px;
-  background: var(--ion-item-background);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
-}
-
-.editor-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.editor-header-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.editor-label {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--ion-text-color);
-}
-
-.content-tabs {
-  display: flex;
-  gap: 8px;
-}
-
-.content-tab {
-  min-width: 88px;
-  padding: 8px 14px;
-  border: 1px solid var(--ion-border-color);
-  border-radius: 999px;
-  background: var(--ion-background-color);
-  color: var(--ion-text-color);
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.content-tab.active {
-  background: var(--ion-color-primary);
-  color: var(--ion-color-primary-contrast);
-  border-color: var(--ion-color-primary);
-}
-
-.editor-surface {
-  border: 1px solid var(--ion-border-color);
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--ion-background-color);
-}
-
-.editor-textarea {
-  --padding-top: 14px;
-  --padding-bottom: 14px;
-  --padding-start: 14px;
-  --padding-end: 14px;
-  min-height: 250px;
-}
-
-.image-upload-input {
-  display: none;
-}
-
-.content-preview {
-  min-height: 250px;
-  padding: 16px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.content-preview-empty {
-  color: var(--ion-color-medium);
-  font-style: italic;
-  margin: 0;
-}
-
-.save-error {
-  color: var(--ion-color-danger);
-  font-size: 0.85rem;
-  margin: 0 4px;
-}
-
-.autosave-offline-note {
-  color: var(--ion-color-medium);
-  font-size: 0.82rem;
-  margin: 0 4px;
-  font-style: italic;
-}
-
-.image-offline-note {
-  margin-top: 0;
-}
-
 .edit-path-dot {
   display: inline-block;
   width: 8px;
@@ -1672,145 +1365,6 @@ onBeforeUnmount(async () => {
   margin-right: 6px;
   vertical-align: middle;
   flex-shrink: 0;
-}
-
-.editor-image-tray {
-  border-top: 1px solid var(--ion-border-color);
-  background: var(--ion-item-background);
-  padding: 10px 12px 8px;
-  max-height: 32vh;
-  overflow: hidden;
-}
-
-.editor-image-tray-hint {
-  margin: 0 0 8px;
-  color: var(--ion-color-medium);
-  font-size: 0.82rem;
-  line-height: 1.35;
-}
-
-.editor-image-tray-scroll {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 4px;
-}
-
-.editor-image-chip {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 116px;
-  min-width: 116px;
-  padding: 10px 10px 8px;
-  border: 1px solid var(--ion-border-color);
-  border-radius: 14px;
-  background: var(--ion-background-color);
-}
-
-.editor-image-chip-main {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-}
-
-.editor-image-chip-name,
-.editor-image-chip-status {
-  display: -webkit-box;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  -webkit-box-orient: vertical;
-  word-break: break-word;
-}
-
-.editor-image-chip-name {
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  font-size: 0.78rem;
-  line-height: 1.3;
-  text-align: center;
-}
-
-.editor-image-chip-status {
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-  font-size: 0.72rem;
-  color: var(--ion-color-medium);
-  text-align: center;
-}
-
-.editor-image-chip-remove {
-  border: 0;
-  background: transparent;
-  color: var(--ion-color-danger);
-  font-size: 0.72rem;
-  font-weight: 600;
-}
-
-.image-caption-modal-content {
-  --padding-top: 18px;
-}
-
-.image-caption-preview {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-.image-caption-field {
-  --padding-start: 0;
-  --inner-padding-end: 0;
-  max-width: 360px;
-  margin: 0 auto;
-}
-
-.image-caption-preview :deep(.entry-image-thumb),
-.image-caption-preview :deep(.entry-image-placeholder),
-.image-caption-preview :deep(.entry-image-draft-preview__image),
-.image-caption-preview :deep(.entry-image-draft-preview__placeholder) {
-  width: min(220px, 60vw);
-  height: min(220px, 60vw);
-  border-radius: 16px;
-}
-
-.image-caption-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 8px 12px;
-}
-
-.commit-fail-dialog-content {
-  --padding-top: 18px;
-  --padding-start: 20px;
-  --padding-end: 20px;
-}
-
-.commit-fail-dialog-message {
-  font-size: 0.95rem;
-  color: var(--ion-color-danger);
-  font-weight: 600;
-  margin: 0 0 12px;
-}
-
-.commit-fail-dialog-note {
-  font-size: 0.88rem;
-  color: var(--ion-color-medium);
-  margin: 0;
-  line-height: 1.5;
-}
-
-.commit-fail-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 8px 12px;
 }
 
 /* Conflict resolution modal */

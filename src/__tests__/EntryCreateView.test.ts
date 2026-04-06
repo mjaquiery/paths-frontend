@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ref } from 'vue';
-import { mount, flushPromises } from '@vue/test-utils';
+import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import EntryCreateView from '../views/EntryCreateView.vue';
 
@@ -214,6 +214,8 @@ const draftResponse = (id = 'draft-1', content = '') => ({
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
+enableAutoUnmount(afterEach);
+
 describe('EntryCreateView', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -284,7 +286,9 @@ describe('EntryCreateView', () => {
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
-    expect(saveBtn?.attributes('disabled')).toBeUndefined();
+    expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
+      false,
+    );
   });
 
   it('Save button is enabled even when draft init failed (canCommit does not require draftId)', async () => {
@@ -298,7 +302,9 @@ describe('EntryCreateView', () => {
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
-    expect(saveBtn?.attributes('disabled')).toBeUndefined();
+    expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
+      false,
+    );
   });
 
   it('Save button is disabled while an attached image is still processing', async () => {
@@ -327,7 +333,9 @@ describe('EntryCreateView', () => {
     const saveBtn = wrapper
       .findAll('button')
       .find((b) => b.text().includes('Save'));
-    expect(saveBtn?.attributes('disabled')).toBeDefined();
+    expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
+      true,
+    );
   });
 
   it('shows inline error note when draft init fails (does not block the form)', async () => {
