@@ -86,7 +86,7 @@
                 :placeholder="confirmHint"
                 autocomplete="off"
                 autocorrect="off"
-                spellcheck="false"
+                :spellcheck="false"
               />
             </ion-item>
             <p v-if="submitError" class="error-msg">{{ submitError }}</p>

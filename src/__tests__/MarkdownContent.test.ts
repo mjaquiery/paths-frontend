@@ -37,8 +37,8 @@ describe('MarkdownContent', () => {
     const wrapper = createWrapper('- item one\n- item two');
     const items = wrapper.findAll('li');
     expect(items).toHaveLength(2);
-    expect(items[0].text()).toBe('item one');
-    expect(items[1].text()).toBe('item two');
+    expect(items[0]!.text()).toBe('item one');
+    expect(items[1]!.text()).toBe('item two');
   });
 
   it('renders a heading', () => {

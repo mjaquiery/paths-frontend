@@ -32,7 +32,9 @@ vi.stubGlobal('localStorage', {
 });
 
 describe('useDarkMode', () => {
-  let classListToggleSpy: ReturnType<typeof vi.spyOn>;
+  let classListToggleSpy: ReturnType<typeof vi.fn> & {
+    mockRestore: () => void;
+  };
 
   beforeEach(() => {
     // Reset state between tests
@@ -41,9 +43,11 @@ describe('useDarkMode', () => {
     for (const key of Object.keys(localStorageStore)) {
       delete localStorageStore[key];
     }
-    classListToggleSpy = vi
-      .spyOn(document.documentElement.classList, 'toggle')
-      .mockImplementation(() => false);
+    classListToggleSpy = vi.spyOn(
+      document.documentElement.classList,
+      'toggle',
+    ) as typeof classListToggleSpy;
+    classListToggleSpy.mockImplementation(() => false);
     vi.resetModules();
   });
 
@@ -168,7 +172,8 @@ describe('useDarkMode', () => {
 
     // Simulate OS switching to dark mode
     mockMatches.value = true;
-    mockListeners[0]({ matches: true } as MediaQueryListEvent);
+    expect(mockListeners).toHaveLength(1);
+    mockListeners[0]!({ matches: true } as MediaQueryListEvent);
 
     expect(isDark.value).toBe(true);
     expect(classListToggleSpy).toHaveBeenCalledWith('ion-palette-dark', true);

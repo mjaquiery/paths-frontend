@@ -24,7 +24,7 @@
           <ion-input
             v-model="form.title"
             placeholder="Give your path a name"
-            maxlength="120"
+            :maxlength="120"
             autocapitalize="words"
           />
         </ion-item>
@@ -34,7 +34,7 @@
           <ion-input
             v-model="form.description"
             placeholder="Optional — what is this path for?"
-            maxlength="1024"
+            :maxlength="1024"
           />
         </ion-item>
 

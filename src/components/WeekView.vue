@@ -99,10 +99,6 @@ const props = defineProps<{
   currentUserId: string;
 }>();
 
-const emit = defineEmits<{
-  entryCreated: [];
-}>();
-
 const router = useRouter();
 const weekOffset = ref(0);
 

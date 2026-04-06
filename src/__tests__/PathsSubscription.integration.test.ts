@@ -26,7 +26,7 @@ import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 
 import PathSubscriptionManager from '../components/PathSubscriptionManager.vue';
-import type { PathResponse, OAuthCallbackResponse } from '../generated/types';
+import type { PathResponse } from '../generated/types';
 
 // ---------------------------------------------------------------------------
 // Mock Dexie
@@ -59,12 +59,6 @@ const ionicStubs = {
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
-const currentUser: OAuthCallbackResponse = {
-  token: 'tok',
-  user_id: 'user-1',
-  display_name: 'Test User',
-};
-
 const ownedPath: PathResponse = {
   path_id: 'path-1',
   uuid: 'uuid-path-1',

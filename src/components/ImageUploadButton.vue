@@ -18,7 +18,7 @@
           v-model="caption"
           :placeholder="pendingFile.name"
           autocorrect="off"
-          spellcheck="false"
+          :spellcheck="false"
           @keydown.enter.prevent="confirmInsert"
         />
       </ion-item>
