@@ -312,7 +312,7 @@ describe('EntryEditView', () => {
     expect(wrapper.html()).toContain('Content');
   });
 
-  it('Save button is enabled once content is present (does not require draftId)', async () => {
+  it('Publish button is enabled once content is present (does not require draftId)', async () => {
     // Make draft init fail so draftId is never set
     mockStartEditEntryDraft.mockRejectedValue(networkError());
     const wrapper = mountEditView();
@@ -323,25 +323,25 @@ describe('EntryEditView', () => {
     await wrapper.vm.$nextTick();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
       false,
     );
   });
 
-  it('Save button is disabled when conflict banner is shown', async () => {
+  it('Publish button is disabled when conflict banner is shown', async () => {
     mockStartEditEntryDraft.mockRejectedValue(conflictError());
     const wrapper = mountEditView();
     await flushPromises();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
       true,
     );
   });
 
-  it('Save button is disabled while an attached image is still processing', async () => {
+  it('Publish button is disabled while an attached image is still processing', async () => {
     const wrapper = mountEditView();
     await flushPromises();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -366,7 +366,7 @@ describe('EntryEditView', () => {
 
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
       true,
     );
@@ -381,7 +381,7 @@ describe('EntryEditView', () => {
     await wrapper.vm.$nextTick();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
     expect(mockCommitDraft).toHaveBeenCalled();
@@ -398,7 +398,7 @@ describe('EntryEditView', () => {
     await wrapper.vm.$nextTick();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
     // The commit-fail dialog should be open
@@ -417,7 +417,7 @@ describe('EntryEditView', () => {
 
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
 
@@ -438,7 +438,7 @@ describe('EntryEditView', () => {
     await wrapper.vm.$nextTick();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
     // Conflict modal should now be open
@@ -487,7 +487,7 @@ describe('EntryEditView', () => {
     await wrapper.vm.$nextTick();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
     expect(mockCommitDraft).toHaveBeenCalled();
@@ -677,7 +677,7 @@ describe('EntryEditView', () => {
 
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
 
@@ -699,7 +699,7 @@ describe('EntryEditView', () => {
     // Manually click Save (bypasses debounce)
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
 
@@ -738,7 +738,7 @@ describe('EntryEditView', () => {
 
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
 

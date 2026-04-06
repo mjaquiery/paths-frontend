@@ -24,8 +24,15 @@
           >
             Discard
           </ion-button>
+          <ion-button
+            fill="outline"
+            :disabled="savingDraft || committing || !draftId"
+            @click="saveDraftAndNavigateBack"
+          >
+            {{ savingDraft ? 'Saving…' : 'Save Draft' }}
+          </ion-button>
           <ion-button :disabled="committing || !canCommit" @click="commitDraft">
-            {{ committing ? 'Saving...' : 'Save' }}
+            {{ committing ? 'Publishing…' : 'Publish' }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -329,6 +336,7 @@ const {
 const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
 const committing = ref(false);
+const savingDraft = ref(false);
 const commitError = ref('');
 const imageError = ref('');
 const imageDrafts = ref<EntryImageDraft[]>([]);
@@ -681,6 +689,8 @@ watch(draftId, (nextId) => {
 // ─── Image helpers ────────────────────────────────────────────────────────
 
 let draftImageRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+/** Guard: true while the polling loop is active to prevent re-entrancy. */
+let isPollingImages = false;
 
 async function refreshDraftImages() {
   if (!draftId.value) return;
@@ -712,33 +722,55 @@ async function refreshDraftImages() {
   }
 }
 
+/**
+ * Start the image-status polling loop if it is not already running.
+ * Uses `isPollingImages` to prevent re-entrancy: assigning to
+ * `imageDrafts.value` inside the loop would otherwise re-trigger any
+ * reactive watcher that inspects the `draft-uploading` condition,
+ * spawning thousands of concurrent requests.
+ */
+function ensureImagePolling() {
+  if (isPollingImages) return;
+  if (!draftId.value) return;
+  if (!imageDrafts.value.some((img) => img.status === 'draft-uploading'))
+    return;
+
+  isPollingImages = true;
+
+  const tick = async () => {
+    await refreshDraftImages();
+    if (imageDrafts.value.some((img) => img.status === 'draft-uploading')) {
+      draftImageRefreshTimer = setTimeout(() => {
+        void tick();
+      }, 2000);
+    } else {
+      draftImageRefreshTimer = null;
+      isPollingImages = false;
+    }
+  };
+
+  void tick();
+}
+
+// Watch only for the conditions that should *start* a new polling loop.
+// We intentionally do NOT watch `imageDrafts.value` here — that would
+// re-fire on every poll result and cause re-entrancy.
 watch(
   () => [
     draftId.value,
     imageDrafts.value.some((image) => image.status === 'draft-uploading'),
   ],
   ([nextDraftId, hasProcessingImages]) => {
-    if (draftImageRefreshTimer !== null) {
-      clearTimeout(draftImageRefreshTimer);
-      draftImageRefreshTimer = null;
-    }
-
-    if (!nextDraftId || !hasProcessingImages) return;
-
-    const tick = async () => {
-      await refreshDraftImages();
-      if (
-        imageDrafts.value.some((image) => image.status === 'draft-uploading')
-      ) {
-        draftImageRefreshTimer = setTimeout(() => {
-          void tick();
-        }, 2000);
-      } else {
+    if (!nextDraftId || !hasProcessingImages) {
+      // If conditions are no longer met, stop any running loop.
+      if (draftImageRefreshTimer !== null) {
+        clearTimeout(draftImageRefreshTimer);
         draftImageRefreshTimer = null;
       }
-    };
-
-    void tick();
+      isPollingImages = false;
+      return;
+    }
+    ensureImagePolling();
   },
   { immediate: true },
 );
@@ -1052,6 +1084,52 @@ async function attemptCommitRetry() {
   } finally {
     commitRetrying.value = false;
   }
+}
+
+/**
+ * Flush the current content to the server draft and navigate back without
+ * committing (publishing) the entry.  Preserves the draft so the user can
+ * return and continue editing later.
+ */
+async function saveDraftAndNavigateBack() {
+  if (savingDraft.value || committing.value || !draftId.value) return;
+  savingDraft.value = true;
+  try {
+    // Cancel pending debounce timer.
+    if (autosaveTimer !== null) {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = null;
+    }
+    // Wait for any in-flight PATCH to finish.
+    if (autosaveInFlight) {
+      await new Promise<void>((resolve) => {
+        const interval = setInterval(() => {
+          if (!autosaveInFlight) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 50);
+      });
+    }
+    // Flush any remaining pending content.
+    const contentToSave = pendingAutosaveContent ?? content.value;
+    if (contentToSave !== lastSavedContent) {
+      await patchDraft({
+        draftId: draftId.value,
+        data: { content: contentToSave },
+      });
+      lastSavedContent = contentToSave;
+    }
+    pendingAutosaveContent = null;
+    setContentSaving(pendingSaveKey(), false);
+  } catch {
+    // Best-effort — navigate back regardless.
+  } finally {
+    savingDraft.value = false;
+  }
+  // Prevent the onBeforeUnmount hook from abandoning the draft.
+  backgroundCommitDelegated.value = true;
+  router.back();
 }
 
 async function commitDraft() {

@@ -213,11 +213,6 @@
         </div>
       </div>
     </div>
-    <RefreshStatus
-      :status-type="refreshStatusType"
-      :status-text="refreshStatusText"
-      :last-checked-at="refreshLastCheckedAt"
-    />
   </ion-footer>
 </template>
 
@@ -238,11 +233,9 @@ import {
 } from '@ionic/vue';
 
 import type { ImageResponse } from '../generated/types';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
 import type { EntryImageDraft } from '../utils/entryImageDrafts';
 import EntryImageDraftPreview from './EntryImageDraftPreview.vue';
 import MarkdownContent from './MarkdownContent.vue';
-import RefreshStatus from './RefreshStatus.vue';
 
 defineProps<{
   bindTextareaRef?: (el: unknown) => void;
@@ -302,12 +295,6 @@ function imageStatusText(image: EntryImageDraft) {
   if (image.status === 'local') return 'Pending draft...';
   return 'Attached';
 }
-
-const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
 </script>
 
 <style scoped>

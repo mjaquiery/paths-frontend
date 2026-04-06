@@ -276,7 +276,7 @@ describe('EntryCreateView', () => {
     expect(wrapper.html()).toContain('Resumed content');
   });
 
-  it('Save button is enabled once path, day and content are filled', async () => {
+  it('Publish button is enabled once path, day and content are filled', async () => {
     const wrapper = mountCreateView();
     await flushPromises();
     // Simulate content being typed
@@ -285,13 +285,13 @@ describe('EntryCreateView', () => {
     await flushPromises();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
       false,
     );
   });
 
-  it('Save button is enabled even when draft init failed (canCommit does not require draftId)', async () => {
+  it('Publish button is enabled even when draft init failed (canCommit does not require draftId)', async () => {
     mockStartCreateEntryDraft.mockRejectedValue(new Error('Network error'));
     const wrapper = mountCreateView();
     await flushPromises();
@@ -301,13 +301,13 @@ describe('EntryCreateView', () => {
     await flushPromises();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
       false,
     );
   });
 
-  it('Save button is disabled while an attached image is still processing', async () => {
+  it('Publish button is disabled while an attached image is still processing', async () => {
     const wrapper = mountCreateView();
     await flushPromises();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -332,7 +332,7 @@ describe('EntryCreateView', () => {
 
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     expect((saveBtn?.element as HTMLButtonElement | undefined)?.disabled).toBe(
       true,
     );
@@ -406,7 +406,7 @@ describe('EntryCreateView', () => {
     await flushPromises();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
     expect(mockCommitDraft).toHaveBeenCalled();
@@ -439,7 +439,7 @@ describe('EntryCreateView', () => {
 
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
 
@@ -459,7 +459,7 @@ describe('EntryCreateView', () => {
     await flushPromises();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
     // The commit-fail dialog should be open (modal rendered with isOpen=true)
@@ -478,7 +478,7 @@ describe('EntryCreateView', () => {
 
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
 
@@ -506,7 +506,7 @@ describe('EntryCreateView', () => {
     await flushPromises();
     const saveBtn = wrapper
       .findAll('button')
-      .find((b) => b.text().includes('Save'));
+      .find((b) => b.text().includes('Publish'));
     await saveBtn?.trigger('click');
     await flushPromises();
     expect(mockCommitDraft).toHaveBeenCalled();

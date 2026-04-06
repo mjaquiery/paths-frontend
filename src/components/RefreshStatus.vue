@@ -4,6 +4,16 @@
       <span class="refresh-status__dot" aria-hidden="true" />
       <span class="refresh-status__text">{{ statusText }}</span>
 
+      <!-- Autosave in-progress badge -->
+      <span
+        v-if="isContentSaving"
+        class="refresh-status__autosave-badge"
+        aria-label="Autosaving draft…"
+        aria-live="polite"
+      >
+        ↻ Saving…
+      </span>
+
       <!-- Queued-writes badge (replaces the old pending-saves badge) -->
       <span
         v-if="pendingCount > 0"
@@ -204,7 +214,7 @@ const props = defineProps<{
 const queryClient = useQueryClient();
 const confirmingDelete = ref(false);
 
-const { savedNotification } = usePendingSaves();
+const { savedNotification, isContentSaving } = usePendingSaves();
 const { queue, pendingCount, abandonedWrites, abandon, retry, clearAbandoned } =
   useApi();
 
@@ -363,6 +373,23 @@ async function confirmDeleteCache() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ── Autosave badge ── */
+.refresh-status__autosave-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ion-color-primary, #3880ff);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1.5;
+  animation: refresh-autosave-spin 0.8s linear infinite;
+  animation-name: refresh-pulse;
 }
 
 /* ── Pending-writes badge ── */
