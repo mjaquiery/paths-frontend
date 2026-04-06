@@ -4,35 +4,24 @@
       <span class="refresh-status__dot" aria-hidden="true" />
       <span class="refresh-status__text">{{ statusText }}</span>
 
-      <!-- Autosave-in-progress indicator -->
+      <!-- Queued-writes badge (replaces the old pending-saves badge) -->
       <span
-        v-if="isContentSaving"
-        class="refresh-status__autosave-indicator"
-        aria-label="Saving…"
-        aria-live="polite"
-      >
-        <span class="refresh-status__autosave-spinner" aria-hidden="true" />
-        <span class="refresh-status__autosave-label">Saving…</span>
-      </span>
-
-      <!-- Pending-saves indicator -->
-      <span
-        v-if="pendingSavesCount > 0"
+        v-if="pendingCount > 0"
         class="refresh-status__pending-badge"
-        :aria-label="`${pendingSavesCount} unsaved ${pendingSavesCount === 1 ? 'change' : 'changes'} retrying`"
+        :aria-label="`${pendingCount} write ${pendingCount === 1 ? 'operation' : 'operations'} pending`"
         aria-live="polite"
       >
-        ↑ {{ pendingSavesCount }}
+        ↑ {{ pendingCount }}
       </span>
 
-      <!-- Draft-init error indicator -->
+      <!-- Abandoned-writes badge -->
       <span
-        v-if="draftInitErrors.length > 0"
-        class="refresh-status__draft-init-badge"
-        :aria-label="`${draftInitErrors.length} draft ${draftInitErrors.length === 1 ? 'error' : 'errors'}`"
+        v-if="abandonedWrites.length > 0"
+        class="refresh-status__error-badge"
+        :aria-label="`${abandonedWrites.length} write ${abandonedWrites.length === 1 ? 'operation' : 'operations'} failed`"
         aria-live="polite"
       >
-        ⚠ {{ draftInitErrors.length }}
+        ✕ {{ abandonedWrites.length }}
       </span>
 
       <span class="refresh-status__chevron" aria-hidden="true">▾</span>
@@ -44,36 +33,91 @@
         ✓ {{ savedNotification }}
       </p>
 
-      <!-- Draft-init error(s) -->
+      <!-- Active write-queue items -->
       <div
-        v-if="draftInitErrors.length > 0"
-        class="refresh-status__draft-init-errors"
+        v-if="queue.length > 0"
+        class="refresh-status__queue"
+        aria-label="Active write operations"
       >
-        <p
-          v-for="(msg, idx) in draftInitErrors"
-          :key="idx"
-          class="refresh-status__draft-init-error"
-        >
-          ⚠ {{ msg }} — retrying in background.
-        </p>
+        <p class="refresh-status__section-title">Write queue:</p>
+        <ul class="refresh-status__queue-list">
+          <li
+            v-for="item in queue"
+            :key="item.id"
+            class="refresh-status__queue-item"
+            :class="`refresh-status__queue-item--${item.status}`"
+          >
+            <span class="refresh-status__queue-item-icon" aria-hidden="true">
+              {{ queueItemIcon(item) }}
+            </span>
+            <span class="refresh-status__queue-item-label">
+              {{ item.label }}
+            </span>
+            <span
+              v-if="item.failureKind"
+              class="refresh-status__queue-item-kind"
+              :class="`refresh-status__queue-item-kind--${item.failureKind}`"
+            >
+              {{ failureKindLabel(item.failureKind) }}
+            </span>
+            <span
+              v-if="item.nextRetryAt"
+              class="refresh-status__queue-item-retry"
+            >
+              retry in {{ retryCountdown(item.nextRetryAt) }}s
+            </span>
+            <div class="refresh-status__queue-item-actions">
+              <button
+                v-if="canRetry(item)"
+                class="refresh-status__queue-action-btn"
+                type="button"
+                @click="retry(item.id)"
+              >
+                Retry now
+              </button>
+              <button
+                v-if="canAbandon(item)"
+                class="refresh-status__queue-action-btn refresh-status__queue-action-btn--danger"
+                type="button"
+                @click="abandon(item.id)"
+              >
+                Abandon
+              </button>
+            </div>
+            <p
+              v-if="item.failureMessage && item.status !== 'success'"
+              class="refresh-status__queue-item-message"
+            >
+              {{ item.failureMessage }}
+            </p>
+          </li>
+        </ul>
       </div>
 
-      <!-- Pending-saves list -->
-      <div
-        v-if="pendingSavesCount > 0"
-        class="refresh-status__pending-list"
-        aria-label="Entries retrying to save"
-      >
-        <p class="refresh-status__pending-title">
-          Retrying save ({{ pendingSavesCount }}):
-        </p>
-        <ul class="refresh-status__pending-items">
-          <li
-            v-for="save in pendingSaves"
-            :key="save.key"
-            class="refresh-status__pending-item"
+      <!-- Abandoned writes (with notes) -->
+      <div v-if="abandonedWrites.length > 0" class="refresh-status__abandoned">
+        <div class="refresh-status__abandoned-header">
+          <p
+            class="refresh-status__section-title refresh-status__section-title--danger"
           >
-            ↑ {{ save.label }}
+            Failed writes:
+          </p>
+          <button
+            class="refresh-status__action-btn"
+            type="button"
+            @click="clearAbandoned"
+          >
+            Dismiss all
+          </button>
+        </div>
+        <ul class="refresh-status__abandoned-list">
+          <li
+            v-for="aw in abandonedWrites"
+            :key="aw.id"
+            class="refresh-status__abandoned-item"
+          >
+            <span class="refresh-status__abandoned-label">{{ aw.label }}</span>
+            <span class="refresh-status__abandoned-note">{{ aw.note }}</span>
           </li>
         </ul>
       </div>
@@ -143,10 +187,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import type { RefreshStatusType } from '../composables/useRefreshStatus';
 import { usePendingSaves } from '../composables/usePendingSaves';
+import { useApi } from '../composables/useApi';
+import type { QueuedWrite, ApiFailureKind } from '../composables/useApi';
 import { db } from '../lib/db';
 
 const props = defineProps<{
@@ -158,22 +204,97 @@ const props = defineProps<{
 const queryClient = useQueryClient();
 const confirmingDelete = ref(false);
 
-const {
-  pendingSaves,
-  pendingSavesCount,
-  savedNotification,
-  isContentSaving,
-  draftInitErrors,
-} = usePendingSaves();
+const { savedNotification } = usePendingSaves();
+const { queue, pendingCount, abandonedWrites, abandon, retry, clearAbandoned } =
+  useApi();
 
 const summaryAriaLabel = computed(() => {
-  const base = `Refresh status: ${props.statusText || 'unknown'}.`;
+  const base = `API status: ${props.statusText || 'unknown'}.`;
   const pending =
-    pendingSavesCount.value > 0
-      ? ` ${pendingSavesCount.value} unsaved ${pendingSavesCount.value === 1 ? 'change' : 'changes'} retrying.`
+    pendingCount.value > 0
+      ? ` ${pendingCount.value} write ${pendingCount.value === 1 ? 'operation' : 'operations'} pending.`
       : '';
-  return `${base}${pending} Click to expand.`;
+  const failed =
+    abandonedWrites.value.length > 0
+      ? ` ${abandonedWrites.value.length} write ${abandonedWrites.value.length === 1 ? 'operation' : 'operations'} failed.`
+      : '';
+  return `${base}${pending}${failed} Click to expand.`;
 });
+
+// ── Queue-item countdown timer ────────────────────────────────────────────────
+
+/** Seconds until each item's next retry, keyed by item.id */
+const retryCountdowns = ref<Record<string, number>>({});
+let countdownInterval: ReturnType<typeof setInterval> | null = null;
+
+function retryCountdown(nextRetryAt: number): number {
+  return Math.max(0, Math.ceil((nextRetryAt - Date.now()) / 1000));
+}
+
+function updateCountdowns() {
+  const next: Record<string, number> = {};
+  for (const item of queue.value) {
+    if (item.nextRetryAt) {
+      next[item.id] = retryCountdown(item.nextRetryAt);
+    }
+  }
+  retryCountdowns.value = next;
+}
+
+onMounted(() => {
+  countdownInterval = setInterval(updateCountdowns, 1000);
+  updateCountdowns();
+});
+onUnmounted(() => {
+  if (countdownInterval !== null) clearInterval(countdownInterval);
+});
+
+// ── Queue-item helpers ────────────────────────────────────────────────────────
+
+function queueItemIcon(item: QueuedWrite): string {
+  switch (item.status) {
+    case 'running':
+      return '↻';
+    case 'repairing':
+      return '🔑';
+    case 'success':
+      return '✓';
+    case 'abandoned':
+      return '✕';
+    default:
+      return item.failureKind ? '⚠' : '↑';
+  }
+}
+
+function failureKindLabel(kind: ApiFailureKind): string {
+  switch (kind) {
+    case 'network':
+      return 'offline';
+    case 'auth':
+      return 'auth error';
+    case 'conflict':
+      return 'conflict';
+    case 'validation':
+      return 'invalid';
+    case 'server_error':
+      return 'server error';
+  }
+}
+
+function canRetry(item: QueuedWrite): boolean {
+  return (
+    (item.status === 'pending' || item.status === 'abandoned') &&
+    item.failureKind !== null &&
+    item.failureKind !== 'conflict' &&
+    item.failureKind !== 'validation'
+  );
+}
+
+function canAbandon(item: QueuedWrite): boolean {
+  return item.status === 'pending' || item.status === 'running';
+}
+
+// ── Standard actions ──────────────────────────────────────────────────────────
 
 function handleRefresh() {
   void queryClient.invalidateQueries({ queryKey: ['v1'] });
@@ -185,7 +306,6 @@ function handleDeleteCacheClick() {
 
 async function confirmDeleteCache() {
   confirmingDelete.value = false;
-  // Clear all server-derived and user-preference caches
   await Promise.all([
     db.queryCache.clear(),
     db.entryContent.clear(),
@@ -193,7 +313,6 @@ async function confirmDeleteCache() {
     db.pathPreferences.clear(),
   ]);
   localStorage.removeItem('pathOrder');
-  // Reload to re-fetch everything cleanly
   window.location.reload();
 }
 </script>
@@ -246,38 +365,7 @@ async function confirmDeleteCache() {
   text-overflow: ellipsis;
 }
 
-/* ── Autosave indicator ── */
-.refresh-status__autosave-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  opacity: 0.75;
-}
-
-.refresh-status__autosave-spinner {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border: 1.5px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: refresh-autosave-spin 0.8s linear infinite;
-}
-
-.refresh-status__autosave-label {
-  font-size: 0.68rem;
-  font-weight: 600;
-  line-height: 1;
-}
-
-@keyframes refresh-autosave-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ── Pending-saves badge ── */
+/* ── Pending-writes badge ── */
 .refresh-status__pending-badge {
   display: inline-flex;
   align-items: center;
@@ -292,14 +380,14 @@ async function confirmDeleteCache() {
   line-height: 1.5;
 }
 
-/* ── Draft-init error badge ── */
-.refresh-status__draft-init-badge {
+/* ── Failed-writes badge ── */
+.refresh-status__error-badge {
   display: inline-flex;
   align-items: center;
   gap: 2px;
   padding: 1px 6px;
   border-radius: 999px;
-  background: var(--ion-color-warning, #f57c00);
+  background: var(--ion-color-danger, #eb445a);
   color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
@@ -354,51 +442,190 @@ details[open] .refresh-status__chevron {
   line-height: 1.4;
 }
 
-/* ── Draft-init errors ── */
-.refresh-status__draft-init-errors {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.refresh-status__draft-init-error {
+/* ── Section titles ── */
+.refresh-status__section-title {
   margin: 0;
-  font-size: 0.75rem;
-  color: var(--ion-color-warning, #f57c00);
-  font-weight: 600;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--ion-color-medium, #808080);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   line-height: 1.4;
 }
 
-/* ── Pending-saves list ── */
-.refresh-status__pending-list {
+.refresh-status__section-title--danger {
+  color: var(--ion-color-danger, #eb445a);
+}
+
+/* ── Write queue ── */
+.refresh-status__queue {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
-.refresh-status__pending-title {
+.refresh-status__queue-list {
   margin: 0;
-  font-size: 0.75rem;
-  color: var(--ion-color-warning, #f57c00);
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.refresh-status__pending-items {
-  margin: 0;
-  padding: 0 0 0 12px;
+  padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 
-.refresh-status__pending-item {
+.refresh-status__queue-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--ion-item-background, var(--ion-background-color));
+  border: 1px solid var(--ion-border-color, rgba(0, 0, 0, 0.08));
+}
+
+.refresh-status__queue-item--success {
+  border-color: var(--ion-color-success, #2dd36f);
+  opacity: 0.75;
+}
+
+.refresh-status__queue-item--abandoned {
+  border-color: var(--ion-color-danger, #eb445a);
+}
+
+.refresh-status__queue-item--running .refresh-status__queue-item-icon,
+.refresh-status__queue-item--repairing .refresh-status__queue-item-icon {
+  display: inline-block;
+  animation: refresh-autosave-spin 0.8s linear infinite;
+}
+
+.refresh-status__queue-item-icon {
+  font-size: 0.75rem;
+  display: inline-block;
+}
+
+.refresh-status__queue-item-label {
   font-size: 0.73rem;
+  color: var(--ion-text-color);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.refresh-status__queue-item-kind {
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0 5px;
+  line-height: 1.6;
+  align-self: flex-start;
+}
+
+.refresh-status__queue-item-kind--network,
+.refresh-status__queue-item-kind--server_error {
+  background: var(--ion-color-warning, #f57c00);
+  color: #fff;
+}
+
+.refresh-status__queue-item-kind--auth {
+  background: var(--ion-color-tertiary, #6030a0);
+  color: #fff;
+}
+
+.refresh-status__queue-item-kind--conflict,
+.refresh-status__queue-item-kind--validation {
+  background: var(--ion-color-danger, #eb445a);
+  color: #fff;
+}
+
+.refresh-status__queue-item-retry {
+  font-size: 0.65rem;
   color: var(--ion-color-medium, #808080);
   line-height: 1.4;
 }
 
+.refresh-status__queue-item-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.refresh-status__queue-action-btn {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--ion-border-color, rgba(0, 0, 0, 0.2));
+  background: var(--ion-background-color);
+  color: var(--ion-text-color);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: opacity 0.15s;
+}
+
+.refresh-status__queue-action-btn:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.refresh-status__queue-action-btn--danger {
+  border-color: var(--ion-color-danger, #eb445a);
+  color: var(--ion-color-danger, #eb445a);
+}
+
+.refresh-status__queue-item-message {
+  margin: 2px 0 0;
+  font-size: 0.68rem;
+  color: var(--ion-color-medium, #808080);
+  line-height: 1.4;
+}
+
+/* ── Abandoned writes ── */
+.refresh-status__abandoned {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.refresh-status__abandoned-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.refresh-status__abandoned-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.refresh-status__abandoned-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--ion-color-danger, #eb445a);
+  background: var(--ion-item-background, var(--ion-background-color));
+}
+
+.refresh-status__abandoned-label {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--ion-text-color);
+  line-height: 1.4;
+}
+
+.refresh-status__abandoned-note {
+  font-size: 0.68rem;
+  color: var(--ion-color-medium, #808080);
+  line-height: 1.4;
+}
+
+/* ── Detail text ── */
 .refresh-status__detail-text {
   margin: 0;
   font-size: 0.75rem;
@@ -406,6 +633,7 @@ details[open] .refresh-status__chevron {
   line-height: 1.4;
 }
 
+/* ── Actions ── */
 .refresh-status__actions {
   display: flex;
   gap: 8px;
@@ -471,6 +699,12 @@ details[open] .refresh-status__chevron {
   }
   50% {
     opacity: 1;
+  }
+}
+
+@keyframes refresh-autosave-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

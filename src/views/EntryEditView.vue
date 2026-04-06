@@ -63,7 +63,9 @@
             :autosave-offline="autosaveOffline"
             :upload-disabled="committing || !draftId || autosaveOffline"
             :upload-button-title="
-              autosaveOffline ? 'Image upload is unavailable while offline' : undefined
+              autosaveOffline
+                ? 'Image upload is unavailable while offline'
+                : undefined
             "
             :image-error="imageError"
             :attached-images="attachedImages"
@@ -191,6 +193,13 @@
       </ion-footer>
     </ion-modal>
 
+    <ion-footer>
+      <RefreshStatus
+        :status-type="refreshStatusType"
+        :status-text="refreshStatusText"
+        :last-checked-at="refreshLastCheckedAt"
+      />
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -215,11 +224,13 @@ import { useRoute, useRouter } from 'vue-router';
 
 import EntryEditorPanel from '../components/EntryEditorPanel.vue';
 import MarkdownContent from '../components/MarkdownContent.vue';
+import RefreshStatus from '../components/RefreshStatus.vue';
 import { useDraftImageUpload } from '../composables/useDraftImageUpload';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { usePaths } from '../composables/usePaths';
 import { usePendingSaves } from '../composables/usePendingSaves';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import {
   startEditEntryDraft,
   useAbandonEntryDraft,
@@ -308,6 +319,12 @@ const {
   registerDraftInitError,
   clearDraftInitError,
 } = usePendingSaves();
+
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
 
 const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
@@ -411,11 +428,15 @@ const hasBlockingImages = computed(() =>
   imageDrafts.value.some(
     (image) =>
       !image.removed &&
-      ['local', 'uploading', 'draft-uploading', 'failed'].includes(image.status),
+      ['local', 'uploading', 'draft-uploading', 'failed'].includes(
+        image.status,
+      ),
   ),
 );
 const hasFailedImages = computed(() =>
-  imageDrafts.value.some((image) => !image.removed && image.status === 'failed'),
+  imageDrafts.value.some(
+    (image) => !image.removed && image.status === 'failed',
+  ),
 );
 
 // ─── Derived ─────────────────────────────────────────────────────────────
@@ -888,7 +909,11 @@ function pendingSaveKey(): string {
   return `edit:${pathId.value}:${entryId.value}`;
 }
 
-function logCommitFailure(context: string, err: unknown, extra: Record<string, unknown> = {}) {
+function logCommitFailure(
+  context: string,
+  err: unknown,
+  extra: Record<string, unknown> = {},
+) {
   const response =
     err && typeof err === 'object' && 'response' in err
       ? (err as { response?: { status?: number; data?: unknown } }).response
@@ -1128,18 +1153,16 @@ async function commitDraft() {
     } else {
       const detail =
         status === 422
-          ? (
-              err as { response?: { data?: { detail?: { code?: string } } } }
-            ).response?.data?.detail
+          ? (err as { response?: { data?: { detail?: { code?: string } } } })
+              .response?.data?.detail
           : undefined;
       let message: string;
       let willRetry = status !== 422;
       if (status === 422) {
         if (detail?.code === 'images_not_ready') {
-          message =
-            hasFailedImages.value
-              ? 'One or more images failed to finish processing. Remove or retry them before saving.'
-              : 'Some images are still uploading or processing. Please wait a moment, then try saving again.';
+          message = hasFailedImages.value
+            ? 'One or more images failed to finish processing. Remove or retry them before saving.'
+            : 'Some images are still uploading or processing. Please wait a moment, then try saving again.';
         } else {
           message =
             extractErrorMessage(err) ?? 'Failed to save. Please try again.';

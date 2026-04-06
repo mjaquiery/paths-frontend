@@ -68,6 +68,13 @@
         </div>
       </div>
     </ion-content>
+    <ion-footer>
+      <RefreshStatus
+        :status-type="refreshStatusType"
+        :status-text="refreshStatusText"
+        :last-checked-at="refreshLastCheckedAt"
+      />
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -78,6 +85,7 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonFooter,
   IonButton,
   IonButtons,
   IonBackButton,
@@ -88,7 +96,9 @@ import { computed } from 'vue';
 import { usePaths } from '../composables/usePaths';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { useCurrentUser } from '../composables/useCurrentUser';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { extractErrorMessage } from '../lib/errors';
+import RefreshStatus from '../components/RefreshStatus.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -106,6 +116,12 @@ const { currentUserId } = useCurrentUser();
 const isOwned = computed(
   () => path.value?.owner_user_id === currentUserId.value,
 );
+
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
 
 const pathIdArr = computed(() => (path.value ? [pathId.value] : []));
 const multiPathEntries = useMultiPathEntries(pathIdArr);

@@ -81,7 +81,10 @@
     Currently offline — your changes will be saved when you reconnect.
   </p>
 
-  <ion-modal :is-open="commitFailDialogOpen" @didDismiss="$emit('close-commit-fail')">
+  <ion-modal
+    :is-open="commitFailDialogOpen"
+    @didDismiss="$emit('close-commit-fail')"
+  >
     <ion-header>
       <ion-toolbar>
         <ion-title>Save failed</ion-title>
@@ -103,7 +106,9 @@
           <ion-button fill="outline" @click="$emit('close-commit-fail')">
             Cancel
           </ion-button>
-          <ion-button @click="$emit('acknowledge-commit-failure')">OK</ion-button>
+          <ion-button @click="$emit('acknowledge-commit-failure')"
+            >OK</ion-button
+          >
         </div>
       </ion-toolbar>
     </ion-footer>
@@ -113,7 +118,9 @@
     <ion-header>
       <ion-toolbar>
         <ion-title>
-          {{ selectedImage ? `Insert ${selectedImage.filename}` : 'Insert image' }}
+          {{
+            selectedImage ? `Insert ${selectedImage.filename}` : 'Insert image'
+          }}
         </ion-title>
         <ion-buttons slot="end">
           <ion-button @click="$emit('close-caption')">Cancel</ion-button>
@@ -148,7 +155,10 @@
           <ion-button fill="outline" @click="$emit('close-caption')">
             Cancel
           </ion-button>
-          <ion-button :disabled="!selectedImage" @click="$emit('confirm-image-insert')">
+          <ion-button
+            :disabled="!selectedImage"
+            @click="$emit('confirm-image-insert')"
+          >
             Insert markdown
           </ion-button>
         </div>
@@ -162,7 +172,11 @@
         Select an image to insert it into the text.
       </p>
       <div class="editor-image-tray-scroll">
-        <div v-for="image in imageDrafts" :key="image.localId" class="editor-image-chip">
+        <div
+          v-for="image in imageDrafts"
+          :key="image.localId"
+          class="editor-image-chip"
+        >
           <button
             type="button"
             class="editor-image-chip-main"
@@ -174,11 +188,14 @@
               :preview-url="image.previewUrl"
               :filename="image.filename"
               :uploading="
-                image.status === 'uploading' || image.status === 'draft-uploading'
+                image.status === 'uploading' ||
+                image.status === 'draft-uploading'
               "
             />
             <span class="editor-image-chip-name">{{ image.filename }}</span>
-            <span class="editor-image-chip-status">{{ imageStatusText(image) }}</span>
+            <span class="editor-image-chip-status">{{
+              imageStatusText(image)
+            }}</span>
           </button>
           <button
             type="button"

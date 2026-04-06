@@ -181,6 +181,13 @@
         </ion-card>
       </div>
     </ion-content>
+    <ion-footer>
+      <RefreshStatus
+        :status-type="refreshStatusType"
+        :status-text="refreshStatusText"
+        :last-checked-at="refreshLastCheckedAt"
+      />
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -191,6 +198,7 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonFooter,
   IonButtons,
   IonBackButton,
   IonCard,
@@ -212,7 +220,9 @@ import {
   useListBlocklist,
   useUnblockUser,
 } from '../generated/apiClient';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { extractErrorMessage } from '../lib/errors';
+import RefreshStatus from '../components/RefreshStatus.vue';
 
 const {
   data: invitationsData,
@@ -229,6 +239,13 @@ const {
   refetch: refetchBlocklist,
 } = useListBlocklist();
 const { mutateAsync: doUnblock } = useUnblockUser();
+
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
+
 const loadErrorMessage = computed(() => {
   if (invitationsError.value) {
     return (

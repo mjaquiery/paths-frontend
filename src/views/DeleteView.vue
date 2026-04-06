@@ -106,6 +106,13 @@
         </ion-card>
       </div>
     </ion-content>
+    <ion-footer>
+      <RefreshStatus
+        :status-type="refreshStatusType"
+        :status-text="refreshStatusText"
+        :last-checked-at="refreshLastCheckedAt"
+      />
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -116,6 +123,7 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonFooter,
   IonButtons,
   IonBackButton,
   IonCard,
@@ -133,9 +141,17 @@ import {
   useCreateDeletionRequest,
 } from '../generated/apiClient';
 import { useCurrentUser } from '../composables/useCurrentUser';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { extractErrorMessage } from '../lib/errors';
+import RefreshStatus from '../components/RefreshStatus.vue';
 
 const { currentUser } = useCurrentUser();
+
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
 
 const { data: latestData } = useGetLatestDeletionRequest();
 const existingRequest = computed(() => latestData.value?.data ?? null);

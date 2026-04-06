@@ -17,7 +17,9 @@
         :value="description"
         placeholder="Optional description"
         :maxlength="1024"
-        @ionInput="emit('update:description', String($event.detail?.value ?? ''))"
+        @ionInput="
+          emit('update:description', String($event.detail?.value ?? ''))
+        "
       />
     </ion-item>
 
@@ -29,7 +31,9 @@
           :value="color"
           type="color"
           class="path-colour-input"
-          @input="emit('update:color', ($event.target as HTMLInputElement).value)"
+          @input="
+            emit('update:color', ($event.target as HTMLInputElement).value)
+          "
         />
         <span class="path-colour-hex">{{ color }}</span>
       </div>

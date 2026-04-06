@@ -74,9 +74,13 @@
             :content-tab="contentTab"
             :committing="committing"
             :autosave-offline="autosaveOffline"
-            :upload-disabled="!selectedPathId || committing || !draftId || autosaveOffline"
+            :upload-disabled="
+              !selectedPathId || committing || !draftId || autosaveOffline
+            "
             :upload-button-title="
-              autosaveOffline ? 'Image upload is unavailable while offline' : undefined
+              autosaveOffline
+                ? 'Image upload is unavailable while offline'
+                : undefined
             "
             :image-error="imageError"
             :attached-images="attachedImages"
@@ -105,6 +109,13 @@
         </template>
       </div>
     </ion-content>
+    <ion-footer>
+      <RefreshStatus
+        :status-type="refreshStatusType"
+        :status-text="refreshStatusText"
+        :last-checked-at="refreshLastCheckedAt"
+      />
+    </ion-footer>
   </ion-page>
 </template>
 
@@ -115,6 +126,7 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonFooter,
   IonButton,
   IonButtons,
   IonBackButton,
@@ -131,11 +143,13 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import EntryEditorPanel from '../components/EntryEditorPanel.vue';
+import RefreshStatus from '../components/RefreshStatus.vue';
 import { useCurrentUser } from '../composables/useCurrentUser';
 import { useDraftImageUpload } from '../composables/useDraftImageUpload';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { usePaths } from '../composables/usePaths';
 import { usePendingSaves } from '../composables/usePendingSaves';
+import { useRefreshStatus } from '../composables/useRefreshStatus';
 import {
   startCreateEntryDraft,
   getEntryDraft,
@@ -200,6 +214,12 @@ const {
   clearDraftInitError,
 } = usePendingSaves();
 
+const {
+  statusType: refreshStatusType,
+  statusText: refreshStatusText,
+  lastCheckedAt: refreshLastCheckedAt,
+} = useRefreshStatus();
+
 const day = ref(
   String(route.query.date ?? new Date().toISOString().slice(0, 10)),
 );
@@ -258,11 +278,15 @@ const hasBlockingImages = computed(() =>
   imageDrafts.value.some(
     (image) =>
       !image.removed &&
-      ['local', 'uploading', 'draft-uploading', 'failed'].includes(image.status),
+      ['local', 'uploading', 'draft-uploading', 'failed'].includes(
+        image.status,
+      ),
   ),
 );
 const hasFailedImages = computed(() =>
-  imageDrafts.value.some((image) => !image.removed && image.status === 'failed'),
+  imageDrafts.value.some(
+    (image) => !image.removed && image.status === 'failed',
+  ),
 );
 
 const canCommit = computed(
@@ -617,7 +641,11 @@ function pendingSaveKey(): string {
   return `create:${selectedPathId.value}:${day.value}`;
 }
 
-function logCommitFailure(context: string, err: unknown, extra: Record<string, unknown> = {}) {
+function logCommitFailure(
+  context: string,
+  err: unknown,
+  extra: Record<string, unknown> = {},
+) {
   const response =
     err && typeof err === 'object' && 'response' in err
       ? (err as { response?: { status?: number; data?: unknown } }).response
@@ -825,19 +853,17 @@ async function commitDraft() {
         : undefined;
     const detail =
       status === 422
-        ? (
-            err as { response?: { data?: { detail?: { code?: string } } } }
-          ).response?.data?.detail
+        ? (err as { response?: { data?: { detail?: { code?: string } } } })
+            .response?.data?.detail
         : undefined;
 
     let message: string;
     let willRetry = status !== 422;
     if (status === 422) {
       if (detail?.code === 'images_not_ready') {
-        message =
-          hasFailedImages.value
-            ? 'One or more images failed to finish processing. Remove or retry them before saving.'
-            : 'Some images are still uploading or processing. Please wait a moment, then try saving again.';
+        message = hasFailedImages.value
+          ? 'One or more images failed to finish processing. Remove or retry them before saving.'
+          : 'Some images are still uploading or processing. Please wait a moment, then try saving again.';
       } else {
         message =
           extractErrorMessage(err) ?? 'Failed to save. Please try again.';
@@ -1013,5 +1039,4 @@ onBeforeUnmount(async () => {
   gap: 10px;
   flex-wrap: wrap;
 }
-
 </style>
