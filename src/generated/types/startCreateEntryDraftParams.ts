@@ -6,8 +6,8 @@
  */
 
 export type StartCreateEntryDraftParams = {
-  /**
-   * Calendar date for the new entry
-   */
-  day: string;
+/**
+ * Calendar date for the new entry
+ */
+day: string;
 };
