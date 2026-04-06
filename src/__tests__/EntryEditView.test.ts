@@ -335,6 +335,35 @@ describe('EntryEditView', () => {
     expect(saveBtn?.attributes('disabled')).toBeDefined();
   });
 
+  it('Save button is disabled while an attached image is still processing', async () => {
+    const wrapper = mountEditView();
+    await flushPromises();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Updated content.';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).imageDrafts = [
+      {
+        localId: 'draft-image-1',
+        source: 'server',
+        status: 'draft-uploading',
+        image: null,
+        draftImageId: 'dimg-1',
+        file: null,
+        filename: 'river.jpg',
+        previewUrl: null,
+        captionDraft: 'River',
+        removed: false,
+        error: '',
+      },
+    ];
+    await wrapper.vm.$nextTick();
+
+    const saveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save'));
+    expect(saveBtn?.attributes('disabled')).toBeDefined();
+  });
+
   it('commits the draft and navigates back on success', async () => {
     const wrapper = mountEditView();
     await flushPromises();
@@ -367,6 +396,28 @@ describe('EntryEditView', () => {
     // The commit-fail dialog should be open
     expect(wrapper.html()).toMatch(/Save failed/i);
     expect(wrapper.html()).toMatch(/retrying to save in the background/i);
+  });
+
+  it('navigates back to the entry view when OK is chosen for a retrying save failure', async () => {
+    mockCommitDraft.mockRejectedValue(networkError());
+    const wrapper = mountEditView();
+    await flushPromises();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Updated content.';
+    await wrapper.vm.$nextTick();
+
+    const saveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save'));
+    await saveBtn?.trigger('click');
+    await flushPromises();
+
+    const okBtn = wrapper.findAll('button').find((b) => b.text() === 'OK');
+    await okBtn?.trigger('click');
+    await flushPromises();
+
+    expect(mockRouterReplace).toHaveBeenCalledWith('/entry/p1/e1');
   });
 
   it('opens conflict resolution modal when commit returns 409', async () => {

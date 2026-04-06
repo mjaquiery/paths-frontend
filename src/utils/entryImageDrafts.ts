@@ -91,10 +91,15 @@ export function createDraftServerImageDraft(
   captionDraft = '',
 ): EntryImageDraft {
   const isDraftReady = draftImage.status === 'ready';
+  const isDraftFailed = draftImage.status === 'failed';
   return {
     localId: nextDraftId(),
     source: 'server',
-    status: isDraftReady ? 'draft-ready' : 'draft-uploading',
+    status: isDraftReady
+      ? 'draft-ready'
+      : isDraftFailed
+        ? 'failed'
+        : 'draft-uploading',
     image: imageResponseFromDraftImage(draftImage),
     draftImageId: String(draftImage.id),
     file: null,
@@ -102,7 +107,7 @@ export function createDraftServerImageDraft(
     previewUrl: null,
     captionDraft,
     removed: false,
-    error: '',
+    error: isDraftFailed ? 'Processing failed.' : '',
   };
 }
 
@@ -111,14 +116,18 @@ export function mergeDraftImageFromServer(
   draftImage: DraftImageResponse,
 ): EntryImageDraft {
   const isDraftReady = draftImage.status === 'ready';
+  const isDraftFailed = draftImage.status === 'failed';
   return {
     ...draft,
     image: imageResponseFromDraftImage(draftImage),
     draftImageId: String(draftImage.id),
     filename: draftImage.filename,
-    status: isDraftReady ? 'draft-ready' : 'draft-uploading',
-    error:
-      draftImage.status === 'failed' ? draft.error || 'Processing failed.' : '',
+    status: isDraftReady
+      ? 'draft-ready'
+      : isDraftFailed
+        ? 'failed'
+        : 'draft-uploading',
+    error: isDraftFailed ? draft.error || 'Processing failed.' : '',
   };
 }
 

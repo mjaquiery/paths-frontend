@@ -301,6 +301,35 @@ describe('EntryCreateView', () => {
     expect(saveBtn?.attributes('disabled')).toBeUndefined();
   });
 
+  it('Save button is disabled while an attached image is still processing', async () => {
+    const wrapper = mountCreateView();
+    await flushPromises();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).content = 'Some content';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (wrapper.vm as any).imageDrafts = [
+      {
+        localId: 'draft-image-1',
+        source: 'server',
+        status: 'draft-uploading',
+        image: null,
+        draftImageId: 'dimg-1',
+        file: null,
+        filename: 'river.jpg',
+        previewUrl: null,
+        captionDraft: 'River',
+        removed: false,
+        error: '',
+      },
+    ];
+    await wrapper.vm.$nextTick();
+
+    const saveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save'));
+    expect(saveBtn?.attributes('disabled')).toBeDefined();
+  });
+
   it('shows inline error note when draft init fails (does not block the form)', async () => {
     mockStartCreateEntryDraft.mockRejectedValue(new Error('Draft failed'));
     const wrapper = mountCreateView();
@@ -428,6 +457,28 @@ describe('EntryCreateView', () => {
     // The commit-fail dialog should be open (modal rendered with isOpen=true)
     expect(wrapper.html()).toMatch(/Save failed/i);
     expect(wrapper.html()).toMatch(/retrying to save in the background/i);
+  });
+
+  it('navigates to the path view when OK is chosen for a retrying save failure', async () => {
+    mockCommitDraft.mockRejectedValue({ response: { status: 503 } });
+    const wrapper = mountCreateView();
+    await flushPromises();
+
+    const textarea = wrapper.find('textarea');
+    await textarea.setValue('My entry content');
+    await flushPromises();
+
+    const saveBtn = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Save'));
+    await saveBtn?.trigger('click');
+    await flushPromises();
+
+    const okBtn = wrapper.findAll('button').find((b) => b.text() === 'OK');
+    await okBtn?.trigger('click');
+    await flushPromises();
+
+    expect(mockRouterReplace).toHaveBeenCalledWith('/path/p1');
   });
 
   it('abandons the draft on unmount if not committed', async () => {

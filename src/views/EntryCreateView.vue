@@ -177,9 +177,12 @@
       </ion-header>
       <ion-content class="ion-padding commit-fail-dialog-content">
         <p class="commit-fail-dialog-message">{{ commitFailDialogMessage }}</p>
-        <p class="commit-fail-dialog-note">
+        <p v-if="commitFailWillRetry" class="commit-fail-dialog-note">
           Your entry will keep retrying to save in the background. You can watch
           the status bar at the bottom of the screen for updates.
+        </p>
+        <p v-else class="commit-fail-dialog-note">
+          Fix the issue above, then try saving again.
         </p>
       </ion-content>
       <ion-footer>
@@ -188,9 +191,7 @@
             <ion-button fill="outline" @click="commitFailDialogOpen = false"
               >Cancel</ion-button
             >
-            <ion-button @click="commitFailDialogOpen = false"
-              >OK — keep retrying</ion-button
-            >
+            <ion-button @click="acknowledgeCommitFailure">OK</ion-button>
           </div>
         </ion-toolbar>
       </ion-footer>
@@ -359,6 +360,7 @@ import {
 } from '../utils/entryImageDrafts';
 
 const AUTOSAVE_DEBOUNCE_MS = 5000;
+const MAX_COMMIT_RETRY_DELAY_MS = 60000;
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
@@ -435,11 +437,15 @@ let lastSavedContent = '';
 const commitFailDialogOpen = ref(false);
 /** Message shown in the commit-fail inform dialog */
 const commitFailDialogMessage = ref('');
+/** Whether the current commit failure will be retried automatically */
+const commitFailWillRetry = ref(true);
+const backgroundCommitDelegated = ref(false);
 
 /** Background commit-retry timer (after a manual save failure) */
 let commitRetryTimer: ReturnType<typeof setTimeout> | null = null;
 /** Whether a commit retry is currently in progress */
 const commitRetrying = ref(false);
+let commitRetryAttempt = 0;
 
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
@@ -447,8 +453,23 @@ const isCaptionModalOpen = ref(false);
 const captionDraft = ref('');
 const selectedImage = ref<EntryImageDraft | null>(null);
 
+const hasBlockingImages = computed(() =>
+  imageDrafts.value.some(
+    (image) =>
+      !image.removed &&
+      ['local', 'uploading', 'draft-uploading', 'failed'].includes(image.status),
+  ),
+);
+const hasFailedImages = computed(() =>
+  imageDrafts.value.some((image) => !image.removed && image.status === 'failed'),
+);
+
 const canCommit = computed(
-  () => !!selectedPathId.value && !!day.value && !!content.value.trim(),
+  () =>
+    !!selectedPathId.value &&
+    !!day.value &&
+    !!content.value.trim() &&
+    !hasBlockingImages.value,
 );
 const attachedImages = computed(() =>
   getAttachedImageResponses(imageDrafts.value),
@@ -803,6 +824,67 @@ function pendingSaveKey(): string {
   return `create:${selectedPathId.value}:${day.value}`;
 }
 
+function logCommitFailure(context: string, err: unknown, extra: Record<string, unknown> = {}) {
+  const response =
+    err && typeof err === 'object' && 'response' in err
+      ? (err as { response?: { status?: number; data?: unknown } }).response
+      : undefined;
+
+  console.error(`[EntryCreateView] ${context}`, {
+    status: response?.status,
+    response: response?.data,
+    draftId: draftId.value || null,
+    pathId: selectedPathId.value || null,
+    day: day.value || null,
+    imageStates: imageDrafts.value.map((image) => ({
+      filename: image.filename,
+      status: image.status,
+      draftImageId: image.draftImageId,
+      removed: image.removed,
+      error: image.error || null,
+    })),
+    ...extra,
+  });
+}
+
+function resetCommitRetryState() {
+  commitRetryAttempt = 0;
+  commitFailWillRetry.value = true;
+  backgroundCommitDelegated.value = false;
+}
+
+function nextCommitRetryDelay() {
+  const delay = Math.min(
+    AUTOSAVE_DEBOUNCE_MS * 2 ** commitRetryAttempt,
+    MAX_COMMIT_RETRY_DELAY_MS,
+  );
+  commitRetryAttempt += 1;
+  return delay;
+}
+
+function scheduleCommitRetry(reason: string) {
+  const delay = nextCommitRetryDelay();
+  console.info('[EntryCreateView] scheduling commit retry', {
+    reason,
+    delayMs: delay,
+    attempt: commitRetryAttempt,
+    draftId: draftId.value || null,
+  });
+  commitRetryTimer = setTimeout(() => void attemptCommitRetry(), delay);
+}
+
+async function acknowledgeCommitFailure() {
+  commitFailDialogOpen.value = false;
+  if (!commitFailWillRetry.value) return;
+
+  backgroundCommitDelegated.value = true;
+  if (selectedPathId.value) {
+    await router.replace(`/path/${selectedPathId.value}`);
+    return;
+  }
+  await router.replace('/');
+}
+
 /** Attempt a background commit retry (called after a failed manual save). */
 async function attemptCommitRetry() {
   commitRetryTimer = null;
@@ -847,19 +929,30 @@ async function attemptCommitRetry() {
     removePendingSave(pendingSaveKey(), true);
     clearDraftInitError(pendingSaveKey());
     draftId.value = '';
+    commitRetryAttempt = 0;
     const newEntryId =
       commitResponse.status === 200 ? commitResponse.data.id : null;
-    if (newEntryId && selectedPathId.value) {
+    const shouldNavigate = !backgroundCommitDelegated.value;
+    backgroundCommitDelegated.value = false;
+    if (shouldNavigate && newEntryId && selectedPathId.value) {
       await router.replace(`/entry/${selectedPathId.value}/${newEntryId}`);
-    } else {
+    } else if (shouldNavigate) {
       router.back();
     }
-  } catch {
-    // Still failing — schedule another retry
-    commitRetryTimer = setTimeout(
-      () => void attemptCommitRetry(),
-      AUTOSAVE_DEBOUNCE_MS,
-    );
+  } catch (err: unknown) {
+    logCommitFailure('background commit retry failed', err, {
+      attempt: commitRetryAttempt,
+    });
+    const status =
+      err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { status?: number } }).response?.status
+        : undefined;
+
+    if (status !== 422) {
+      scheduleCommitRetry('retry_failed');
+    } else {
+      removePendingSave(pendingSaveKey(), false);
+    }
   } finally {
     commitRetrying.value = false;
   }
@@ -870,6 +963,12 @@ async function commitDraft() {
 
   committing.value = true;
   commitError.value = '';
+  backgroundCommitDelegated.value = false;
+  commitRetryAttempt = 0;
+  if (commitRetryTimer !== null) {
+    clearTimeout(commitRetryTimer);
+    commitRetryTimer = null;
+  }
 
   try {
     // Cancel any pending debounce timer and await any in-flight autosave
@@ -918,6 +1017,7 @@ async function commitDraft() {
     clearSavedNotification();
     clearDraftInitError(pendingSaveKey());
     draftId.value = '';
+    resetCommitRetryState();
     const newEntryId =
       commitResponse.status === 200 ? commitResponse.data.id : null;
     if (newEntryId && selectedPathId.value) {
@@ -930,15 +1030,21 @@ async function commitDraft() {
       err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { status?: number } }).response?.status
         : undefined;
+    const detail =
+      status === 422
+        ? (
+            err as { response?: { data?: { detail?: { code?: string } } } }
+          ).response?.data?.detail
+        : undefined;
 
     let message: string;
+    let willRetry = status !== 422;
     if (status === 422) {
-      const detail = (
-        err as { response?: { data?: { detail?: { code?: string } } } }
-      ).response?.data?.detail;
       if (detail?.code === 'images_not_ready') {
         message =
-          'Some images are still uploading. Please wait a moment and try again.';
+          hasFailedImages.value
+            ? 'One or more images failed to finish processing. Remove or retry them before saving.'
+            : 'Some images are still uploading or processing. Please wait a moment, then try saving again.';
       } else {
         message =
           extractErrorMessage(err) ?? 'Failed to save. Please try again.';
@@ -947,14 +1053,18 @@ async function commitDraft() {
       message = extractErrorMessage(err) ?? 'Failed to save. Please try again.';
     }
 
-    // Show the inform dialog and start a background retry
+    logCommitFailure('manual commit failed', err, { willRetry });
+
+    // Validation failures require user action; transient failures can retry.
     commitFailDialogMessage.value = message;
+    commitFailWillRetry.value = willRetry;
     commitFailDialogOpen.value = true;
-    registerPendingSave(pendingSaveKey(), buildPendingSaveLabel());
-    commitRetryTimer = setTimeout(
-      () => void attemptCommitRetry(),
-      AUTOSAVE_DEBOUNCE_MS,
-    );
+    if (willRetry) {
+      registerPendingSave(pendingSaveKey(), buildPendingSaveLabel());
+      scheduleCommitRetry('manual_commit_failed');
+    } else {
+      removePendingSave(pendingSaveKey(), false);
+    }
   } finally {
     committing.value = false;
   }
@@ -1021,18 +1131,26 @@ watch(ownedPaths, (nextPaths, previousPaths) => {
 onBeforeUnmount(async () => {
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
   if (draftInitRetryTimer !== null) clearTimeout(draftInitRetryTimer);
-  if (commitRetryTimer !== null) clearTimeout(commitRetryTimer);
-  if (draftImageRefreshTimer !== null) clearTimeout(draftImageRefreshTimer);
+  if (!backgroundCommitDelegated.value && commitRetryTimer !== null) {
+    clearTimeout(commitRetryTimer);
+  }
+  if (!backgroundCommitDelegated.value && draftImageRefreshTimer !== null) {
+    clearTimeout(draftImageRefreshTimer);
+  }
   window.removeEventListener('online', handleOnline);
+
+  for (const draft of imageDrafts.value) {
+    revokeDraftPreviewUrl(draft);
+  }
+
+  if (backgroundCommitDelegated.value) {
+    return;
+  }
 
   // Deregister any pending save entry (not succeeded — just navigating away)
   removePendingSave(pendingSaveKey(), false);
   setContentSaving(pendingSaveKey(), false);
   clearDraftInitError(pendingSaveKey());
-
-  for (const draft of imageDrafts.value) {
-    revokeDraftPreviewUrl(draft);
-  }
 
   // Abandon the server draft if we navigated away without committing
   if (draftId.value) {

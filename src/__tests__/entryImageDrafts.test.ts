@@ -341,11 +341,19 @@ describe('createDraftServerImageDraft', () => {
     expect(draft.image).toBeNull();
   });
 
-  it('creates a draft-uploading draft when status is not ready', () => {
+  it('creates a draft-uploading draft when status is pending', () => {
     const draft = createDraftServerImageDraft(
       makeDraftImageResponse({ status: 'pending' }),
     );
     expect(draft.status).toBe('draft-uploading');
+  });
+
+  it('creates a failed draft when status is failed', () => {
+    const draft = createDraftServerImageDraft(
+      makeDraftImageResponse({ status: 'failed' }),
+    );
+    expect(draft.status).toBe('failed');
+    expect(draft.error).toBe('Processing failed.');
   });
 
   it('uses the provided captionDraft', () => {
