@@ -221,6 +221,19 @@ export function shouldRetry(
   return attempts < MAX_SERVER_ERROR_ATTEMPTS;
 }
 
+// ─── Read tracking ────────────────────────────────────────────────────────────
+
+/**
+ * A lightweight record of the most recent API read (GET) operation.
+ * Writes to this are fire-and-forget — reads are never retried.
+ */
+export interface LastRead {
+  /** Short human-readable description of what was fetched. */
+  label: string;
+  /** Timestamp of the read (ms since epoch). */
+  at: number;
+}
+
 // ─── Module-level singleton state ─────────────────────────────────────────────
 // All component instances share the same write queue so the status bar
 // (mounted in a footer) can observe operations enqueued by any view.
@@ -232,6 +245,9 @@ const _abandonedWrites = ref<
 const _isOnline = ref(
   typeof navigator !== 'undefined' ? navigator.onLine : true,
 );
+
+/** The most recent successful read operation recorded by `trackRead`. */
+const _lastRead = ref<LastRead | null>(null);
 
 // Map of item.id → timer handle for scheduled retries
 const _retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -371,14 +387,17 @@ function abandonItem(item: QueuedWrite, note: string) {
  * - `pendingCount`: number of writes not yet succeeded/abandoned.
  * - `hasFailure`: true when any write is in a failed/retrying state.
  * - `abandonedWrites`: list of recently abandoned writes with explanatory notes.
+ * - `lastRead`: the most recent read operation tracked by `trackRead`, or null.
  * - `enqueue(item)`: add a write to the queue and execute it immediately.
  * - `abandon(id)`: manually abandon a queued write by id.
  * - `retry(id)`: manually trigger an immediate retry for a pending item.
  * - `clearAbandoned()`: dismiss all abandoned write notices.
+ * - `trackRead(label)`: record that a read (GET) was just performed.
  */
 export function useApi() {
   const queue = computed(() => _queue.value);
   const isOnline = computed(() => _isOnline.value);
+  const lastRead = computed(() => _lastRead.value);
 
   const pendingCount = computed(
     () =>
@@ -486,16 +505,28 @@ export function useApi() {
     _abandonedWrites.value = [];
   }
 
+  /**
+   * Record that a read (GET) operation just completed successfully.
+   * This updates `lastRead` so the status bar can display "Last read: X".
+   *
+   * Call this after any successful data fetch that is meaningful to surface.
+   */
+  function trackRead(label: string): void {
+    _lastRead.value = { label, at: Date.now() };
+  }
+
   return {
     isOnline: readonly(isOnline),
     queue: readonly(queue),
     pendingCount: readonly(pendingCount),
     hasFailure: readonly(hasFailure),
     abandonedWrites: readonly(abandonedWrites),
+    lastRead: readonly(lastRead),
     enqueue,
     abandon,
     retry,
     clearAbandoned,
+    trackRead,
   };
 }
 
@@ -514,5 +545,6 @@ export function resetApiState(): void {
 
   _queue.value = [];
   _abandonedWrites.value = [];
+  _lastRead.value = null;
   _isOnline.value = typeof navigator !== 'undefined' ? navigator.onLine : true;
 }

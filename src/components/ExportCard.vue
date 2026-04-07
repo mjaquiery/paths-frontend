@@ -118,6 +118,7 @@ import {
   downloadFileFromUrl,
   exportLocalData,
 } from '../utils/export';
+import { useApi } from '../composables/useApi';
 
 defineProps<{ paths: PathResponse[] }>();
 
@@ -129,6 +130,7 @@ const downloadError = ref('');
 const showLocalExportAlert = ref(false);
 const localExportAlertMessage = ref('');
 const { mutateAsync: createExportMutation } = useCreateExport();
+const { enqueue } = useApi();
 
 function todayYYYYMMDD(): string {
   return new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -151,21 +153,29 @@ function setExportPath(pathId: string, event: CheckboxCustomEvent) {
   else selectedForExport.value.delete(pathId);
 }
 
-async function triggerExport() {
+function triggerExport() {
   jsonDownloadUrl.value = '';
   imagesDownloadUrl.value = '';
-  try {
-    exportJob.value = (
-      await createExportMutation({
-        data: { path_ids: [...selectedForExport.value] },
-      })
-    ).data as ExportJobResponse;
-    await pollExport();
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    localExportAlertMessage.value = `Remote export failed: ${msg}. Would you like to export your locally cached data instead?`;
-    showLocalExportAlert.value = true;
-  }
+  enqueue({
+    id: `trigger-export:${[...selectedForExport.value].sort().join(',')}`,
+    label: 'Trigger export',
+    execute: async () => {
+      try {
+        exportJob.value = (
+          await createExportMutation({
+            data: { path_ids: [...selectedForExport.value] },
+          })
+        ).data as ExportJobResponse;
+        await pollExport();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        localExportAlertMessage.value = `Remote export failed: ${msg}. Would you like to export your locally cached data instead?`;
+        showLocalExportAlert.value = true;
+        // Re-throw so enqueue classifies the failure correctly
+        throw e;
+      }
+    },
+  });
 }
 
 async function pollExport() {

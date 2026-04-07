@@ -89,7 +89,6 @@
                 :spellcheck="false"
               />
             </ion-item>
-            <p v-if="submitError" class="error-msg">{{ submitError }}</p>
             <ion-button
               expand="block"
               color="danger"
@@ -142,10 +141,12 @@ import {
 } from '../generated/apiClient';
 import { useCurrentUser } from '../composables/useCurrentUser';
 import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { extractErrorMessage } from '../lib/errors';
+import { useApi } from '../composables/useApi';
 import RefreshStatus from '../components/RefreshStatus.vue';
 
 const { currentUser } = useCurrentUser();
+
+const { enqueue } = useApi();
 
 const {
   statusType: refreshStatusType,
@@ -178,21 +179,21 @@ const confirmMatches = computed(
 );
 
 const submitting = ref(false);
-const submitError = ref('');
 
-async function submitDeletion() {
-  if (!confirmMatches.value) return;
+function submitDeletion() {
+  if (!confirmMatches.value || submitting.value) return;
   submitting.value = true;
-  submitError.value = '';
-  try {
-    await doCreateDeletion();
-  } catch (err) {
-    submitError.value =
-      extractErrorMessage(err) ??
-      'Failed to submit deletion request. Please try again.';
-  } finally {
-    submitting.value = false;
-  }
+  enqueue({
+    id: 'delete-account',
+    label: 'Request account deletion',
+    execute: async () => {
+      try {
+        await doCreateDeletion();
+      } finally {
+        submitting.value = false;
+      }
+    },
+  });
 }
 
 function formatDate(dateStr: string): string {

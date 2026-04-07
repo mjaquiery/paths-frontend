@@ -14,7 +14,6 @@
         :description="form.description"
         :color="form.color"
         color-input-id="edit-path-colour-picker"
-        :error-message="errorMessage"
         @update:title="form.title = $event"
         @update:description="form.description = $event"
         @update:color="form.color = $event"
@@ -53,6 +52,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 import PathFormFields from './PathFormFields.vue';
 import type { PathResponse } from '../generated/types';
 import { useUpdatePath } from '../generated/apiClient';
+import { useApi } from '../composables/useApi';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -66,10 +66,10 @@ const emit = defineEmits<{
 
 const queryClient = useQueryClient();
 const { mutateAsync: doUpdatePath } = useUpdatePath();
+const { enqueue } = useApi();
 
 const form = ref({ title: '', description: '', color: '' });
 const saving = ref(false);
-const errorMessage = ref('');
 
 watch(
   () => props.isOpen,
@@ -80,7 +80,6 @@ watch(
         description: props.path.description ?? '',
         color: props.path.color,
       };
-      errorMessage.value = '';
     }
   },
 );
@@ -88,32 +87,31 @@ watch(
 async function save() {
   if (!form.value.title.trim()) return;
   saving.value = true;
-  errorMessage.value = '';
-  try {
-    const result = await doUpdatePath({
-      pathCode: props.path.path_id,
-      data: {
-        title: form.value.title.trim(),
-        description: form.value.description.trim() || null,
-        color: form.value.color,
-      },
-    });
-    void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
-    if (result.status === 200) {
-      emit('updated', result.data as PathResponse);
-    }
-    emit('dismiss');
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('Request failed: 409')) {
-      errorMessage.value =
-        'A path with that name already exists. Please choose a different title.';
-    } else {
-      errorMessage.value = 'Failed to update path. Please try again.';
-    }
-  } finally {
-    saving.value = false;
-  }
+
+  const title = form.value.title.trim();
+  const description = form.value.description.trim() || null;
+  const color = form.value.color;
+  const pathCode = props.path.path_id;
+
+  enqueue({
+    id: `update-path:${pathCode}`,
+    label: `Update path "${title}"`,
+    execute: async () => {
+      const result = await doUpdatePath({
+        pathCode,
+        data: { title, description, color },
+      });
+      void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+      if (result.status === 200) {
+        emit('updated', result.data as PathResponse);
+      }
+      emit('dismiss');
+    },
+  });
+
+  // Close modal optimistically — queue shows progress / errors.
+  saving.value = false;
+  emit('dismiss');
 }
 
 function onDismiss() {

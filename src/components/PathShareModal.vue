@@ -24,7 +24,6 @@
           @keyup.enter="invite"
         />
       </ion-item>
-      <p v-if="errorMessage" class="share-error">{{ errorMessage }}</p>
       <p v-if="successMessage" class="share-success">{{ successMessage }}</p>
     </ion-content>
     <ion-footer>
@@ -61,7 +60,7 @@ import { ref, watch } from 'vue';
 
 import type { PathResponse } from '../generated/types';
 import { useInviteSubscriber } from '../generated/apiClient';
-import { extractErrorMessage } from '../lib/errors';
+import { useApi } from '../composables/useApi';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -73,10 +72,10 @@ const emit = defineEmits<{
 }>();
 
 const { mutateAsync: doInvite } = useInviteSubscriber();
+const { enqueue } = useApi();
 
 const email = ref('');
 const inviting = ref(false);
-const errorMessage = ref('');
 const successMessage = ref('');
 
 watch(
@@ -84,7 +83,6 @@ watch(
   (open) => {
     if (open) {
       email.value = '';
-      errorMessage.value = '';
       successMessage.value = '';
     }
   },
@@ -93,23 +91,23 @@ watch(
 async function invite() {
   if (!email.value.trim()) return;
   inviting.value = true;
-  errorMessage.value = '';
-  successMessage.value = '';
-  try {
-    await doInvite({
-      pathCode: props.path.path_id,
-      data: { email: email.value.trim() },
-    });
-    successMessage.value = `Invitation sent to ${email.value.trim()}.`;
-    email.value = '';
-  } catch (err: unknown) {
-    const detail = extractErrorMessage(err);
-    errorMessage.value = detail
-      ? `Failed to send invitation: ${detail}`
-      : 'Failed to send invitation. Please try again.';
-  } finally {
-    inviting.value = false;
-  }
+
+  const emailValue = email.value.trim();
+  const pathCode = props.path.path_id;
+  const pathTitle = props.path.title;
+
+  enqueue({
+    id: `invite:${pathCode}:${emailValue}`,
+    label: `Invite ${emailValue} to "${pathTitle}"`,
+    execute: async () => {
+      await doInvite({ pathCode, data: { email: emailValue } });
+    },
+  });
+
+  // Optimistic feedback.
+  successMessage.value = `Invitation sent to ${emailValue}.`;
+  email.value = '';
+  inviting.value = false;
 }
 
 function onDismiss() {

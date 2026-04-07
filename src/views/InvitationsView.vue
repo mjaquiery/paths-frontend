@@ -69,9 +69,6 @@
                       {{ blockBusy[inv.id] ? 'Blocking…' : 'Block sender' }}
                     </ion-button>
                   </div>
-                  <p v-if="invError[inv.id]" class="action-error">
-                    {{ invError[inv.id] }}
-                  </p>
                 </div>
               </ion-item>
             </ion-list>
@@ -121,9 +118,6 @@
                       {{ blockBusy[inv.id] ? 'Blocking…' : 'Block sender' }}
                     </ion-button>
                   </div>
-                  <p v-if="invError[inv.id]" class="action-error">
-                    {{ invError[inv.id] }}
-                  </p>
                 </div>
               </ion-item>
             </ion-list>
@@ -168,12 +162,6 @@
                       }}
                     </ion-button>
                   </div>
-                  <p
-                    v-if="unblockError[entry.blocked_user_id]"
-                    class="action-error"
-                  >
-                    {{ unblockError[entry.blocked_user_id] }}
-                  </p>
                 </div>
               </ion-item>
             </ion-list>
@@ -221,9 +209,9 @@ import {
   useUnblockUser,
 } from '../generated/apiClient';
 import { useRefreshStatus } from '../composables/useRefreshStatus';
+import { useApi } from '../composables/useApi';
 import { extractErrorMessage } from '../lib/errors';
 import RefreshStatus from '../components/RefreshStatus.vue';
-
 const {
   data: invitationsData,
   error: invitationsError,
@@ -239,6 +227,8 @@ const {
   refetch: refetchBlocklist,
 } = useListBlocklist();
 const { mutateAsync: doUnblock } = useUnblockUser();
+
+const { enqueue } = useApi();
 
 const {
   statusType: refreshStatusType,
@@ -277,63 +267,57 @@ const blocklist = computed(() => blocklistData.value?.data ?? []);
 const invBusy = ref<Record<string, boolean>>({});
 const blockBusy = ref<Record<string, boolean>>({});
 const unblockBusy = ref<Record<string, boolean>>({});
-const invError = ref<Record<string, string>>({});
-const unblockError = ref<Record<string, string>>({});
 
-async function acceptInv(invitationId: string) {
+function acceptInv(invitationId: string) {
   invBusy.value[invitationId] = true;
-  invError.value[invitationId] = '';
-  try {
-    await doAccept({ invitationId });
-    await refetchInvitations();
-  } catch (err) {
-    invError.value[invitationId] =
-      extractErrorMessage(err) ?? 'Failed to accept. Please try again.';
-  } finally {
-    invBusy.value[invitationId] = false;
-  }
+  enqueue({
+    id: `accept-invitation:${invitationId}`,
+    label: `Accept invitation`,
+    execute: async () => {
+      await doAccept({ invitationId });
+      await refetchInvitations();
+    },
+  });
+  invBusy.value[invitationId] = false;
 }
 
-async function ignoreInv(invitationId: string) {
+function ignoreInv(invitationId: string) {
   invBusy.value[invitationId] = true;
-  invError.value[invitationId] = '';
-  try {
-    await doIgnore({ invitationId });
-    await refetchInvitations();
-  } catch (err) {
-    invError.value[invitationId] =
-      extractErrorMessage(err) ?? 'Failed to ignore. Please try again.';
-  } finally {
-    invBusy.value[invitationId] = false;
-  }
+  enqueue({
+    id: `ignore-invitation:${invitationId}`,
+    label: `Ignore invitation`,
+    execute: async () => {
+      await doIgnore({ invitationId });
+      await refetchInvitations();
+    },
+  });
+  invBusy.value[invitationId] = false;
 }
 
-async function blockInv(invitationId: string, inviterUserId: string) {
+function blockInv(invitationId: string, inviterUserId: string) {
   blockBusy.value[invitationId] = true;
-  invError.value[invitationId] = '';
-  try {
-    await doBlock({ data: { user_id: inviterUserId } });
-    await Promise.all([refetchInvitations(), refetchBlocklist()]);
-  } catch (err) {
-    invError.value[invitationId] =
-      extractErrorMessage(err) ?? 'Failed to block sender. Please try again.';
-  } finally {
-    blockBusy.value[invitationId] = false;
-  }
+  enqueue({
+    id: `block-user:${inviterUserId}`,
+    label: `Block sender`,
+    execute: async () => {
+      await doBlock({ data: { user_id: inviterUserId } });
+      await Promise.all([refetchInvitations(), refetchBlocklist()]);
+    },
+  });
+  blockBusy.value[invitationId] = false;
 }
 
-async function unblock(blockedUserId: string) {
+function unblock(blockedUserId: string) {
   unblockBusy.value[blockedUserId] = true;
-  unblockError.value[blockedUserId] = '';
-  try {
-    await doUnblock({ blockedUserId });
-    await refetchBlocklist();
-  } catch (err) {
-    unblockError.value[blockedUserId] =
-      extractErrorMessage(err) ?? 'Failed to unblock. Please try again.';
-  } finally {
-    unblockBusy.value[blockedUserId] = false;
-  }
+  enqueue({
+    id: `unblock-user:${blockedUserId}`,
+    label: `Unblock user`,
+    execute: async () => {
+      await doUnblock({ blockedUserId });
+      await refetchBlocklist();
+    },
+  });
+  unblockBusy.value[blockedUserId] = false;
 }
 
 function formatDate(dateStr: string): string {
@@ -414,11 +398,5 @@ function formatDate(dateStr: string): string {
 .inv-actions ion-button {
   margin: 0;
   flex: 1 1 140px;
-}
-
-.action-error {
-  color: var(--ion-color-danger);
-  font-size: 0.85rem;
-  margin: 4px 0 0;
 }
 </style>

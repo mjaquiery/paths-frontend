@@ -5,7 +5,9 @@ import { mount, flushPromises } from '@vue/test-utils';
 import {
   formatRelativeTime,
   useRefreshStatus,
+  resetRefreshStatusState,
 } from '../composables/useRefreshStatus';
+import { resetApiState } from '../composables/useApi';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -76,6 +78,11 @@ describe('formatRelativeTime', () => {
 describe('useRefreshStatus', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // Reset the useApi singleton so _lastRead (and other state) doesn't leak
+    // between tests — it is module-level and persists across test cases.
+    resetApiState();
+    // Reset useRefreshStatus module-level state (_hasError) for the same reason.
+    resetRefreshStatusState();
   });
 
   afterEach(() => {
@@ -193,16 +200,27 @@ describe('useRefreshStatus', () => {
     wrapper.unmount();
   });
 
-  it('cleans up event listeners on unmount', async () => {
-    const removeSpy = vi.spyOn(window, 'removeEventListener');
+  it('cleans up the query cache subscription on unmount', async () => {
     const queryClient = createQueryClient();
+
+    // Spy on the subscribe method of the query cache so we can capture the
+    // unsubscribe function it returns, then verify it is called on unmount.
+    const cache = queryClient.getQueryCache();
+    const originalSubscribe = cache.subscribe.bind(cache);
+    let capturedUnsubscribe: (() => void) | null = null;
+    vi.spyOn(cache, 'subscribe').mockImplementation((listener) => {
+      const unsubscribe = originalSubscribe(listener);
+      capturedUnsubscribe = vi.fn(() => unsubscribe());
+      return capturedUnsubscribe;
+    });
+
     const { wrapper } = mountWithStatus(queryClient);
     await flushPromises();
 
+    expect(capturedUnsubscribe).not.toBeNull();
+
     wrapper.unmount();
 
-    const calls = removeSpy.mock.calls.map((c) => c[0]);
-    expect(calls).toContain('online');
-    expect(calls).toContain('offline');
+    expect(capturedUnsubscribe).toHaveBeenCalledOnce();
   });
 });

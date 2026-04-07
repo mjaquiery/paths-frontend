@@ -26,7 +26,12 @@
           autocomplete="off"
         />
       </ion-item>
-      <p v-if="errorMessage" class="delete-error">{{ errorMessage }}</p>
+      <p
+        v-if="confirmation !== path.title && confirmation.length > 0"
+        class="delete-error"
+      >
+        Name does not match.
+      </p>
     </ion-content>
     <ion-footer>
       <ion-toolbar>
@@ -64,6 +69,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 
 import type { PathResponse } from '../generated/types';
 import { useDeletePath } from '../generated/apiClient';
+import { useApi } from '../composables/useApi';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -77,17 +83,16 @@ const emit = defineEmits<{
 
 const queryClient = useQueryClient();
 const { mutateAsync: doDeletePath } = useDeletePath();
+const { enqueue } = useApi();
 
 const confirmation = ref('');
 const deleting = ref(false);
-const errorMessage = ref('');
 
 watch(
   () => props.isOpen,
   (open) => {
     if (open) {
       confirmation.value = '';
-      errorMessage.value = '';
     }
   },
 );
@@ -95,17 +100,23 @@ watch(
 async function confirmDelete() {
   if (confirmation.value !== props.path.title) return;
   deleting.value = true;
-  errorMessage.value = '';
-  try {
-    await doDeletePath({ pathCode: props.path.path_id });
-    void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
-    emit('deleted');
-    emit('dismiss');
-  } catch {
-    errorMessage.value = 'Failed to delete path. Please try again.';
-  } finally {
-    deleting.value = false;
-  }
+
+  const pathCode = props.path.path_id;
+  const pathTitle = props.path.title;
+
+  enqueue({
+    id: `delete-path:${pathCode}`,
+    label: `Delete path "${pathTitle}"`,
+    execute: async () => {
+      await doDeletePath({ pathCode });
+      void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+      emit('deleted');
+    },
+  });
+
+  // Close modal optimistically.
+  deleting.value = false;
+  emit('dismiss');
 }
 
 function onDismiss() {

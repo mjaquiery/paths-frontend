@@ -1,7 +1,9 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useIsFetching, useQueryClient } from '@tanstack/vue-query';
 import type { QueryCacheNotifyEvent } from '@tanstack/query-core';
+import { useApi } from './useApi';
 
+// Re-export so callers that imported RefreshStatusType from here don't break.
 export type RefreshStatusType = 'ok' | 'fetching' | 'offline' | 'error';
 
 /** Format a Date as a human-readable relative time string. */
@@ -15,44 +17,49 @@ export function formatRelativeTime(date: Date): string {
   return `${hours}h ago`;
 }
 
+// ─── Module-level error state ─────────────────────────────────────────────────
+// Kept module-level so multiple useRefreshStatus instances (one per view) share
+// the same error flag without prop-drilling.
+const _hasError = ref(false);
+
+/**
+ * Reset all module-level singleton state.  Call between tests (or in
+ * Storybook `prepareStoryEnvironment`) so each scenario starts clean.
+ */
+export function resetRefreshStatusState(): void {
+  _hasError.value = false;
+}
+
 /**
  * Composable that tracks the refresh status of the path-entry queries.
  *
- * - `lastCheckedAt`: when the most recent successful entry-list fetch completed.
- * - `isOnline`: whether the browser reports network connectivity.
+ * - `lastCheckedAt`: when the most recent successful entry-list fetch completed
+ *   (derived from `useApi().lastRead`).
+ * - `isOnline`: whether the browser reports network connectivity (delegated to
+ *   the `useApi` singleton — a single source of truth with no duplicate
+ *   window listeners).
  * - `hasError`: whether the most recent entry-list fetch failed.
  * - `isFetching`: whether any TanStack Query queries are currently in-flight.
  * - `statusType`: summary classification used for colour-coding the indicator.
  * - `statusText`: short human-readable label for the indicator.
  */
 export function useRefreshStatus() {
-  const lastCheckedAt = ref<Date | null>(null);
-  const isOnline = ref(
-    typeof navigator !== 'undefined' ? navigator.onLine : true,
-  );
-  const hasError = ref(false);
+  // Delegate online/offline tracking to the useApi singleton — it already wires
+  // window listeners at module load, so we avoid a second independent set.
+  const { isOnline, trackRead, lastRead } = useApi();
+
+  const hasError = computed(() => _hasError.value);
 
   const fetchingCount = useIsFetching();
   const isFetching = computed(() => fetchingCount.value > 0);
 
   const queryClient = useQueryClient();
 
-  function handleOnline() {
-    isOnline.value = true;
-  }
-  function handleOffline() {
-    isOnline.value = false;
-  }
-
   let unsubscribeCache: (() => void) | null = null;
 
   onMounted(() => {
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Seed lastCheckedAt from any already-successful entry-list queries that
-    // were loaded (e.g. restored from persisted cache) before this composable
-    // was set up.
+    // Seed lastRead from any already-successful entry-list queries that were
+    // loaded (e.g. restored from persisted cache) before this composable mounted.
     const cache = queryClient.getQueryCache();
     const existing = cache.findAll({
       predicate: (q) => {
@@ -68,8 +75,11 @@ export function useRefreshStatus() {
       },
     });
     if (existing.length > 0) {
+      // Only seed if useApi doesn't already have a more recent lastRead.
       const latestMs = Math.max(...existing.map((q) => q.state.dataUpdatedAt));
-      lastCheckedAt.value = new Date(latestMs);
+      if (!lastRead.value || lastRead.value.at < latestMs) {
+        trackRead('entries');
+      }
     }
 
     // Subscribe to subsequent cache events to keep status up-to-date.
@@ -85,20 +95,18 @@ export function useRefreshStatus() {
         return;
 
       if (event.action.type === 'success') {
-        lastCheckedAt.value = new Date();
-        hasError.value = false;
+        _hasError.value = false;
+        trackRead('entries');
       } else if (
         event.action.type === 'error' ||
         event.query.state.status === 'error'
       ) {
-        hasError.value = true;
+        _hasError.value = true;
       }
     });
   });
 
   onUnmounted(() => {
-    window.removeEventListener('online', handleOnline);
-    window.removeEventListener('offline', handleOffline);
     unsubscribeCache?.();
   });
 
@@ -113,9 +121,15 @@ export function useRefreshStatus() {
     if (!isOnline.value) return 'Offline';
     if (hasError.value) return 'Unable to connect';
     if (isFetching.value) return 'Checking\u2026';
-    if (!lastCheckedAt.value) return '';
-    return `Updated ${formatRelativeTime(lastCheckedAt.value)}`;
+    if (!lastRead.value) return '';
+    return `Updated ${formatRelativeTime(new Date(lastRead.value.at))}`;
   });
+
+  // lastCheckedAt kept for backward compat — RefreshStatus uses it for the
+  // detail text in the expanded panel.
+  const lastCheckedAt = computed(() =>
+    lastRead.value ? new Date(lastRead.value.at) : null,
+  );
 
   return {
     lastCheckedAt,

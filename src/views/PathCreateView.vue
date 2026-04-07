@@ -24,7 +24,6 @@
           :description="form.description"
           :color="form.color"
           color-input-id="path-colour-picker"
-          :error-message="createError"
           @update:title="form.title = $event"
           @update:description="form.description = $event"
           @update:color="form.color = $event"
@@ -69,13 +68,14 @@ import PathFormFields from '../components/PathFormFields.vue';
 import RefreshStatus from '../components/RefreshStatus.vue';
 import { useCreatePath } from '../generated/apiClient';
 import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { extractErrorMessage } from '../lib/errors';
+import { useApi } from '../composables/useApi';
 
 const router = useRouter();
 const route = useRoute();
 const queryClient = useQueryClient();
 
 const { mutateAsync: doCreatePath } = useCreatePath();
+const { enqueue } = useApi();
 
 const {
   statusType: refreshStatusType,
@@ -90,35 +90,33 @@ const form = ref({
 });
 
 const creating = ref(false);
-const createError = ref('');
 
 async function create() {
   if (!form.value.title.trim() || creating.value) return;
   creating.value = true;
-  createError.value = '';
-  try {
-    await doCreatePath({
-      data: {
-        title: form.value.title.trim(),
-        description: form.value.description.trim() || undefined,
-        color: form.value.color,
-      },
-    });
-    void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
 
-    // If a redirect URL was passed (e.g. from EntryCreateView), go there.
-    // Otherwise return home.
-    const redirect = route.query.redirect;
-    if (redirect && typeof redirect === 'string') {
-      void router.replace(redirect);
-    } else {
-      void router.replace('/');
-    }
-  } catch (err: unknown) {
-    createError.value =
-      extractErrorMessage(err) ?? 'Failed to create path. Please try again.';
-    creating.value = false;
-  }
+  const title = form.value.title.trim();
+  const description = form.value.description.trim() || undefined;
+  const color = form.value.color;
+
+  enqueue({
+    id: `create-path:${title}`,
+    label: `Create path "${title}"`,
+    execute: async () => {
+      await doCreatePath({ data: { title, description, color } });
+      void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
+
+      const redirect = route.query.redirect;
+      if (redirect && typeof redirect === 'string') {
+        void router.replace(redirect);
+      } else {
+        void router.replace('/');
+      }
+    },
+  });
+
+  // Unblock the button optimistically — the queue shows progress.
+  creating.value = false;
 }
 </script>
 

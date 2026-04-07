@@ -157,6 +157,7 @@ import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { usePaths } from '../composables/usePaths';
 import { usePendingSaves } from '../composables/usePendingSaves';
 import { useRefreshStatus } from '../composables/useRefreshStatus';
+import { useApi } from '../composables/useApi';
 import {
   startCreateEntryDraft,
   getEntryDraft,
@@ -180,7 +181,6 @@ import {
 } from '../utils/entryImageDrafts';
 
 const AUTOSAVE_DEBOUNCE_MS = 5000;
-const MAX_COMMIT_RETRY_DELAY_MS = 60000;
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
@@ -220,6 +220,8 @@ const {
   registerDraftInitError,
   clearDraftInitError,
 } = usePendingSaves();
+
+const { enqueue, isOnline } = useApi();
 
 const {
   statusType: refreshStatusType,
@@ -261,12 +263,6 @@ const commitFailDialogMessage = ref('');
 /** Whether the current commit failure will be retried automatically */
 const commitFailWillRetry = ref(true);
 const backgroundCommitDelegated = ref(false);
-
-/** Background commit-retry timer (after a manual save failure) */
-let commitRetryTimer: ReturnType<typeof setTimeout> | null = null;
-/** Whether a commit retry is currently in progress */
-const commitRetrying = ref(false);
-let commitRetryAttempt = 0;
 
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
@@ -700,32 +696,6 @@ function logCommitFailure(
   });
 }
 
-function resetCommitRetryState() {
-  commitRetryAttempt = 0;
-  commitFailWillRetry.value = true;
-  backgroundCommitDelegated.value = false;
-}
-
-function nextCommitRetryDelay() {
-  const delay = Math.min(
-    AUTOSAVE_DEBOUNCE_MS * 2 ** commitRetryAttempt,
-    MAX_COMMIT_RETRY_DELAY_MS,
-  );
-  commitRetryAttempt += 1;
-  return delay;
-}
-
-function scheduleCommitRetry(reason: string) {
-  const delay = nextCommitRetryDelay();
-  console.info('[EntryCreateView] scheduling commit retry', {
-    reason,
-    delayMs: delay,
-    attempt: commitRetryAttempt,
-    draftId: draftId.value || null,
-  });
-  commitRetryTimer = setTimeout(() => void attemptCommitRetry(), delay);
-}
-
 async function acknowledgeCommitFailure() {
   commitFailDialogOpen.value = false;
   if (!commitFailWillRetry.value) return;
@@ -738,77 +708,46 @@ async function acknowledgeCommitFailure() {
   await router.replace('/');
 }
 
-/** Attempt a background commit retry (called after a failed manual save). */
-async function attemptCommitRetry() {
-  commitRetryTimer = null;
-  if (!canCommit.value || commitRetrying.value) return;
-  commitRetrying.value = true;
-
-  try {
-    const currentDraftId = draftId.value || (await ensureDraft());
-    if (!currentDraftId) {
-      // Still no draft — schedule another retry
-      commitRetryTimer = setTimeout(
-        () => void attemptCommitRetry(),
-        AUTOSAVE_DEBOUNCE_MS,
-      );
-      return;
-    }
-
-    imageDrafts.value = syncDraftCaptionsFromContent(
-      imageDrafts.value,
-      content.value,
+/**
+ * Core commit logic shared between the initial attempt and background retries
+ * (via enqueue). Returns the new entry id on success or throws on failure.
+ */
+async function executeCommit(): Promise<string | null> {
+  const currentDraftId = draftId.value || (await ensureDraft());
+  if (!currentDraftId) {
+    throw new Error(
+      'Could not start a draft. Please check your connection and try again.',
     );
-    const finalContent = content.value;
-
-    if (finalContent !== lastSavedContent) {
-      await patchDraft({
-        draftId: currentDraftId,
-        data: { content: finalContent },
-      });
-      lastSavedContent = finalContent;
-    }
-
-    const commitResponse = await commitDraftApi({ draftId: currentDraftId });
-
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] }),
-      queryClient.invalidateQueries({
-        queryKey: ['v1', 'paths', selectedPathId.value, 'entries'],
-      }),
-    ]);
-
-    // Success — deregister pending save and signal success
-    removePendingSave(pendingSaveKey(), true);
-    clearDraftInitError(pendingSaveKey());
-    draftId.value = '';
-    commitRetryAttempt = 0;
-    const newEntryId =
-      commitResponse.status === 200 ? commitResponse.data.id : null;
-    const shouldNavigate = !backgroundCommitDelegated.value;
-    backgroundCommitDelegated.value = false;
-    if (shouldNavigate && newEntryId && selectedPathId.value) {
-      await router.replace(`/entry/${selectedPathId.value}/${newEntryId}`);
-    } else if (shouldNavigate) {
-      router.back();
-    }
-  } catch (err: unknown) {
-    logCommitFailure('background commit retry failed', err, {
-      attempt: commitRetryAttempt,
-    });
-    const status =
-      err && typeof err === 'object' && 'response' in err
-        ? (err as { response?: { status?: number } }).response?.status
-        : undefined;
-
-    if (status !== 422) {
-      scheduleCommitRetry('retry_failed');
-    } else {
-      removePendingSave(pendingSaveKey(), false);
-    }
-  } finally {
-    commitRetrying.value = false;
   }
+
+  imageDrafts.value = syncDraftCaptionsFromContent(
+    imageDrafts.value,
+    content.value,
+  );
+  const finalContent = content.value;
+
+  if (finalContent !== lastSavedContent) {
+    await patchDraft({
+      draftId: currentDraftId,
+      data: { content: finalContent },
+    });
+    lastSavedContent = finalContent;
+  }
+
+  const commitResponse = await commitDraftApi({ draftId: currentDraftId });
+
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] }),
+    queryClient.invalidateQueries({
+      queryKey: ['v1', 'paths', selectedPathId.value, 'entries'],
+    }),
+  ]);
+
+  clearSavedNotification();
+  clearDraftInitError(pendingSaveKey());
+  draftId.value = '';
+
+  return commitResponse.status === 200 ? commitResponse.data.id : null;
 }
 
 /**
@@ -849,65 +788,23 @@ async function saveDraftAndNavigateBack() {
 async function commitDraft() {
   if (!canCommit.value) return;
 
+  // Cancel any pending debounce timer and await any in-flight autosave
+  if (autosaveTimer !== null) {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+  }
+  if (autosaveFlushPromise) {
+    await autosaveFlushPromise;
+  }
+
   committing.value = true;
   commitError.value = '';
   backgroundCommitDelegated.value = false;
-  commitRetryAttempt = 0;
-  if (commitRetryTimer !== null) {
-    clearTimeout(commitRetryTimer);
-    commitRetryTimer = null;
-  }
 
   try {
-    // Cancel any pending debounce timer and await any in-flight autosave
-    if (autosaveTimer !== null) {
-      clearTimeout(autosaveTimer);
-      autosaveTimer = null;
-    }
-    if (autosaveFlushPromise) {
-      await autosaveFlushPromise;
-    }
-
-    // Ensure we have a draft — create one now if init failed earlier
-    const currentDraftId = draftId.value || (await ensureDraft());
-    if (!currentDraftId) {
-      commitError.value =
-        'Could not start a draft. Please check your connection and try again.';
-      return;
-    }
-
-    imageDrafts.value = syncDraftCaptionsFromContent(
-      imageDrafts.value,
-      content.value,
-    );
-    const finalContent = content.value;
-
-    // Patch the final content to the draft
-    if (finalContent !== lastSavedContent) {
-      await patchDraft({
-        draftId: currentDraftId,
-        data: { content: finalContent },
-      });
-      lastSavedContent = finalContent;
-    }
-
-    // Commit the draft
-    const commitResponse = await commitDraftApi({ draftId: currentDraftId });
-
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] }),
-      queryClient.invalidateQueries({
-        queryKey: ['v1', 'paths', selectedPathId.value, 'entries'],
-      }),
-    ]);
-
-    // Draft committed — no need to abandon on unmount
-    clearSavedNotification();
-    clearDraftInitError(pendingSaveKey());
-    draftId.value = '';
-    resetCommitRetryState();
-    const newEntryId =
-      commitResponse.status === 200 ? commitResponse.data.id : null;
+    const newEntryId = await executeCommit();
+    removePendingSave(pendingSaveKey(), true);
+    backgroundCommitDelegated.value = false;
     if (newEntryId && selectedPathId.value) {
       await router.replace(`/entry/${selectedPathId.value}/${newEntryId}`);
     } else {
@@ -925,7 +822,7 @@ async function commitDraft() {
         : undefined;
 
     let message: string;
-    let willRetry = status !== 422;
+    const willRetry = status !== 422;
     if (status === 422) {
       if (detail?.code === 'images_not_ready') {
         message = hasFailedImages.value
@@ -941,13 +838,30 @@ async function commitDraft() {
 
     logCommitFailure('manual commit failed', err, { willRetry });
 
-    // Validation failures require user action; transient failures can retry.
     commitFailDialogMessage.value = message;
     commitFailWillRetry.value = willRetry;
     commitFailDialogOpen.value = true;
+
     if (willRetry) {
+      // Hand off to useApi for background retries with automatic back-off
       registerPendingSave(pendingSaveKey(), buildPendingSaveLabel());
-      scheduleCommitRetry('manual_commit_failed');
+      enqueue({
+        id: `commit-entry:${pendingSaveKey()}`,
+        label: buildPendingSaveLabel(),
+        execute: async () => {
+          const newEntryId = await executeCommit();
+          removePendingSave(pendingSaveKey(), true);
+          const shouldNavigate = !backgroundCommitDelegated.value;
+          backgroundCommitDelegated.value = false;
+          if (shouldNavigate && newEntryId && selectedPathId.value) {
+            await router.replace(
+              `/entry/${selectedPathId.value}/${newEntryId}`,
+            );
+          } else if (shouldNavigate) {
+            router.back();
+          }
+        },
+      });
     } else {
       removePendingSave(pendingSaveKey(), false);
     }
@@ -992,15 +906,18 @@ onMounted(() => {
   if (selectedPathId.value && day.value) {
     void ensureDraft();
   }
-  window.addEventListener('online', handleOnline);
 });
 
-function handleOnline() {
-  autosaveOffline.value = false;
-  if (content.value && content.value !== lastSavedContent) {
-    scheduleContentAutosave();
+// When connectivity is restored, clear the offline flag and flush any
+// unsaved content.  useApi owns the single online/offline listener.
+watch(isOnline, (online) => {
+  if (online) {
+    autosaveOffline.value = false;
+    if (content.value && content.value !== lastSavedContent) {
+      scheduleContentAutosave();
+    }
   }
-}
+});
 
 watch(ownedPaths, (nextPaths, previousPaths) => {
   if (
@@ -1017,13 +934,9 @@ watch(ownedPaths, (nextPaths, previousPaths) => {
 onBeforeUnmount(async () => {
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
   if (draftInitRetryTimer !== null) clearTimeout(draftInitRetryTimer);
-  if (!backgroundCommitDelegated.value && commitRetryTimer !== null) {
-    clearTimeout(commitRetryTimer);
-  }
   if (!backgroundCommitDelegated.value && draftImageRefreshTimer !== null) {
     clearTimeout(draftImageRefreshTimer);
   }
-  window.removeEventListener('online', handleOnline);
 
   for (const draft of imageDrafts.value) {
     revokeDraftPreviewUrl(draft);

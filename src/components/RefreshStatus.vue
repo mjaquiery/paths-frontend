@@ -172,8 +172,9 @@
       <div v-if="confirmingDelete" class="refresh-status__confirm">
         <p class="refresh-status__confirm-text">
           This will remove all locally stored data — cached entries, images, and
-          path preferences. Since this app has no offline write queue,
-          <strong>no unsynced changes will be lost</strong>.
+          path preferences. Any writes currently queued in the status bar will
+          be lost. Make sure there are no pending or failed writes before
+          proceeding.
         </p>
         <div class="refresh-status__confirm-actions">
           <button
