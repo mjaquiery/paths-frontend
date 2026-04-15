@@ -1,2 +1,4 @@
 public/mockServiceWorker.js
 schema/openapi.json
+.nuxt/
+.output/
