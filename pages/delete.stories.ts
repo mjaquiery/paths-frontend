@@ -5,7 +5,7 @@ import {
   createStoryApiError,
   createPopulatedState,
   createStoryParameters,
-} from '../storybook/storySupport';
+} from '~/src/storybook/storySupport';
 
 const meta: Meta<typeof DeleteView> = {
   title: 'Views/DeleteView',

@@ -95,12 +95,12 @@ import {
   IonText,
 } from '@ionic/vue';
 import { computed } from 'vue';
-import { usePaths } from '../composables/usePaths';
-import { useMultiPathEntries } from '../composables/useMultiPathEntries';
-import { useCurrentUser } from '../composables/useCurrentUser';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { extractErrorMessage } from '../lib/errors';
-import RefreshStatus from '../components/RefreshStatus.vue';
+import { usePaths } from '~/src/composables/usePaths';
+import { useMultiPathEntries } from '~/src/composables/useMultiPathEntries';
+import { useCurrentUser } from '~/src/composables/useCurrentUser';
+import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
+import { extractErrorMessage } from '~/src/lib/errors';
+import RefreshStatus from '~/src/components/RefreshStatus.vue';
 
 const route = useRoute();
 const router = useRouter();

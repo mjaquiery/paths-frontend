@@ -13,7 +13,7 @@ import {
   storyDateYearsAgo,
   storybookUser,
   storybookPaths,
-} from '../storybook/storySupport';
+} from '~/src/storybook/storySupport';
 
 const populatedState = createPopulatedState();
 const crowdedState = createPopulatedState();

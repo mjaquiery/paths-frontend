@@ -101,16 +101,16 @@ import {
   IonBackButton,
   IonAlert,
 } from '@ionic/vue';
-import RefreshStatus from '../components/RefreshStatus.vue';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
+import RefreshStatus from '~/src/components/RefreshStatus.vue';
+import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
 import { computed, ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
-import { usePaths } from '../composables/usePaths';
-import { useMultiPathEntries } from '../composables/useMultiPathEntries';
-import { useDeleteEntry } from '../generated/apiClient';
-import { useCurrentUser } from '../composables/useCurrentUser';
-import { db } from '../lib/db';
-import MarkdownContent from '../components/MarkdownContent.vue';
+import { usePaths } from '~/src/composables/usePaths';
+import { useMultiPathEntries } from '~/src/composables/useMultiPathEntries';
+import { useDeleteEntry } from '~/src/generated/apiClient';
+import { useCurrentUser } from '~/src/composables/useCurrentUser';
+import { db } from '~/src/lib/db';
+import MarkdownContent from '~/src/components/MarkdownContent.vue';
 
 const route = useRoute();
 const router = useRouter();

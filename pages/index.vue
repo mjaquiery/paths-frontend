@@ -237,21 +237,21 @@ import {
 import { ref, computed } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 
-import PathsSelectorBar from '../components/PathsSelectorBar.vue';
-import OnThisDaySpotlight from '../components/OnThisDaySpotlight.vue';
-import WeekView from '../components/WeekView.vue';
-import RefreshStatus from '../components/RefreshStatus.vue';
+import PathsSelectorBar from '~/src/components/PathsSelectorBar.vue';
+import OnThisDaySpotlight from '~/src/components/OnThisDaySpotlight.vue';
+import WeekView from '~/src/components/WeekView.vue';
+import RefreshStatus from '~/src/components/RefreshStatus.vue';
 import type {
   PathResponse,
   OAuthCallbackResponse,
   OAuthLoginResponse,
-} from '../generated/types';
-import { authLogin } from '../generated/apiClient';
-import { useMultiPathEntries } from '../composables/useMultiPathEntries';
-import { usePaths } from '../composables/usePaths';
-import { useDarkMode } from '../composables/useDarkMode';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { extractErrorMessage } from '../lib/errors';
+} from '~/src/generated/types';
+import { authLogin } from '~/src/generated/apiClient';
+import { useMultiPathEntries } from '~/src/composables/useMultiPathEntries';
+import { usePaths } from '~/src/composables/usePaths';
+import { useDarkMode } from '~/src/composables/useDarkMode';
+import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
+import { extractErrorMessage } from '~/src/lib/errors';
 
 const {
   isDark,

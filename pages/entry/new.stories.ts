@@ -8,7 +8,7 @@ import {
   createStoryParameters,
   storybookPaths,
   storyDateOffset,
-} from '../storybook/storySupport';
+} from '~/src/storybook/storySupport';
 
 const populatedState = createPopulatedState();
 

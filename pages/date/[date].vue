@@ -118,13 +118,13 @@ import {
   IonIcon,
   IonText,
 } from '@ionic/vue';
-import RefreshStatus from '../components/RefreshStatus.vue';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
+import RefreshStatus from '~/src/components/RefreshStatus.vue';
+import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
 import { computed } from 'vue';
-import { useMultiPathEntries } from '../composables/useMultiPathEntries';
-import { usePaths } from '../composables/usePaths';
-import { useCurrentUser } from '../composables/useCurrentUser';
-import { extractErrorMessage } from '../lib/errors';
+import { useMultiPathEntries } from '~/src/composables/useMultiPathEntries';
+import { usePaths } from '~/src/composables/usePaths';
+import { useCurrentUser } from '~/src/composables/useCurrentUser';
+import { extractErrorMessage } from '~/src/lib/errors';
 
 const route = useRoute();
 const router = useRouter();

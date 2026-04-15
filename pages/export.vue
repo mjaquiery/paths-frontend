@@ -55,11 +55,11 @@ import {
   IonSpinner,
 } from '@ionic/vue';
 
-import ExportCard from '../components/ExportCard.vue';
-import RefreshStatus from '../components/RefreshStatus.vue';
-import { usePaths } from '../composables/usePaths';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { extractErrorMessage } from '../lib/errors';
+import ExportCard from '~/src/components/ExportCard.vue';
+import RefreshStatus from '~/src/components/RefreshStatus.vue';
+import { usePaths } from '~/src/composables/usePaths';
+import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
+import { extractErrorMessage } from '~/src/lib/errors';
 import { computed } from 'vue';
 
 const { data: paths, error: pathsError } = usePaths();

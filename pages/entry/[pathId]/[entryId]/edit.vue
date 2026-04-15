@@ -231,16 +231,16 @@ import {
 import { useQueryClient } from '@tanstack/vue-query';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
-import EntryEditorPanel from '../components/EntryEditorPanel.vue';
-import MarkdownContent from '../components/MarkdownContent.vue';
-import RefreshStatus from '../components/RefreshStatus.vue';
-import { useDraftImageUpload } from '../composables/useDraftImageUpload';
-import { useMarkdownEditor } from '../composables/useMarkdownEditor';
-import { useMultiPathEntries } from '../composables/useMultiPathEntries';
-import { usePaths } from '../composables/usePaths';
-import { usePendingSaves } from '../composables/usePendingSaves';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { useApi } from '../composables/useApi';
+import EntryEditorPanel from '~/src/components/EntryEditorPanel.vue';
+import MarkdownContent from '~/src/components/MarkdownContent.vue';
+import RefreshStatus from '~/src/components/RefreshStatus.vue';
+import { useDraftImageUpload } from '~/src/composables/useDraftImageUpload';
+import { useMarkdownEditor } from '~/src/composables/useMarkdownEditor';
+import { useMultiPathEntries } from '~/src/composables/useMultiPathEntries';
+import { usePaths } from '~/src/composables/usePaths';
+import { usePendingSaves } from '~/src/composables/usePendingSaves';
+import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
+import { useApi } from '~/src/composables/useApi';
 import {
   startEditEntryDraft,
   useAbandonEntryDraft,
@@ -249,10 +249,10 @@ import {
   useRemoveDraftImage,
   getEntry,
   getEntryDraft,
-} from '../generated/apiClient';
-import type { EntryContentResponse } from '../generated/types';
-import { extractErrorMessage } from '../lib/errors';
-import { db } from '../lib/db';
+} from '~/src/generated/apiClient';
+import type { EntryContentResponse } from '~/src/generated/types';
+import { extractErrorMessage } from '~/src/lib/errors';
+import { db } from '~/src/lib/db';
 import {
   buildLocalImageUrlMap,
   createDraftServerImageDraft,
@@ -263,8 +263,8 @@ import {
   revokeDraftPreviewUrl,
   syncDraftCaptionsFromContent,
   type EntryImageDraft,
-} from '../utils/entryImageDrafts';
-import { removeImageMarkdownReferences } from '../utils/markdown';
+} from '~/src/utils/entryImageDrafts';
+import { removeImageMarkdownReferences } from '~/src/utils/markdown';
 
 /**
  * Internal/test-only prop: when set to true the conflict resolution modal is

@@ -7,7 +7,7 @@ import {
   createPopulatedState,
   createStoryParameters,
   storyTimestampOffset,
-} from '../storybook/storySupport';
+} from '~/src/storybook/storySupport';
 
 const populatedState = createPopulatedState();
 const emptyState = createPopulatedState({

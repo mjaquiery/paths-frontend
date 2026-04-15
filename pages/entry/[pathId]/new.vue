@@ -151,15 +151,15 @@ import {
 import { useQueryClient } from '@tanstack/vue-query';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
-import EntryEditorPanel from '../components/EntryEditorPanel.vue';
-import RefreshStatus from '../components/RefreshStatus.vue';
-import { useCurrentUser } from '../composables/useCurrentUser';
-import { useDraftImageUpload } from '../composables/useDraftImageUpload';
-import { useMarkdownEditor } from '../composables/useMarkdownEditor';
-import { usePaths } from '../composables/usePaths';
-import { usePendingSaves } from '../composables/usePendingSaves';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { useApi } from '../composables/useApi';
+import EntryEditorPanel from '~/src/components/EntryEditorPanel.vue';
+import RefreshStatus from '~/src/components/RefreshStatus.vue';
+import { useCurrentUser } from '~/src/composables/useCurrentUser';
+import { useDraftImageUpload } from '~/src/composables/useDraftImageUpload';
+import { useMarkdownEditor } from '~/src/composables/useMarkdownEditor';
+import { usePaths } from '~/src/composables/usePaths';
+import { usePendingSaves } from '~/src/composables/usePendingSaves';
+import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
+import { useApi } from '~/src/composables/useApi';
 import {
   startCreateEntryDraft,
   getEntryDraft,
@@ -167,10 +167,10 @@ import {
   usePatchEntryDraft,
   useCommitEntryDraft,
   useRemoveDraftImage,
-} from '../generated/apiClient';
-import { extractErrorMessage } from '../lib/errors';
-import { getPathOrder, isPathHidden } from '../lib/db';
-import { removeImageMarkdownReferences } from '../utils/markdown';
+} from '~/src/generated/apiClient';
+import { extractErrorMessage } from '~/src/lib/errors';
+import { getPathOrder, isPathHidden } from '~/src/lib/db';
+import { removeImageMarkdownReferences } from '~/src/utils/markdown';
 import {
   buildLocalImageUrlMap,
   createDraftServerImageDraft,
@@ -180,7 +180,7 @@ import {
   revokeDraftPreviewUrl,
   syncDraftCaptionsFromContent,
   type EntryImageDraft,
-} from '../utils/entryImageDrafts';
+} from '~/src/utils/entryImageDrafts';
 
 const AUTOSAVE_DEBOUNCE_MS = 5000;
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;

@@ -210,11 +210,11 @@ import {
   useBlockInviter,
   useListBlocklist,
   useUnblockUser,
-} from '../generated/apiClient';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { useApi } from '../composables/useApi';
-import { extractErrorMessage } from '../lib/errors';
-import RefreshStatus from '../components/RefreshStatus.vue';
+} from '~/src/generated/apiClient';
+import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
+import { useApi } from '~/src/composables/useApi';
+import { extractErrorMessage } from '~/src/lib/errors';
+import RefreshStatus from '~/src/components/RefreshStatus.vue';
 const {
   data: invitationsData,
   error: invitationsError,

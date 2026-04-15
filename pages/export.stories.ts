@@ -8,7 +8,7 @@ import {
   createStoryPath,
   createStoryParameters,
   storybookUser,
-} from '../storybook/storySupport';
+} from '~/src/storybook/storySupport';
 
 const populatedState = createPopulatedState();
 const manyPathsState = createPopulatedState();

@@ -26,8 +26,8 @@ import {
 } from '@ionic/vue';
 import { onMounted, ref } from 'vue';
 
-import { useAuthCallback } from '../generated/apiClient';
-import type { OAuthCallbackResponse } from '../generated/types';
+import { useAuthCallback } from '~/src/generated/apiClient';
+import type { OAuthCallbackResponse } from '~/src/generated/types';
 
 const router = useRouter();
 const route = useRoute();

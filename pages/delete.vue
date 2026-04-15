@@ -141,11 +141,11 @@ import { ref, computed } from 'vue';
 import {
   useGetLatestDeletionRequest,
   useCreateDeletionRequest,
-} from '../generated/apiClient';
-import { useCurrentUser } from '../composables/useCurrentUser';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { useApi } from '../composables/useApi';
-import RefreshStatus from '../components/RefreshStatus.vue';
+} from '~/src/generated/apiClient';
+import { useCurrentUser } from '~/src/composables/useCurrentUser';
+import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
+import { useApi } from '~/src/composables/useApi';
+import RefreshStatus from '~/src/components/RefreshStatus.vue';
 
 const { currentUser } = useCurrentUser();
 

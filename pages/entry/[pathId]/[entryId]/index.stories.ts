@@ -6,7 +6,7 @@ import {
   createStoryEntry,
   createStoryParameters,
   storybookPaths,
-} from '../storybook/storySupport';
+} from '~/src/storybook/storySupport';
 
 const populatedState = createPopulatedState();
 

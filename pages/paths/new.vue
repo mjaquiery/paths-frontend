@@ -66,11 +66,11 @@ import {
 } from '@ionic/vue';
 import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
-import PathFormFields from '../components/PathFormFields.vue';
-import RefreshStatus from '../components/RefreshStatus.vue';
-import { useCreatePath } from '../generated/apiClient';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
-import { useApi } from '../composables/useApi';
+import PathFormFields from '~/src/components/PathFormFields.vue';
+import RefreshStatus from '~/src/components/RefreshStatus.vue';
+import { useCreatePath } from '~/src/generated/apiClient';
+import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
+import { useApi } from '~/src/composables/useApi';
 
 const router = useRouter();
 const route = useRoute();
