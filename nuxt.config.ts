@@ -82,6 +82,7 @@ export default defineNuxtConfig({
     '@ionic/vue/css/typography.css',
     '@ionic/vue/css/palettes/dark.class.css',
     '~/src/assets/theme.css',
+    '~/src/assets/transitions.css',
   ],
 
   app: {

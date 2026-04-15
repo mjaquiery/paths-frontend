@@ -261,7 +261,6 @@ import {
 } from '@ionic/vue';
 import { computed, ref, watch } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
-import { useRouter } from 'vue-router';
 
 import type { OAuthCallbackResponse, PathResponse } from '../generated/types';
 import {

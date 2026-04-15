@@ -1,0 +1,32 @@
+/* Ionic-style page transitions for Nuxt file-based routing */
+
+.ion-forward-enter-active,
+.ion-forward-leave-active,
+.ion-back-enter-active,
+.ion-back-leave-active {
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+/* Forward: new page slides in from right */
+.ion-forward-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.ion-forward-leave-to {
+  transform: translateX(-30%);
+  opacity: 0;
+}
+
+/* Back: new page slides in from left */
+.ion-back-enter-from {
+  transform: translateX(-30%);
+  opacity: 0;
+}
+
+.ion-back-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}

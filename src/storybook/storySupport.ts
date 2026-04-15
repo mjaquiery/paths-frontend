@@ -1,6 +1,6 @@
 import { IonicVue, IonApp } from '@ionic/vue';
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query';
-import { createRouter } from '@ionic/vue-router';
+import { createRouter } from 'vue-router';
 import { createMemoryHistory } from 'vue-router';
 import { HttpResponse, http } from 'msw';
 import { setup } from '@storybook/vue3';
