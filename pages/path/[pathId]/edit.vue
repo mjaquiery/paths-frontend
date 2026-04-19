@@ -160,9 +160,6 @@ function save() {
       }
     },
   });
-
-  // Unblock optimistically
-  saving.value = false;
 }
 </script>
 
