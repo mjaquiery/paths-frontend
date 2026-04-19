@@ -50,29 +50,11 @@
         <ion-item
           button
           :detail="false"
-          router-link="/invitations"
+          router-link="/settings"
           router-direction="forward"
           @click="menuOpen = false"
         >
-          Manage invitations
-        </ion-item>
-        <ion-item
-          button
-          :detail="false"
-          router-link="/export"
-          router-direction="forward"
-          @click="menuOpen = false"
-        >
-          Export data
-        </ion-item>
-        <ion-item
-          button
-          :detail="false"
-          router-link="/delete"
-          router-direction="forward"
-          @click="menuOpen = false"
-        >
-          Delete data
+          Settings
         </ion-item>
         <ion-item-divider />
         <ion-item
