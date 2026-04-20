@@ -91,10 +91,10 @@ test.describe('create path and entry', () => {
     });
 
     // Draft creation: GET /v1/paths/{pathId}/entries/drafts?day=…
+    // Use a glob pattern (** matches query string) instead of a regex to
+    // avoid CodeQL's incomplete-sanitization warning for string-built regexes.
     await page.route(
-      new RegExp(
-        `${API_BASE.replace(/\./g, '\\.')}/v1/paths/${pathId}/entries/drafts`,
-      ),
+      `${API_BASE}/v1/paths/${pathId}/entries/drafts**`,
       (route) => route.fulfill({ json: MOCK_DRAFT }),
     );
 
@@ -120,11 +120,8 @@ test.describe('create path and entry', () => {
     );
 
     // Entries list returned after cache invalidation on the entry view
-    await page.route(
-      new RegExp(
-        `${API_BASE.replace(/\./g, '\\.')}/v1/paths/${pathId}/entries`,
-      ),
-      (route) => route.fulfill({ json: [MOCK_ENTRY] }),
+    await page.route(`${API_BASE}/v1/paths/${pathId}/entries**`, (route) =>
+      route.fulfill({ json: [MOCK_ENTRY] }),
     );
 
     // Absorb remaining API calls
