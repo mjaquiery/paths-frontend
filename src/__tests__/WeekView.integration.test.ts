@@ -476,3 +476,39 @@ describe('WeekView – route navigation', () => {
     expect(entry.attributes('tabindex')).toBe('0');
   });
 });
+
+describe('WeekView – day ordering', () => {
+  it('shows today at position 6 (1-indexed) in the 7-day window', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const wrapper = mountWeekView([path], [{ pathId: 'p1', entries: [] }]);
+    await nextTick();
+    const dayBoxes = wrapper.findAll('.day-box');
+    expect(dayBoxes).toHaveLength(7);
+    // Position 6 (index 5) should be labelled "Today"
+    expect(dayBoxes[5].text()).toContain('Today');
+  });
+
+  it('shows tomorrow at position 7 (last position)', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const wrapper = mountWeekView([path], [{ pathId: 'p1', entries: [] }]);
+    await nextTick();
+    const dayBoxes = wrapper.findAll('.day-box');
+    // Last position should not be labelled "Today"
+    expect(dayBoxes[6].text()).not.toContain('Today');
+    // And it should not have the today class
+    expect(dayBoxes[6].classes()).not.toContain('day-box--today');
+  });
+
+  it('shows today with the today marker CSS class at position 6', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const wrapper = mountWeekView([path], [{ pathId: 'p1', entries: [] }]);
+    await nextTick();
+    const dayBoxes = wrapper.findAll('.day-box');
+    // Exactly one day box should have the today class
+    const todayBoxes = dayBoxes.filter((box) =>
+      box.classes().includes('day-box--today'),
+    );
+    expect(todayBoxes).toHaveLength(1);
+    expect(dayBoxes.indexOf(todayBoxes[0])).toBe(5);
+  });
+});

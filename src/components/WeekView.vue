@@ -87,6 +87,7 @@
 <script setup lang="ts">
 import { IonButton } from '@ionic/vue';
 import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 import type { PathResponse, ImageResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
@@ -140,8 +141,11 @@ const weekDays = computed<DayInfo[]>(() => {
   const todayStr = isoDate(0);
   const days: DayInfo[] = [];
   const baseOffset = weekOffset.value * 7;
+  // Display 7 days in chronological order (oldest → newest).
+  // At weekOffset=0: positions 1–5 are 5 days ago → yesterday,
+  // position 6 is today, position 7 is tomorrow.
   for (let i = 0; i <= 6; i++) {
-    const offsetFromToday = baseOffset - i;
+    const offsetFromToday = baseOffset - 5 + i;
     const dateStr = isoDate(offsetFromToday);
     const isToday = dateStr === todayStr;
     const pathEntries: DayPathEntry[] = [];
@@ -174,8 +178,8 @@ const weekDays = computed<DayInfo[]>(() => {
 });
 
 const weekRangeLabel = computed(() => {
-  const newest = weekDays.value[0];
-  const oldest = weekDays.value[weekDays.value.length - 1];
+  const oldest = weekDays.value[0];
+  const newest = weekDays.value[weekDays.value.length - 1];
   if (!newest || !oldest) return '';
   const fmt = (ds: string) =>
     new Date(ds + 'T00:00:00').toLocaleDateString(undefined, {

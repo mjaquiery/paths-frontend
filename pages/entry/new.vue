@@ -423,13 +423,18 @@ async function flushContentAutosave() {
     });
     lastSavedContent = currentContent;
     autosaveOffline.value = false;
+    setContentSaving(pendingSaveKey(), false);
   } catch {
     // Show an offline note if the device appears to be offline
     if (!navigator.onLine) {
       autosaveOffline.value = true;
     }
-  } finally {
-    setContentSaving(pendingSaveKey(), false);
+    // Schedule a retry so the unsaved content is not silently dropped
+    autosaveTimer = setTimeout(() => {
+      autosaveFlushPromise = flushContentAutosave().finally(() => {
+        autosaveFlushPromise = null;
+      });
+    }, AUTOSAVE_DEBOUNCE_MS);
   }
 }
 
@@ -952,6 +957,22 @@ onBeforeUnmount(async () => {
   removePendingSave(pendingSaveKey(), false);
   setContentSaving(pendingSaveKey(), false);
   clearDraftInitError(pendingSaveKey());
+
+  // Best-effort: flush any unsaved content to the server draft before
+  // abandoning so the user doesn't lose work typed since the last autosave.
+  if (draftId.value && content.value !== lastSavedContent) {
+    try {
+      if (autosaveFlushPromise) await autosaveFlushPromise;
+      if (content.value !== lastSavedContent) {
+        await patchDraft({
+          draftId: draftId.value,
+          data: { content: content.value },
+        });
+      }
+    } catch {
+      // Best-effort — proceed to abandon regardless
+    }
+  }
 
   // Abandon the server draft if we navigated away without committing
   if (draftId.value) {

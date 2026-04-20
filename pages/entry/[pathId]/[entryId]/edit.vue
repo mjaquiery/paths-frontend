@@ -654,6 +654,10 @@ async function flushContentAutosave() {
     if (!navigator.onLine) {
       autosaveOffline.value = true;
     }
+    // Re-queue the failed content for retry so it isn't silently dropped
+    if (pendingAutosaveContent === null) {
+      pendingAutosaveContent = contentToSave;
+    }
   } finally {
     autosaveInFlight = false;
     // If content changed again while we were in flight, flush again
@@ -1317,6 +1321,32 @@ onBeforeUnmount(async () => {
   removePendingSave(pendingSaveKey(), false);
   setContentSaving(pendingSaveKey(), false);
   clearDraftInitError(pendingSaveKey());
+
+  // Best-effort: flush any pending or in-flight autosave content before
+  // abandoning so the user doesn't lose work typed since the last autosave.
+  if (draftId.value) {
+    try {
+      const contentToFlush = pendingAutosaveContent ?? content.value;
+      if (autosaveInFlight) {
+        // Wait for the in-flight PATCH to complete before we abandon
+        await new Promise<void>((resolve) => {
+          const poll = () => {
+            if (!autosaveInFlight) resolve();
+            else setTimeout(poll, 50);
+          };
+          poll();
+        });
+      }
+      if (contentToFlush !== null && contentToFlush !== lastSavedContent) {
+        await patchDraft({
+          draftId: draftId.value,
+          data: { content: contentToFlush },
+        });
+      }
+    } catch {
+      // Best-effort — proceed to abandon regardless
+    }
+  }
 
   if (draftId.value) {
     try {

@@ -77,38 +77,89 @@ interface YearEntry {
   entryId: string;
   pathId: string;
   content?: string;
+  /** Lower = higher priority */
+  priority: number;
 }
 
+/**
+ * Returns the month-day string (MM-DD) for a date offset by the given number
+ * of days from today.
+ */
+function offsetMonthDay(offsetDays: number): string {
+  const d = new Date(today);
+  d.setDate(d.getDate() + offsetDays);
+  return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Priority tiers for the spotlight algorithm (lower = higher priority):
+ *  1 – first path  + exact day,   previous years
+ *  2 – other paths + exact day,   previous years
+ *  3 – first path  + adjacent days, not this year
+ *  4 – other paths + adjacent days, not this year
+ *  5 – first path  + adjacent days, this year (not today)
+ *  6 – other paths + adjacent days, this year (not today)
+ */
+const ADJACENT_OFFSETS = [-2, -1, 1, 2];
+
 const spotlightYears = computed<YearEntry[]>(() => {
+  const firstPathId = props.visiblePaths[0]?.path_id;
+  const exactMonthDay = todayMonthDay;
+  const adjacentMonthDays = new Set(
+    ADJACENT_OFFSETS.map((o) => offsetMonthDay(o)),
+  );
+
   const results: YearEntry[] = [];
+
   for (const { pathId, entries } of props.pathEntries) {
+    const isFirstPath = pathId === firstPathId;
+
     for (const entry of entries) {
-      // Match month-day but exclude current year
-      if (
-        entry.day.slice(5) === todayMonthDay &&
-        Number(entry.day.slice(0, 4)) < todayYear
-      ) {
-        const content = entry.content;
+      const entryYear = Number(entry.day.slice(0, 4));
+      const entryMonthDay = entry.day.slice(5);
+      const isThisYear = entryYear === todayYear;
+      // Never include today itself
+      if (entry.day === today.toISOString().slice(0, 10)) continue;
+
+      if (entryMonthDay === exactMonthDay && entryYear < todayYear) {
+        // Priority 1 or 2: exact day, previous years
         results.push({
-          year: Number(entry.day.slice(0, 4)),
+          year: entryYear,
           entryId: entry.id,
           pathId,
-          content,
+          content: entry.content,
+          priority: isFirstPath ? 1 : 2,
+        });
+      } else if (adjacentMonthDays.has(entryMonthDay) && !isThisYear) {
+        // Priority 3 or 4: adjacent day, not this year
+        results.push({
+          year: entryYear,
+          entryId: entry.id,
+          pathId,
+          content: entry.content,
+          priority: isFirstPath ? 3 : 4,
+        });
+      } else if (adjacentMonthDays.has(entryMonthDay) && isThisYear) {
+        // Priority 5 or 6: adjacent day, this year
+        results.push({
+          year: entryYear,
+          entryId: entry.id,
+          pathId,
+          content: entry.content,
+          priority: isFirstPath ? 5 : 6,
         });
       }
     }
   }
-  // Sort descending by year, then by path priority
-  return results.sort((a, b) => b.year - a.year);
+
+  // Sort by priority asc, then by year desc (most recent first within tier)
+  return results.sort((a, b) =>
+    a.priority !== b.priority ? a.priority - b.priority : b.year - a.year,
+  );
 });
 
 const primaryEntry = computed<YearEntry | null>(() => {
-  if (spotlightYears.value.length === 0) return null;
-  // Pick the most recent year for the top-priority visible path
-  for (const path of props.visiblePaths) {
-    const entry = spotlightYears.value.find((e) => e.pathId === path.path_id);
-    if (entry) return entry;
-  }
+  // The first entry in spotlightYears is already the highest-priority one.
   return spotlightYears.value[0] ?? null;
 });
 
