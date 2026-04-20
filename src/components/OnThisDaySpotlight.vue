@@ -83,11 +83,15 @@ interface YearEntry {
 
 /**
  * Returns the month-day string (MM-DD) for a date offset by the given number
- * of days from today.
+ * of days from today. Uses the Date constructor's overflow semantics to
+ * handle month/year rollovers correctly without mutating `today`.
  */
 function offsetMonthDay(offsetDays: number): string {
-  const d = new Date(today);
-  d.setDate(d.getDate() + offsetDays);
+  const d = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() + offsetDays,
+  );
   return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 

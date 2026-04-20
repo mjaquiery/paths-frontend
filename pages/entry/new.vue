@@ -258,6 +258,10 @@ let autosaveFlushPromise: Promise<void> | null = null;
 /** Last content value that was successfully PATCHed to the server */
 let lastSavedContent = '';
 
+/** Number of consecutive autosave failures (reset on success) */
+let autosaveRetryCount = 0;
+const AUTOSAVE_MAX_RETRIES = 10;
+
 /** Whether the commit-fail inform dialog is open */
 const commitFailDialogOpen = ref(false);
 /** Message shown in the commit-fail inform dialog */
@@ -382,6 +386,7 @@ watch(
       const oldDraftId = draftId.value;
       draftId.value = '';
       lastSavedContent = '';
+      autosaveRetryCount = 0;
       try {
         await abandonDraft({ draftId: oldDraftId });
       } catch {
@@ -423,18 +428,27 @@ async function flushContentAutosave() {
     });
     lastSavedContent = currentContent;
     autosaveOffline.value = false;
+    autosaveRetryCount = 0;
     setContentSaving(pendingSaveKey(), false);
   } catch {
     // Show an offline note if the device appears to be offline
     if (!navigator.onLine) {
       autosaveOffline.value = true;
     }
-    // Schedule a retry so the unsaved content is not silently dropped
-    autosaveTimer = setTimeout(() => {
-      autosaveFlushPromise = flushContentAutosave().finally(() => {
-        autosaveFlushPromise = null;
-      });
-    }, AUTOSAVE_DEBOUNCE_MS);
+    // Schedule a retry so the unsaved content is not silently dropped,
+    // subject to a maximum number of consecutive retries.
+    autosaveRetryCount += 1;
+    if (autosaveRetryCount <= AUTOSAVE_MAX_RETRIES) {
+      autosaveTimer = setTimeout(() => {
+        autosaveFlushPromise = flushContentAutosave().finally(() => {
+          autosaveFlushPromise = null;
+        });
+      }, AUTOSAVE_DEBOUNCE_MS);
+    } else {
+      // Give up retrying; the user's content will be flushed on the next
+      // manual action (publish / save draft / navigation away).
+      setContentSaving(pendingSaveKey(), false);
+    }
   }
 }
 

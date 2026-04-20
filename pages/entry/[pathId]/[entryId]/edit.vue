@@ -390,6 +390,9 @@ let pendingAutosaveContent: string | null = null;
 /** True while a PATCH is running so we don't start a second one. */
 let autosaveInFlight = false;
 
+/** Promise that resolves when the current in-flight flush completes. */
+let autosaveFlushPromise: Promise<void> | null = null;
+
 /** Debounce timer before the first flush after a change. */
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -625,7 +628,9 @@ function markContentDirty() {
   if (autosaveTimer !== null) clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => {
     autosaveTimer = null;
-    void flushContentAutosave();
+    autosaveFlushPromise = flushContentAutosave().finally(() => {
+      autosaveFlushPromise = null;
+    });
   }, AUTOSAVE_DEBOUNCE_MS);
 }
 
@@ -665,7 +670,9 @@ async function flushContentAutosave() {
       pendingAutosaveContent !== null &&
       pendingAutosaveContent !== lastSavedContent
     ) {
-      void flushContentAutosave();
+      autosaveFlushPromise = flushContentAutosave().finally(() => {
+        autosaveFlushPromise = null;
+      });
     } else {
       setContentSaving(pendingSaveKey(), false);
     }
@@ -683,7 +690,9 @@ watch(draftId, (nextId) => {
     if (autosaveTimer !== null) clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
       autosaveTimer = null;
-      void flushContentAutosave();
+      autosaveFlushPromise = flushContentAutosave().finally(() => {
+        autosaveFlushPromise = null;
+      });
     }, AUTOSAVE_DEBOUNCE_MS);
   }
 });
@@ -1044,16 +1053,7 @@ async function saveDraftAndNavigateBack() {
       autosaveTimer = null;
     }
     // Wait for any in-flight PATCH to finish.
-    if (autosaveInFlight) {
-      await new Promise<void>((resolve) => {
-        const interval = setInterval(() => {
-          if (!autosaveInFlight) {
-            clearInterval(interval);
-            resolve();
-          }
-        }, 50);
-      });
-    }
+    if (autosaveFlushPromise) await autosaveFlushPromise;
     // Flush any remaining pending content.
     const contentToSave = pendingAutosaveContent ?? content.value;
     if (contentToSave !== lastSavedContent) {
@@ -1091,16 +1091,7 @@ async function commitDraft() {
     }
     // If a PATCH is in flight or we have pending content, flush it now before committing
     if (autosaveInFlight || pendingAutosaveContent !== null) {
-      await new Promise<void>((resolve) => {
-        const poll = () => {
-          if (!autosaveInFlight) {
-            resolve();
-          } else {
-            setTimeout(poll, 50);
-          }
-        };
-        poll();
-      });
+      if (autosaveFlushPromise) await autosaveFlushPromise;
       if (
         pendingAutosaveContent !== null &&
         pendingAutosaveContent !== lastSavedContent
@@ -1326,17 +1317,9 @@ onBeforeUnmount(async () => {
   // abandoning so the user doesn't lose work typed since the last autosave.
   if (draftId.value) {
     try {
+      // Wait for any in-flight flush to complete before we abandon
+      if (autosaveFlushPromise) await autosaveFlushPromise;
       const contentToFlush = pendingAutosaveContent ?? content.value;
-      if (autosaveInFlight) {
-        // Wait for the in-flight PATCH to complete before we abandon
-        await new Promise<void>((resolve) => {
-          const poll = () => {
-            if (!autosaveInFlight) resolve();
-            else setTimeout(poll, 50);
-          };
-          poll();
-        });
-      }
       if (contentToFlush !== null && contentToFlush !== lastSavedContent) {
         await patchDraft({
           draftId: draftId.value,
