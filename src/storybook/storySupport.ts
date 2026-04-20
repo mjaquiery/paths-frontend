@@ -32,7 +32,6 @@ import {
   getListSubscriptionsQueryKey,
 } from '../generated/apiClient';
 import type { PathEntries } from '../composables/useMultiPathEntries';
-import type { EntryDetailData } from '../components/EntryDetailModal.vue';
 import { db } from '../lib/db';
 import { resetPendingSaves } from '../composables/usePendingSaves';
 
@@ -378,46 +377,6 @@ export function buildPathEntries(
       images: record.images,
     })),
   }));
-}
-
-export function buildEntryDetail(
-  state: StoryState,
-  entryId: string,
-): EntryDetailData {
-  const match = findEntryRecord(state, entryId);
-  if (!match) {
-    throw new Error(`Story entry "${entryId}" was not found.`);
-  }
-
-  const path = state.paths.find((item) => item.path_id === match.pathId);
-  if (!path) {
-    throw new Error(`Story path "${match.pathId}" was not found.`);
-  }
-
-  const canEdit =
-    !!state.currentUser && path.owner_user_id === state.currentUser.user_id;
-
-  return {
-    pathId: match.pathId,
-    entryId: match.record.summary.id,
-    pathTitle: path.title,
-    color: path.color,
-    day: match.record.summary.day,
-    content: match.record.content,
-    hasImages: match.record.images.length > 0,
-    images: match.record.images,
-    edit_id: match.record.summary.edit_id,
-    canEdit,
-  };
-}
-
-export function buildEntryDetailsForPath(
-  state: StoryState,
-  pathId: string,
-): EntryDetailData[] {
-  return (state.entriesByPath[pathId] ?? []).map((record) =>
-    buildEntryDetail(state, record.summary.id),
-  );
 }
 
 export function createStoryParameters(

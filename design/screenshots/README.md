@@ -26,3 +26,12 @@ Designs A–E are in [`archive/`](archive/). Each has a brochure and screenshots
 - Design C — Month Calendar + Day Panel
 - Design D — Full-screen Day Cards
 - Design E — Entry Stream
+
+## Archived planning documents
+
+The following planning and issue-tracking documents have been archived to [`archive/`](archive/) after completion:
+
+- `storybook-issues.md` — Storybook issues resolved by Stage 6
+- `storybook-issues-plan.md` — Storybook remediation plan superseded by Stage 6
+- `0_scaffolding.md` — Phase 0 scaffolding plan (complete)
+- `app-screens/` — Pre-Design-F application screenshots
