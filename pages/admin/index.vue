@@ -97,7 +97,6 @@ import { setPathCreationApproval } from '~/src/generated/apiClient';
 import { useAdminAuth } from '~/src/composables/useAdminAuth';
 import type { PathCreationApprovalResponse } from '~/src/generated/types';
 
-const router = useRouter();
 const { isAdminLoggedIn, clearToken, getAdminAuthHeaders } = useAdminAuth();
 
 if (!isAdminLoggedIn.value) {

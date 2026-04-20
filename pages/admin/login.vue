@@ -72,7 +72,6 @@ import AppErrorBanner from '~/src/components/AppErrorBanner.vue';
 import { adminLogin } from '~/src/generated/apiClient';
 import { useAdminAuth } from '~/src/composables/useAdminAuth';
 
-const router = useRouter();
 const { storeToken, isAdminLoggedIn } = useAdminAuth();
 
 if (isAdminLoggedIn.value) {
