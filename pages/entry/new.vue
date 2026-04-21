@@ -116,13 +116,6 @@
         </template>
       </div>
     </ion-content>
-    <ion-footer>
-      <RefreshStatus
-        :status-type="refreshStatusType"
-        :status-text="refreshStatusText"
-        :last-checked-at="refreshLastCheckedAt"
-      />
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -136,7 +129,6 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonFooter,
   IonButton,
   IonButtons,
   IonBackButton,
@@ -152,13 +144,11 @@ import { useQueryClient } from '@tanstack/vue-query';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import EntryEditorPanel from '~/src/components/EntryEditorPanel.vue';
-import RefreshStatus from '~/src/components/RefreshStatus.vue';
 import { useCurrentUser } from '~/src/composables/useCurrentUser';
 import { useDraftImageUpload } from '~/src/composables/useDraftImageUpload';
 import { useMarkdownEditor } from '~/src/composables/useMarkdownEditor';
 import { usePaths } from '~/src/composables/usePaths';
 import { usePendingSaves } from '~/src/composables/usePendingSaves';
-import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
 import { useApi } from '~/src/composables/useApi';
 import {
   startCreateEntryDraft,
@@ -226,10 +216,6 @@ const {
 const { enqueue, isOnline } = useApi();
 
 const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
 
 const day = ref(
   String(route.query.date ?? new Date().toISOString().slice(0, 10)),

@@ -199,14 +199,6 @@
         </ion-toolbar>
       </ion-footer>
     </ion-modal>
-
-    <ion-footer>
-      <RefreshStatus
-        :status-type="refreshStatusType"
-        :status-text="refreshStatusText"
-        :last-checked-at="refreshLastCheckedAt"
-      />
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -233,13 +225,11 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import EntryEditorPanel from '~/src/components/EntryEditorPanel.vue';
 import MarkdownContent from '~/src/components/MarkdownContent.vue';
-import RefreshStatus from '~/src/components/RefreshStatus.vue';
 import { useDraftImageUpload } from '~/src/composables/useDraftImageUpload';
 import { useMarkdownEditor } from '~/src/composables/useMarkdownEditor';
 import { useMultiPathEntries } from '~/src/composables/useMultiPathEntries';
 import { usePaths } from '~/src/composables/usePaths';
 import { usePendingSaves } from '~/src/composables/usePendingSaves';
-import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
 import { useApi } from '~/src/composables/useApi';
 import {
   startEditEntryDraft,
@@ -332,10 +322,6 @@ const {
 const { enqueue, isOnline } = useApi();
 
 const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
 
 const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');

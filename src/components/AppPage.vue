@@ -13,5 +13,6 @@ import { IonPage } from '@ionic/vue';
   --background: var(--color-paper);
   --padding-start: var(--page-margin);
   --padding-end: var(--page-margin);
+  --padding-bottom: var(--footer-height-active, 3rem);
 }
 </style>

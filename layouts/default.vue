@@ -1,6 +1,7 @@
 <template>
   <ion-app>
     <NuxtPage />
+    <AppFooter />
     <ion-toast
       :is-open="!!deferredPrompt"
       message="Install Paths for offline access"
@@ -13,6 +14,7 @@
 
 <script setup lang="ts">
 import { IonApp, IonToast } from '@ionic/vue';
+import AppFooter from '~/src/components/AppFooter.vue';
 import { useInstallBanner } from '~/src/composables/useInstallBanner';
 
 const { deferredPrompt, promptInstall, dismissInstall } = useInstallBanner();

@@ -75,13 +75,6 @@
       :buttons="deleteAlertButtons"
       @didDismiss="showDeleteAlert = false"
     />
-    <ion-footer>
-      <RefreshStatus
-        :status-type="refreshStatusType"
-        :status-text="refreshStatusText"
-        :last-checked-at="refreshLastCheckedAt"
-      />
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -95,14 +88,11 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonFooter,
   IonButton,
   IonButtons,
   IonBackButton,
   IonAlert,
 } from '@ionic/vue';
-import RefreshStatus from '~/src/components/RefreshStatus.vue';
-import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
 import { computed, ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { usePaths } from '~/src/composables/usePaths';
@@ -129,10 +119,6 @@ const canEdit = computed(
 );
 
 const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
 
 const pathIdArr = computed(() => (pathId.value ? [pathId.value] : []));
 const multiPathEntries = useMultiPathEntries(pathIdArr);

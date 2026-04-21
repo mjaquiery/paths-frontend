@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, readonly, computed, onMounted, onUnmounted } from 'vue';
 import { useIsFetching, useQueryClient } from '@tanstack/vue-query';
 import type { QueryCacheNotifyEvent } from '@tanstack/query-core';
 import { useApi } from './useApi';
@@ -44,9 +44,15 @@ export function resetRefreshStatusState(): void {
  * - `statusText`: short human-readable label for the indicator.
  */
 export function useRefreshStatus() {
-  // Delegate online/offline tracking to the useApi singleton — it already wires
-  // window listeners at module load, so we avoid a second independent set.
-  const { isOnline, trackRead, lastRead } = useApi();
+  const {
+    isOnline,
+    trackRead,
+    lastRead,
+    pendingCount,
+    abandonedWrites,
+    queue,
+    clearAbandoned,
+  } = useApi();
 
   const hasError = computed(() => _hasError.value);
 
@@ -131,6 +137,46 @@ export function useRefreshStatus() {
     lastRead.value ? new Date(lastRead.value.at) : null,
   );
 
+  // ── Stage-5 additions ──────────────────────────────────────────────────────
+
+  /** Number of write operations not yet succeeded or abandoned. */
+  const pendingOpsCount = computed(() => pendingCount.value);
+
+  /** Human-readable description of the most recent error, or null. */
+  const lastError = computed<string | null>(() => {
+    if (abandonedWrites.value.length > 0) {
+      return (
+        abandonedWrites.value[abandonedWrites.value.length - 1]?.note ?? null
+      );
+    }
+    if (_hasError.value) return 'Unable to reach server.';
+    return null;
+  });
+
+  /** Whether any queued write has a conflict failure. */
+  const hasConflict = computed(() =>
+    queue.value.some((w) => w.failureKind === 'conflict'),
+  );
+
+  /** Manually flush all queries to force a re-fetch. */
+  function retrySync(): void {
+    void queryClient.invalidateQueries({ queryKey: ['v1'] });
+  }
+
+  /** Clear the fetch-error flag, reset errored queries, and dismiss abandoned writes. */
+  function clearError(): void {
+    _hasError.value = false;
+    clearAbandoned();
+    queryClient
+      .getQueryCache()
+      .findAll()
+      .forEach((q) => {
+        if (q.state.status === 'error') {
+          void queryClient.resetQueries({ queryKey: q.queryKey });
+        }
+      });
+  }
+
   return {
     lastCheckedAt,
     isOnline,
@@ -138,5 +184,10 @@ export function useRefreshStatus() {
     isFetching,
     statusType,
     statusText,
+    pendingOpsCount: readonly(pendingOpsCount),
+    lastError: readonly(lastError),
+    hasConflict: readonly(hasConflict),
+    retrySync,
+    clearError,
   };
 }

@@ -39,13 +39,6 @@
         </ion-button>
       </div>
     </ion-content>
-    <ion-footer>
-      <RefreshStatus
-        :status-type="refreshStatusType"
-        :status-text="refreshStatusText"
-        :last-checked-at="refreshLastCheckedAt"
-      />
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -59,7 +52,6 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonFooter,
   IonButton,
   IonButtons,
   IonBackButton,
@@ -67,9 +59,7 @@ import {
 import { ref } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import PathFormFields from '~/src/components/PathFormFields.vue';
-import RefreshStatus from '~/src/components/RefreshStatus.vue';
 import { useCreatePath } from '~/src/generated/apiClient';
-import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
 import { useApi } from '~/src/composables/useApi';
 
 const router = useRouter();
@@ -80,10 +70,6 @@ const { mutateAsync: doCreatePath } = useCreatePath();
 const { enqueue } = useApi();
 
 const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
 
 const form = ref({
   title: '',

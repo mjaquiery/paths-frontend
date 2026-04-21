@@ -29,6 +29,19 @@
   --ion-toolbar-background: var(--color-paper);
   --ion-item-background: var(--color-paper);
   --ion-border-color: var(--color-rule);
+
+  /* ── AppFooter tokens ── */
+  --footer-height-idle: 2rem;
+  --footer-height-active: 3rem;
+  --footer-bg-idle: transparent;
+  --footer-bg-active: var(--color-paper);
+  --footer-bg-offline: #3d2b00;
+  --footer-bg-error: #3d1f00;
+  --footer-text-idle: var(--color-ink-muted);
+  --footer-text-active: var(--color-ink);
+  --footer-text-offline: #f5c842;
+  --footer-text-error: #f5a623;
+  --footer-border: 1px solid var(--color-rule);
 }
 
 /* ── Dark mode (media query) ── */
@@ -38,6 +51,9 @@
     --color-ink: #f0ede4;
     --color-ink-muted: #9b9890;
     --color-rule: #38362e;
+
+    --footer-bg-offline: #2a1e00;
+    --footer-bg-error: #2a1400;
   }
 }
 
@@ -47,6 +63,9 @@
   --color-ink: #f0ede4;
   --color-ink-muted: #9b9890;
   --color-rule: #38362e;
+
+  --footer-bg-offline: #2a1e00;
+  --footer-bg-error: #2a1400;
 }
 
 /* ── Typography rules ── */

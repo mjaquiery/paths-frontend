@@ -113,14 +113,6 @@
         </ion-button>
       </div>
     </ion-content>
-
-    <ion-footer>
-      <RefreshStatus
-        :status-type="refreshStatusType"
-        :status-text="refreshStatusText"
-        :last-checked-at="refreshLastCheckedAt"
-      />
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -134,7 +126,6 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonFooter,
   IonButtons,
   IonBackButton,
   IonButton,
@@ -144,12 +135,10 @@ import { ref, computed } from 'vue';
 import AppErrorBanner from '~/src/components/AppErrorBanner.vue';
 import AppEmptyState from '~/src/components/AppEmptyState.vue';
 import PathColorBar from '~/src/components/PathColorBar.vue';
-import RefreshStatus from '~/src/components/RefreshStatus.vue';
 
 import { usePaths } from '~/src/composables/usePaths';
 import { useMultiPathEntries } from '~/src/composables/useMultiPathEntries';
 import { useCurrentUser } from '~/src/composables/useCurrentUser';
-import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
 import { extractErrorMessage } from '~/src/lib/errors';
 
 const router = useRouter();
@@ -171,10 +160,6 @@ const pathIds = computed(() => (allPaths.value ?? []).map((p) => p.path_id));
 const multiPathEntries = useMultiPathEntries(pathIds);
 
 const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
 
 // ── Calendar state ──────────────────────────────────────────────────────────
 const today = new Date();

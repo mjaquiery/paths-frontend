@@ -47,14 +47,6 @@
         </ion-button>
       </div>
     </ion-content>
-
-    <ion-footer>
-      <RefreshStatus
-        :status-type="refreshStatusType"
-        :status-text="refreshStatusText"
-        :last-checked-at="refreshLastCheckedAt"
-      />
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -68,7 +60,6 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonFooter,
   IonButton,
   IonButtons,
   IonBackButton,
@@ -79,10 +70,8 @@ import { useQueryClient } from '@tanstack/vue-query';
 import AppErrorBanner from '~/src/components/AppErrorBanner.vue';
 import AppSpinner from '~/src/components/AppSpinner.vue';
 import PathFormFields from '~/src/components/PathFormFields.vue';
-import RefreshStatus from '~/src/components/RefreshStatus.vue';
 
 import { usePaths } from '~/src/composables/usePaths';
-import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
 import { useApi } from '~/src/composables/useApi';
 import { extractErrorMessage } from '~/src/lib/errors';
 import { useUpdatePath } from '~/src/generated/apiClient';
@@ -102,10 +91,6 @@ const pathsErrorMsg = computed(
 );
 
 const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
 
 const { mutateAsync: doUpdatePath } = useUpdatePath();
 const { enqueue } = useApi();

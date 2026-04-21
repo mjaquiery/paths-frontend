@@ -223,4 +223,89 @@ describe('useRefreshStatus', () => {
 
     expect(capturedUnsubscribe).toHaveBeenCalledOnce();
   });
+
+  it('exposes pendingOpsCount from useApi pendingCount', async () => {
+    const queryClient = createQueryClient();
+    const { wrapper, exposed } = mountWithStatus(queryClient);
+    await flushPromises();
+
+    expect(exposed.pendingOpsCount.value).toBe(0);
+
+    wrapper.unmount();
+  });
+
+  it('exposes lastError as null when there are no errors', async () => {
+    const queryClient = createQueryClient();
+    const { wrapper, exposed } = mountWithStatus(queryClient);
+    await flushPromises();
+
+    expect(exposed.lastError.value).toBeNull();
+
+    wrapper.unmount();
+  });
+
+  it('exposes hasConflict as false when no conflict failures', async () => {
+    const queryClient = createQueryClient();
+    const { wrapper, exposed } = mountWithStatus(queryClient);
+    await flushPromises();
+
+    expect(exposed.hasConflict.value).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it('exposes retrySync as a callable function', async () => {
+    const queryClient = createQueryClient();
+    const { wrapper, exposed } = mountWithStatus(queryClient);
+    await flushPromises();
+
+    expect(typeof exposed.retrySync).toBe('function');
+    // Should not throw when called
+    expect(() => exposed.retrySync()).not.toThrow();
+
+    wrapper.unmount();
+  });
+
+  it('exposes clearError as a callable function that resets hasError', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const { wrapper, exposed } = mountWithStatus(queryClient);
+    await flushPromises();
+
+    // Trigger an error
+    await queryClient.prefetchQuery({
+      queryKey: ['v1', 'paths', 'p1', 'entries'],
+      queryFn: () => Promise.reject(new Error('API down')),
+      retry: false,
+    });
+    await nextTick();
+    expect(exposed.hasError.value).toBe(true);
+
+    exposed.clearError();
+    await nextTick();
+
+    expect(exposed.hasError.value).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it('lastError returns "Unable to reach server." when hasError is true and no abandoned writes', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const { wrapper, exposed } = mountWithStatus(queryClient);
+    await flushPromises();
+
+    await queryClient.prefetchQuery({
+      queryKey: ['v1', 'paths', 'p1', 'entries'],
+      queryFn: () => Promise.reject(new Error('API down')),
+      retry: false,
+    });
+    await nextTick();
+
+    expect(exposed.lastError.value).toBe('Unable to reach server.');
+
+    wrapper.unmount();
+  });
 });

@@ -183,13 +183,6 @@
         </ion-card>
       </div>
     </ion-content>
-    <ion-footer>
-      <RefreshStatus
-        :status-type="refreshStatusType"
-        :status-text="refreshStatusText"
-        :last-checked-at="refreshLastCheckedAt"
-      />
-    </ion-footer>
   </ion-page>
 </template>
 
@@ -203,7 +196,6 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonFooter,
   IonButton,
   IonButtons,
   IonLabel,
@@ -222,7 +214,6 @@ import { useQueryClient } from '@tanstack/vue-query';
 import PathsSelectorBar from '~/src/components/PathsSelectorBar.vue';
 import OnThisDaySpotlight from '~/src/components/OnThisDaySpotlight.vue';
 import WeekView from '~/src/components/WeekView.vue';
-import RefreshStatus from '~/src/components/RefreshStatus.vue';
 import type {
   PathResponse,
   OAuthCallbackResponse,
@@ -232,7 +223,6 @@ import { authLogin } from '~/src/generated/apiClient';
 import { useMultiPathEntries } from '~/src/composables/useMultiPathEntries';
 import { usePaths } from '~/src/composables/usePaths';
 import { useDarkMode } from '~/src/composables/useDarkMode';
-import { useRefreshStatus } from '~/src/composables/useRefreshStatus';
 import { extractErrorMessage } from '~/src/lib/errors';
 
 const {
@@ -242,10 +232,6 @@ const {
 } = useDarkMode();
 
 const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
 
 const darkModeLabel = computed(() => {
   if (darkPreference.value === 'light') return 'Light mode – switch to dark';
