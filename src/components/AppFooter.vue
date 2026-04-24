@@ -107,14 +107,15 @@ const footerClass = computed(() => ({
 <style scoped>
 .app-footer {
   position: fixed;
-  bottom: 0;
+  bottom: var(--keyboard-height, 0px);
   left: 0;
   right: 0;
   z-index: var(--ion-z-index-overlay, 999);
   padding-bottom: env(safe-area-inset-bottom);
   transition:
     height 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    bottom 0.1s ease;
   background: var(--footer-bg-active, var(--color-paper));
   border-top: var(--footer-border, 1px solid var(--color-rule));
   height: var(--footer-height-active, 3rem);

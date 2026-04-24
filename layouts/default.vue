@@ -16,8 +16,10 @@
 import { IonApp, IonToast } from '@ionic/vue';
 import AppFooter from '~/src/components/AppFooter.vue';
 import { useInstallBanner } from '~/src/composables/useInstallBanner';
+import { useVirtualKeyboard } from '~/src/composables/useVirtualKeyboard';
 
 const { deferredPrompt, promptInstall, dismissInstall } = useInstallBanner();
+useVirtualKeyboard();
 
 const installToastButtons = [
   { text: 'Install', handler: promptInstall },
