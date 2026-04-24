@@ -260,6 +260,7 @@ import {
   type ToggleCustomEvent,
 } from '@ionic/vue';
 import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 
 import type { OAuthCallbackResponse, PathResponse } from '../generated/types';
