@@ -69,8 +69,6 @@ const queryClient = useQueryClient();
 const { mutateAsync: doCreatePath } = useCreatePath();
 const { enqueue } = useApi();
 
-const {
-
 const form = ref({
   title: '',
   description: '',

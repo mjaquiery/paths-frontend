@@ -118,8 +118,6 @@ const canEdit = computed(
     !!currentUserId.value && path.value?.owner_user_id === currentUserId.value,
 );
 
-const {
-
 const pathIdArr = computed(() => (pathId.value ? [pathId.value] : []));
 const multiPathEntries = useMultiPathEntries(pathIdArr);
 

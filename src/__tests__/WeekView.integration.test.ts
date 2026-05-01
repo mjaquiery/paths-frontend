@@ -485,7 +485,7 @@ describe('WeekView – day ordering', () => {
     const dayBoxes = wrapper.findAll('.day-box');
     expect(dayBoxes).toHaveLength(7);
     // Position 6 (index 5) should be labelled "Today"
-    expect(dayBoxes[5].text()).toContain('Today');
+    expect(dayBoxes[5]!.text()).toContain('Today');
   });
 
   it('shows tomorrow at position 7 (last position)', async () => {
@@ -494,9 +494,9 @@ describe('WeekView – day ordering', () => {
     await nextTick();
     const dayBoxes = wrapper.findAll('.day-box');
     // Last position should not be labelled "Today"
-    expect(dayBoxes[6].text()).not.toContain('Today');
+    expect(dayBoxes[6]!.text()).not.toContain('Today');
     // And it should not have the today class
-    expect(dayBoxes[6].classes()).not.toContain('day-box--today');
+    expect(dayBoxes[6]!.classes()).not.toContain('day-box--today');
   });
 
   it('shows today with the today marker CSS class at position 6', async () => {
@@ -509,6 +509,6 @@ describe('WeekView – day ordering', () => {
       box.classes().includes('day-box--today'),
     );
     expect(todayBoxes).toHaveLength(1);
-    expect(dayBoxes.indexOf(todayBoxes[0])).toBe(5);
+    expect(dayBoxes.indexOf(todayBoxes[0]!)).toBe(5);
   });
 });

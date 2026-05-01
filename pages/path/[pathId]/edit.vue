@@ -90,8 +90,6 @@ const pathsErrorMsg = computed(
   () => extractErrorMessage(pathsError.value) ?? 'Unable to load this path.',
 );
 
-const {
-
 const { mutateAsync: doUpdatePath } = useUpdatePath();
 const { enqueue } = useApi();
 

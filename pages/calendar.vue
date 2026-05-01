@@ -159,8 +159,6 @@ const canCreate = computed(
 const pathIds = computed(() => (allPaths.value ?? []).map((p) => p.path_id));
 const multiPathEntries = useMultiPathEntries(pathIds);
 
-const {
-
 // ── Calendar state ──────────────────────────────────────────────────────────
 const today = new Date();
 const viewYear = ref(today.getFullYear());

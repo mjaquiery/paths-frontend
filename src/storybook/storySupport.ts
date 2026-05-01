@@ -1494,15 +1494,15 @@ function installDeterministicDate() {
       }
     }
 
-    static now() {
+    static override now() {
       return fixedTime;
     }
 
-    static parse(value: string) {
+    static override parse(value: string) {
       return RealDate.parse(value);
     }
 
-    static UTC(...args: Parameters<typeof RealDate.UTC>) {
+    static override UTC(...args: Parameters<typeof RealDate.UTC>) {
       return RealDate.UTC(...args);
     }
   }

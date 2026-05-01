@@ -21,3 +21,7 @@ jobs:
         run: npm ci
       - name: Run tests
         run: npx nuxt prepare && npm test
+      - name: Run TypeScript check
+        run: npx tsc --noEmit
+      - name: Verify production build
+        run: npm run build

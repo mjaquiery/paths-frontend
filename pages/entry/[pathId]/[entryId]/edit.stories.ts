@@ -195,7 +195,7 @@ export const DraftInitError: Story = {
 export const ConflictResolution: Story = {
   args: {
     _openConflictOnMount: true,
-  },
+  } as Record<string, unknown>,
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
