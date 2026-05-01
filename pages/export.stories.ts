@@ -42,6 +42,7 @@ for (let index = 0; index < 9; index += 1) {
 const meta: Meta<typeof ExportView> = {
   title: 'Views/ExportView',
   component: ExportView,
+  tags: ['smoke'],
 };
 
 export default meta;

@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-
 import HomeView from './index.vue';
 import {
   createStoryApiError,
@@ -50,6 +49,7 @@ for (let index = 0; index < 6; index += 1) {
 const meta: Meta<typeof HomeView> = {
   title: 'Views/HomeView',
   component: HomeView,
+  tags: ['smoke'],
 };
 
 export default meta;
@@ -92,10 +92,10 @@ export const Offline: Story = {
 };
 
 export const PathsApiError: Story = {
+  tags: ['edge-error'],
   parameters: createStoryParameters({
     state: populatedState,
     route: '/',
-    seedCacheFromState: true,
     requestOverrides: [
       createStoryApiError('*/v1/paths', 503, 'GET', {
         detail: 'Storybook forced paths outage.',
@@ -109,6 +109,7 @@ export const PathsApiError: Story = {
  * show a "Create a Path" CTA rather than per-day "+" chips.
  */
 export const EmptyPaths: Story = {
+  tags: ['edge-permissions'],
   parameters: createStoryParameters({
     state: createEmptyState({ paths: [] }),
     route: '/',

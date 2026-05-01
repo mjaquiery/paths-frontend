@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test } from 'playwright/test';
 test('check HomeView Default story console', async ({ page }) => {
   const messages: string[] = [];
   page.on('console', (msg) => messages.push(`[${msg.type()}] ${msg.text()}`));

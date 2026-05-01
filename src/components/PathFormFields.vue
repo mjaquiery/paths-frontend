@@ -30,6 +30,7 @@
           :id="colorInputId"
           :value="color"
           type="color"
+          aria-label="Path colour"
           class="path-colour-input"
           @input="
             emit('update:color', ($event.target as HTMLInputElement).value)

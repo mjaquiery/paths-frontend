@@ -13,6 +13,7 @@
         :title="form.title"
         :description="form.description"
         :color="form.color"
+        error-message=""
         color-input-id="edit-path-colour-picker"
         @update:title="form.title = $event"
         @update:description="form.description = $event"

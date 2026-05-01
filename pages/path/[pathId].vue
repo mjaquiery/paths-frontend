@@ -109,8 +109,6 @@ const isOwned = computed(
   () => path.value?.owner_user_id === currentUserId.value,
 );
 
-const {
-
 const pathIdArr = computed(() => (path.value ? [pathId.value] : []));
 const multiPathEntries = useMultiPathEntries(pathIdArr);
 

@@ -1,146 +1,165 @@
-# Coding Agent Instructions — Shared Journal PWA (fly.io, Path-only)
+# AGENTS.md — Frontend Coding Agent Guide
 
-This file defines strict guidance for LLM-based coding agents (Codex) contributing to this repository.
+This document defines how coding agents should work in this repository.
 
-This repository is the **frontend**.
-
-You **must never change `schemas/openapi.json`**. If changes are necessary in this file, stop what you are doing and DO NOT CONTINUE until the file is in a proper state for continuation.
-
-This file comes from the backend and represents the backend's ground truth; changing it will result in desynching the front and back ends.
+Scope: **this is a frontend-only repo**.
 
 ---
 
-## Core terminology (non-negotiable)
+## 1) Mission and Scope
 
-- **Path** is the only content container.
-- Entries, Images, and Edits belong to exactly one Path.
-- There is no diary, journey, or aggregation entity.
-- UI filtering does not affect server state.
-- User may only export data they have read access to (read-write access okay).
-
-If code introduces alternative container concepts, it is incorrect.
+- Build and maintain the frontend application.
+- Prioritize correctness, clarity, maintainability, and predictable behavior.
+- Do not implement backend-only behavior here unless explicitly requested.
+- Treat backend API contracts as external source-of-truth inputs.
 
 ---
 
-## General rules
+## 2) Runtime Model (Critical)
 
-1. Produce deterministic, reproducible code.
-2. Respect formatting:
-   - Python: ruff
-   - Vue/TypeScript: prettier
-   - **Before opening or updating a PR, run `npm run format` (or `prettier --write .`) on all files to avoid large formatting-only diffs.**
-
-3. Generate tests alongside features.
-4. Keep OpenAPI and backend models in sync.
-5. All services must be containerised (Dockerfile-based).
-
----
-
-## Backend rules
-
-### Stack
-
-- FastAPI
-- Pydantic v2 (OpenAPI documentation, examples, etc. via model config)
-- SQLAlchemy (modern ORM, i.e. session.execute(select(...)) not legacy Query API)
-- Alembic
-- boto3 or S3-compatible SDK
-
-### Optimistic locking
-
-- All entry updates require `expected_edit_id` of current latest edit.
-- Mismatches return HTTP 409 with structured error payload.
-
-### Export implementation
-
-- POST /exports creates an async export job.
-- Export job:
-  - Selects all Paths requested.
-  - Errors if any requested Path is not owned or subscribed.
-  - Rate-limits to 1 current export per pathset per user.
-  - Rate-limits to 3 concurrent exports per user.
-  - Serialises entries using latest edits only.
-  - Writes JSON export to object storage.
-  - Packages all referenced images into a single archive.
-
-- JSON must include:
-  - day
-  - entry_id
-  - edit_id
-  - image filenames
-
-- Image archive filenames must match JSON exactly.
-
-### Security
-
-- Enforce ownership checks on all export and upload endpoints.
-- Admins are explicitly blocked from exporting user data.
-- Signed URLs must be short-lived.
+- The app must be delivered as a **statically compiled, client-only bundle**.
+- Nuxt is used for **developer experience and frontend tooling**, not as an application backend.
+- **Do not rely on Nuxt server capabilities** for production app behavior:
+  - no SSR-dependent business logic,
+  - no API proxying through Nuxt server routes,
+  - no backend orchestration in Nuxt server code.
+- The browser client should communicate **directly with the backend API**.
+- Any exception requires explicit project-owner approval.
 
 ---
 
-## Frontend rules
+## 3) Non-Negotiables
 
-- Ionic + Vue + Vite + TypeScript.
-- IndexedDB via Dexie.
-- Render all owned and subscribed Paths by default.
-- Hide/show Paths locally only.
-- Can check updates via latest_edit_id without fetching full data.
-- Export UI:
-  - Trigger export
-  - Poll status
-  - Download JSON and images
-  - Handle expiry gracefully
+- **Do not edit `schemas/openapi.json`.**
+  - If a task appears to require changing it, stop and report that backend/schema alignment is required.
+- Keep changes deterministic and reproducible.
+- Follow existing project conventions before introducing new patterns.
+- Prefer explicit code over clever abstractions.
 
 ---
 
-## Testing requirements
+## 4) Product Concepts (Current Domain Language)
 
-- Unit tests:
-  - Export JSON schema correctness
-  - Filename matching
-
-- Integration tests:
-  - Export lifecycle
-  - Permission enforcement
-
-- E2E tests:
-  - User creates Path and Entry
-  - User exports data
-  - User downloads JSON and image archive
+- Use the current domain model as implemented by the app and API.
+- Avoid reintroducing deprecated or speculative terminology.
+- If naming looks inconsistent in code vs UX copy:
+  - preserve API/data model correctness first,
+  - then propose a follow-up cleanup if needed.
 
 ---
 
-## CI / CD rules
+## 5) Frontend Architecture Expectations
 
-- On PR:
-  - Run ruff + prettier
-  - Auto-commit formatting fixes unless last commit was by the action
-  - Run unit and integration tests
+- Stack: Nuxt + Vue + TypeScript (Ionic UI where applicable).
+- Local persistence: IndexedDB via Dexie (where applicable).
+- API integration:
+  - Generate or consume typed API clients from current schema/tooling.
+  - Keep request/response handling compatible with OpenAPI.
+  - Surface API errors in user-meaningful ways.
 
-- On merge to main:
-  - Build Docker image
-  - Deploy to fly.io staging
-  - Run smoke and E2E tests
-
-- On release:
-  - Deploy to fly.io production
-
----
-
-## Infrastructure expectations
-
-- Stateless app containers.
-- All configuration via environment variables.
-- No local filesystem persistence beyond ephemeral temp files.
-- Background work must tolerate restarts and retries.
+- UI behavior:
+  - Preserve existing design system/patterns unless task explicitly asks for redesign.
+  - Prefer accessible, responsive, mobile-safe interactions.
+  - Avoid hidden state mutations from purely visual filters/toggles unless intentionally persisted.
 
 ---
 
-## Final guardrails
+## 6) Change Workflow for Agents
 
-- Path is the only conceptual container.
-- Exported data must be portable and self-contained.
-- No hidden server-only metadata in exports.
-- Prefer simple, explicit designs over clever abstractions.
-- Use FastAPI and Pydantic return_types for all endpoints to ensure correctness at the API boundary.
+When implementing a task:
+
+1. Understand existing behavior before editing.
+2. Make minimal, focused changes for the requested outcome.
+3. Update/add tests alongside behavior changes.
+4. Run verification steps (see below).
+5. Report what changed, what was verified, and any residual risks.
+
+For larger work, break changes into small logical commits (when asked to commit).
+
+---
+
+## 7) Verification Checklist (Frontend)
+
+Use as many of these as relevant to the change:
+
+- `npm run test` (or targeted test commands)
+- `npm run build` (must succeed for static/client bundle output)
+- `npx tsc --noEmit`
+- Lint/format checks used by the repo (e.g., `npm run lint`, `npm run format`)
+- Any API contract compatibility checks tied to `schemas/openapi.json`
+- E2E/integration checks when UI flows or API wiring change
+
+If a command fails:
+
+- include the exact failing step,
+- summarize likely cause,
+- propose the smallest safe fix.
+
+---
+
+## 8) Testing Expectations
+
+- New features: include/adjust tests at appropriate layers.
+- Bug fixes: add a regression test when feasible.
+- Refactors: preserve behavior; prove via existing tests and type checks.
+- Prefer focused tests that validate behavior, not implementation details.
+
+Suggested layers (as applicable):
+
+- Unit tests for local logic/components
+- Integration tests for API/UI interactions
+- E2E tests for critical user flows
+
+---
+
+## 9) API and Schema Compatibility
+
+- Treat OpenAPI as contract input, not editable frontend config.
+- Keep API usage aligned with schema-defined paths, payloads, and response handling.
+- If the frontend and API behavior diverge:
+  - do not “paper over” contract mismatches silently,
+  - document mismatch and propose coordinated backend/frontend follow-up.
+
+---
+
+## 10) Safety and Repo Hygiene
+
+- Never commit secrets or credentials.
+- Do not add unnecessary dependencies.
+- Avoid broad unrelated refactors in feature/fix tasks.
+- Keep diffs tight and reviewable.
+- Respect existing git changes in the working tree; do not revert unrelated user changes.
+
+---
+
+## 11) PR/Delivery Guidance
+
+When finishing work, provide:
+
+- What changed (by area/file)
+- Why it changed
+- Verification performed (commands + result)
+- Any follow-ups or known limitations
+
+Keep explanations concise and actionable.
+
+---
+
+## 12) Decision Rules for Agents
+
+When uncertain:
+
+1. Choose the option that preserves current behavior and compatibility.
+2. Prefer type-safe and test-backed solutions.
+3. Ask for clarification only when ambiguity materially changes behavior or risk.
+4. If blocked by external dependency (backend/schema/product decision), report blocker early with recommended next step.
+
+---
+
+## 13) Out of Scope Unless Requested
+
+- Backend endpoint/model changes
+- Infra/deployment redesign
+- Broad visual redesign
+- Cross-repo contract changes without coordination
+- Introducing Nuxt server-side runtime dependencies for core app behavior

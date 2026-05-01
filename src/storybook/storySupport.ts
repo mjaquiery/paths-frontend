@@ -320,6 +320,7 @@ export const storybookRouter = createRouter({
 installDeterministicDate();
 installMatchMediaStub();
 installNavigatorOnlineStub();
+installNuxtPageStubs();
 
 setup((app) => {
   app.use(IonicVue, { mode: 'md' });
@@ -1494,21 +1495,54 @@ function installDeterministicDate() {
       }
     }
 
-    static now() {
+    static override now() {
       return fixedTime;
     }
 
-    static parse(value: string) {
+    static override parse(value: string) {
       return RealDate.parse(value);
     }
 
-    static UTC(...args: Parameters<typeof RealDate.UTC>) {
+    static override UTC(...args: Parameters<typeof RealDate.UTC>) {
       return RealDate.UTC(...args);
     }
   }
 
   globalThis.Date = MockDate as DateConstructor;
   globalScope.__PATHS_STORYBOOK_DATE__ = true;
+}
+
+function installNuxtPageStubs() {
+  const globalScope = globalThis as typeof globalThis & {
+    definePageMeta?: (meta: unknown) => unknown;
+    useRoute?: () => typeof storybookRouter.currentRoute.value;
+    useRouter?: () => typeof storybookRouter;
+    navigateTo?: (
+      to: string | { path?: string; fullPath?: string },
+      options?: { redirectCode?: number },
+    ) => Promise<typeof storybookRouter.currentRoute.value>;
+  };
+
+  if (typeof globalScope.definePageMeta !== 'function') {
+    globalScope.definePageMeta = () => undefined;
+  }
+
+  if (typeof globalScope.useRoute !== 'function') {
+    globalScope.useRoute = () => storybookRouter.currentRoute.value;
+  }
+
+  if (typeof globalScope.useRouter !== 'function') {
+    globalScope.useRouter = () => storybookRouter;
+  }
+
+  if (typeof globalScope.navigateTo !== 'function') {
+    globalScope.navigateTo = async (to) => {
+      const target =
+        typeof to === 'string' ? to : (to.fullPath ?? to.path ?? '/');
+      await storybookRouter.replace(target);
+      return storybookRouter.currentRoute.value;
+    };
+  }
 }
 
 function installMatchMediaStub() {

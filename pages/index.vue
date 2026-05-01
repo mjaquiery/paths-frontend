@@ -231,8 +231,6 @@ const {
   toggle: toggleDarkMode,
 } = useDarkMode();
 
-const {
-
 const darkModeLabel = computed(() => {
   if (darkPreference.value === 'light') return 'Light mode – switch to dark';
   if (darkPreference.value === 'dark') return 'Dark mode – switch to system';

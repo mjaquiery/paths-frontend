@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
+import { expect, userEvent } from '@storybook/test';
 
 import EntryCreateView from './new.vue';
 import {
@@ -9,6 +10,10 @@ import {
   storybookPaths,
   storyDateOffset,
 } from '~/src/storybook/storySupport';
+import {
+  findElementByText,
+  withinStoryDocument,
+} from '~/src/storybook/storyTest';
 
 const populatedState = createPopulatedState();
 
@@ -19,6 +24,7 @@ const noOwnedPathsState = createPopulatedState({
 const meta: Meta<typeof EntryCreateView> = {
   title: 'Views/EntryCreateView',
   component: EntryCreateView,
+  tags: ['smoke'],
 };
 
 export default meta;
@@ -50,16 +56,26 @@ export const FilledIn: Story = {
  * Only a subscribed (not owned) path is present.
  */
 export const NoOwnedPaths: Story = {
+  tags: ['interaction', 'edge-permissions'],
   parameters: createStoryParameters({
     state: noOwnedPathsState,
     route: '/entry/new?date=2025-03-15',
   }),
+  play: async ({ canvasElement }) => {
+    const page = withinStoryDocument(canvasElement);
+
+    await expect(
+      await page.findByText("You don't have any paths yet."),
+    ).toBeVisible();
+    await expect(await page.findByText('Create a path')).toBeVisible();
+  },
 };
 
 /**
  * Paths API fails — a full-state error is shown with a Go back button.
  */
 export const PathsApiError: Story = {
+  tags: ['interaction', 'edge-error'],
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/new?date=2025-03-15',
@@ -69,6 +85,13 @@ export const PathsApiError: Story = {
       }),
     ],
   }),
+  play: async ({ canvasElement }) => {
+    const page = withinStoryDocument(canvasElement);
+
+    await expect(
+      await page.findByText('Could not load your paths.'),
+    ).toBeVisible();
+  },
 };
 
 /**
@@ -94,6 +117,7 @@ export const DraftInitError: Story = {
  * A pre-seeded draft is supplied so the Save button is enabled.
  */
 export const SaveError: Story = {
+  tags: ['edge-error'],
   parameters: createStoryParameters({
     state: populatedState,
     route: `/entry/daily-river/new?date=${storyDateOffset(0)}`,
@@ -117,6 +141,7 @@ export const SaveError: Story = {
  * content that was saved in a previous session.
  */
 export const DraftResumed: Story = {
+  tags: ['interaction'],
   parameters: createStoryParameters({
     state: populatedState,
     route: `/entry/daily-river/new?date=${storyDateOffset(0)}`,
@@ -132,6 +157,16 @@ export const DraftResumed: Story = {
       },
     ],
   }),
+  play: async ({ canvasElement }) => {
+    const storyDocument = canvasElement.ownerDocument;
+    const storyBody = canvasElement.ownerDocument.body;
+
+    await userEvent.click(
+      findElementByText(storyDocument, 'button', 'Preview'),
+    );
+
+    await expect(storyBody.querySelector('.content-preview')).not.toBeNull();
+  },
 };
 
 /**
@@ -173,6 +208,7 @@ export const WithImageUpload: Story = {
  * offline note at the bottom.
  */
 export const Offline: Story = {
+  tags: ['edge-offline'],
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/new?date=2025-03-15',

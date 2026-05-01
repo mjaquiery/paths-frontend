@@ -149,8 +149,6 @@ const multiPathEntries = useMultiPathEntries(pathIds);
 
 const { currentUserId } = useCurrentUser();
 
-const {
-
 const ownedPaths = computed(() =>
   allPaths.value.filter((p) => p.owner_user_id === currentUserId.value),
 );

@@ -23,6 +23,7 @@
           :title="form.title"
           :description="form.description"
           :color="form.color"
+          error-message=""
           color-input-id="path-colour-picker"
           @update:title="form.title = $event"
           @update:description="form.description = $event"
@@ -68,8 +69,6 @@ const queryClient = useQueryClient();
 
 const { mutateAsync: doCreatePath } = useCreatePath();
 const { enqueue } = useApi();
-
-const {
 
 const form = ref({
   title: '',

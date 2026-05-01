@@ -38,6 +38,7 @@ const subscribedState = createPopulatedState({
 const meta: Meta<typeof EntryView> = {
   title: 'Views/EntryView',
   component: EntryView,
+  tags: ['smoke'],
 };
 
 export default meta;

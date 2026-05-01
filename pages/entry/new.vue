@@ -215,8 +215,6 @@ const {
 
 const { enqueue, isOnline } = useApi();
 
-const {
-
 const day = ref(
   String(route.query.date ?? new Date().toISOString().slice(0, 10)),
 );

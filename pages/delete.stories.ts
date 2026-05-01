@@ -10,6 +10,7 @@ import {
 const meta: Meta<typeof DeleteView> = {
   title: 'Views/DeleteView',
   component: DeleteView,
+  tags: ['smoke'],
 };
 
 export default meta;

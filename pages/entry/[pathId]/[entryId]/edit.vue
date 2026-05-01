@@ -321,8 +321,6 @@ const {
 
 const { enqueue, isOnline } = useApi();
 
-const {
-
 const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
 const committing = ref(false);
