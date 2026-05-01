@@ -59,13 +59,18 @@ export const Default: Story = {
   }),
   play: async ({ canvasElement }) => {
     await waitFor(() => {
-      expect(canvasElement.querySelectorAll('.path-entry-row').length).toBeGreaterThan(0);
+      expect(
+        canvasElement.querySelectorAll('.path-entry-row').length,
+      ).toBeGreaterThan(0);
     });
 
-    const firstEntry = canvasElement.querySelector<HTMLElement>('.path-entry-row');
+    const firstEntry =
+      canvasElement.querySelector<HTMLElement>('.path-entry-row');
 
     if (!firstEntry) {
-      throw new Error('Expected at least one entry row in the default path view.');
+      throw new Error(
+        'Expected at least one entry row in the default path view.',
+      );
     }
 
     await userEvent.click(firstEntry);

@@ -18,26 +18,38 @@ async function injectMockSession(
 
 test.describe('app smoke routes', () => {
   test('logged-out home page renders welcome copy', async ({ page }) => {
-    await page.route(`${API_BASE}/**`, (route) => route.fulfill({ status: 204 }));
+    await page.route(`${API_BASE}/**`, (route) =>
+      route.fulfill({ status: 204 }),
+    );
 
     await page.goto('/');
 
     await expect(page.getByRole('heading', { name: 'Paths' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Continue with Google' }),
+    ).toBeVisible();
   });
 
-  test('authenticated path-create page renders form controls', async ({ page }) => {
+  test('authenticated path-create page renders form controls', async ({
+    page,
+  }) => {
     await injectMockSession(page);
-    await page.route(`${API_BASE}/**`, (route) => route.fulfill({ status: 204 }));
+    await page.route(`${API_BASE}/**`, (route) =>
+      route.fulfill({ status: 204 }),
+    );
 
     await page.goto('/paths/new');
 
     await expect(page.getByText('New Path')).toBeVisible();
     await expect(page.getByPlaceholder('Path title')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create Path' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Create Path' }),
+    ).toBeVisible();
   });
 
-  test('authenticated settings page renders export controls', async ({ page }) => {
+  test('authenticated settings page renders export controls', async ({
+    page,
+  }) => {
     await injectMockSession(page);
 
     await page.route(`${API_BASE}/v1/paths`, (route, request) => {
@@ -52,7 +64,9 @@ test.describe('app smoke routes', () => {
     await page.route(`${API_BASE}/v1/invitations/blocklist`, (route) =>
       route.fulfill({ json: [] }),
     );
-    await page.route(`${API_BASE}/**`, (route) => route.fulfill({ status: 204 }));
+    await page.route(`${API_BASE}/**`, (route) =>
+      route.fulfill({ status: 204 }),
+    );
 
     await page.goto('/settings');
 

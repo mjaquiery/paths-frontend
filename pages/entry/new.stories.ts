@@ -88,7 +88,9 @@ export const PathsApiError: Story = {
   play: async ({ canvasElement }) => {
     const page = withinStoryDocument(canvasElement);
 
-    await expect(await page.findByText('Could not load your paths.')).toBeVisible();
+    await expect(
+      await page.findByText('Could not load your paths.'),
+    ).toBeVisible();
   },
 };
 
@@ -152,14 +154,16 @@ export const DraftResumed: Story = {
           '',
           'Want to come back to the part about the heron standing perfectly still.',
         ].join('\n'),
-        },
-      ],
-    }),
+      },
+    ],
+  }),
   play: async ({ canvasElement }) => {
     const storyDocument = canvasElement.ownerDocument;
     const storyBody = canvasElement.ownerDocument.body;
 
-    await userEvent.click(findElementByText(storyDocument, 'button', 'Preview'));
+    await userEvent.click(
+      findElementByText(storyDocument, 'button', 'Preview'),
+    );
 
     await expect(storyBody.querySelector('.content-preview')).not.toBeNull();
   },

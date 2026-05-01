@@ -134,7 +134,9 @@ test.describe('create path and entry', () => {
     // immediately on mount (no need to interact with the ion-select).
     await page.goto(`/entry/${pathId}/new`);
 
-    const editor = page.getByPlaceholder('Write your entry... (markdown supported)');
+    const editor = page.getByPlaceholder(
+      'Write your entry... (markdown supported)',
+    );
     await editor.waitFor({ state: 'visible', timeout: 10_000 });
     await editor.fill('Hello E2E world');
 

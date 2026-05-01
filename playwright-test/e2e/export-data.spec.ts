@@ -132,16 +132,19 @@ test.describe('export data', () => {
     await triggerExportButton.waitFor({ state: 'visible', timeout: 10_000 });
 
     // Toggle the first path checkbox using the Ionic change event contract.
-    await page.locator('ion-checkbox').first().evaluate((element: Element) => {
-      const checkbox = element as Element & { checked?: boolean };
-      checkbox.checked = true;
-      checkbox.dispatchEvent(
-        new CustomEvent('ionChange', {
-          detail: { checked: true },
-          bubbles: true,
-        }),
-      );
-    });
+    await page
+      .locator('ion-checkbox')
+      .first()
+      .evaluate((element: Element) => {
+        const checkbox = element as Element & { checked?: boolean };
+        checkbox.checked = true;
+        checkbox.dispatchEvent(
+          new CustomEvent('ionChange', {
+            detail: { checked: true },
+            bubbles: true,
+          }),
+        );
+      });
     await expect(triggerExportButton).toBeEnabled();
 
     // Trigger the export
@@ -172,16 +175,19 @@ test.describe('export data', () => {
     });
     await triggerExportButton.waitFor({ state: 'visible', timeout: 10_000 });
 
-    await page.locator('ion-checkbox').first().evaluate((element: Element) => {
-      const checkbox = element as Element & { checked?: boolean };
-      checkbox.checked = true;
-      checkbox.dispatchEvent(
-        new CustomEvent('ionChange', {
-          detail: { checked: true },
-          bubbles: true,
-        }),
-      );
-    });
+    await page
+      .locator('ion-checkbox')
+      .first()
+      .evaluate((element: Element) => {
+        const checkbox = element as Element & { checked?: boolean };
+        checkbox.checked = true;
+        checkbox.dispatchEvent(
+          new CustomEvent('ionChange', {
+            detail: { checked: true },
+            bubbles: true,
+          }),
+        );
+      });
     await expect(triggerExportButton).toBeEnabled();
 
     // Trigger the export

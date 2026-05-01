@@ -6,9 +6,9 @@
  */
 
 export type StartEditEntryDraftParams = {
-/**
- * Current edit ID for optimistic locking
- * @minimum 1
- */
-based_on_edit_id: number;
+  /**
+   * Current edit ID for optimistic locking
+   * @minimum 1
+   */
+  based_on_edit_id: number;
 };

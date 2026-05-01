@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { resetPendingSaves, usePendingSaves } from '../composables/usePendingSaves';
+import {
+  resetPendingSaves,
+  usePendingSaves,
+} from '../composables/usePendingSaves';
 
 describe('usePendingSaves', () => {
   beforeEach(() => {

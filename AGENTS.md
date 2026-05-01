@@ -90,6 +90,7 @@ Use as many of these as relevant to the change:
 - E2E/integration checks when UI flows or API wiring change
 
 If a command fails:
+
 - include the exact failing step,
 - summarize likely cause,
 - propose the smallest safe fix.
@@ -104,6 +105,7 @@ If a command fails:
 - Prefer focused tests that validate behavior, not implementation details.
 
 Suggested layers (as applicable):
+
 - Unit tests for local logic/components
 - Integration tests for API/UI interactions
 - E2E tests for critical user flows

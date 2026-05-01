@@ -166,14 +166,16 @@ export const DraftResumed: Story = {
             client_image_id: null,
           },
         ],
-        },
-      ],
-    }),
+      },
+    ],
+  }),
   play: async ({ canvasElement }) => {
     const storyDocument = canvasElement.ownerDocument;
     const storyBody = canvasElement.ownerDocument.body;
 
-    await userEvent.click(findElementByText(storyDocument, 'button', 'Preview'));
+    await userEvent.click(
+      findElementByText(storyDocument, 'button', 'Preview'),
+    );
 
     await expect(storyBody.querySelector('.content-preview')).not.toBeNull();
   },

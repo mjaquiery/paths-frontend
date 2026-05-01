@@ -7,10 +7,7 @@ import {
   createStoryParameters,
   storybookUser,
 } from '../storybook/storySupport';
-import {
-  expectRoute,
-  findElementsByText,
-} from '../storybook/storyTest';
+import { expectRoute, findElementsByText } from '../storybook/storyTest';
 
 const meta: Meta<typeof PathsSelectorBar> = {
   title: 'Components/PathsSelectorBar',

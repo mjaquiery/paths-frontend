@@ -35,7 +35,11 @@ describe('useCurrentUser', () => {
 
     localStorage.setItem(
       'user',
-      JSON.stringify({ user_id: 'user-2', display_name: 'Casey', token: 'tok' }),
+      JSON.stringify({
+        user_id: 'user-2',
+        display_name: 'Casey',
+        token: 'tok',
+      }),
     );
     refresh();
 
