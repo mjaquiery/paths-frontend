@@ -18,7 +18,7 @@ import {
   MOCK_PATH,
   MOCK_DRAFT,
   MOCK_ENTRY,
-} from '../fixtures/index.js';
+} from '../fixtures/index.ts';
 
 const API_BASE = 'http://localhost:8080';
 
@@ -134,13 +134,9 @@ test.describe('create path and entry', () => {
     // immediately on mount (no need to interact with the ion-select).
     await page.goto(`/entry/${pathId}/new`);
 
-    // Wait for the editor textarea to be visible (draft has been initialised)
-    await page.waitForSelector('ion-textarea', { timeout: 10_000 });
-
-    // Fill in the entry content — ion-textarea wraps a native <textarea>
-    await page
-      .getByPlaceholder('Write your entry... (markdown supported)')
-      .fill('Hello E2E world');
+    const editor = page.getByPlaceholder('Write your entry... (markdown supported)');
+    await editor.waitFor({ state: 'visible', timeout: 10_000 });
+    await editor.fill('Hello E2E world');
 
     // Publish the entry
     await page.getByRole('button', { name: 'Publish' }).click();

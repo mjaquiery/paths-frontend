@@ -26,7 +26,7 @@ import {
   MOCK_EXPORT_JOB_READY,
   MOCK_DOWNLOAD_URL_JSON,
   MOCK_DOWNLOAD_URL_IMAGES,
-} from '../fixtures/index.js';
+} from '../fixtures/index.ts';
 
 const API_BASE = 'http://localhost:8080';
 
@@ -126,14 +126,26 @@ test.describe('export data', () => {
 
     await page.goto('/settings');
 
-    // Wait for the ExportCard to render (it is inside a <Suspense> block)
-    await page.waitForSelector('ion-checkbox', { timeout: 10_000 });
+    const triggerExportButton = page.getByRole('button', {
+      name: 'Trigger export',
+    });
+    await triggerExportButton.waitFor({ state: 'visible', timeout: 10_000 });
 
-    // Select the path checkbox in the export card
-    await page.locator('ion-checkbox').first().click();
+    // Toggle the first path checkbox using the Ionic change event contract.
+    await page.locator('ion-checkbox').first().evaluate((element: Element) => {
+      const checkbox = element as Element & { checked?: boolean };
+      checkbox.checked = true;
+      checkbox.dispatchEvent(
+        new CustomEvent('ionChange', {
+          detail: { checked: true },
+          bubbles: true,
+        }),
+      );
+    });
+    await expect(triggerExportButton).toBeEnabled();
 
     // Trigger the export
-    await page.getByRole('button', { name: 'Trigger export' }).click();
+    await triggerExportButton.click();
 
     // The export job polls until "ready" and then reveals download buttons.
     // Allow up to 20 s to account for the 2-second polling interval.
@@ -155,13 +167,25 @@ test.describe('export data', () => {
 
     await page.goto('/settings');
 
-    await page.waitForSelector('ion-checkbox', { timeout: 10_000 });
+    const triggerExportButton = page.getByRole('button', {
+      name: 'Trigger export',
+    });
+    await triggerExportButton.waitFor({ state: 'visible', timeout: 10_000 });
 
-    // Select the path for export
-    await page.locator('ion-checkbox').first().click();
+    await page.locator('ion-checkbox').first().evaluate((element: Element) => {
+      const checkbox = element as Element & { checked?: boolean };
+      checkbox.checked = true;
+      checkbox.dispatchEvent(
+        new CustomEvent('ionChange', {
+          detail: { checked: true },
+          bubbles: true,
+        }),
+      );
+    });
+    await expect(triggerExportButton).toBeEnabled();
 
     // Trigger the export
-    await page.getByRole('button', { name: 'Trigger export' }).click();
+    await triggerExportButton.click();
 
     // Wait for download buttons
     await page.waitForSelector('ion-button:has-text("Download JSON")', {

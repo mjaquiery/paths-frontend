@@ -53,6 +53,7 @@ const crowdedState = createPopulatedState({
 const meta: Meta<typeof InvitationsView> = {
   title: 'Views/InvitationsView',
   component: InvitationsView,
+  tags: ['smoke'],
 };
 
 export default meta;

@@ -12,6 +12,7 @@ const populatedState = createPopulatedState();
 const meta: Meta<typeof PathCreateView> = {
   title: 'Views/PathCreateView',
   component: PathCreateView,
+  tags: ['smoke'],
 };
 
 export default meta;
@@ -20,6 +21,7 @@ type Story = StoryObj<typeof PathCreateView>;
 
 /** Empty form, ready to fill in. */
 export const Default: Story = {
+  tags: ['a11y'],
   parameters: createStoryParameters({
     state: populatedState,
     route: '/paths/new',

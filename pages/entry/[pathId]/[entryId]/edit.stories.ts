@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
+import { expect, userEvent } from '@storybook/test';
 
 import EntryEditView from './edit.vue';
 import {
@@ -9,6 +10,7 @@ import {
   createStoryNetworkError,
   storybookPaths,
 } from '~/src/storybook/storySupport';
+import { findElementByText } from '~/src/storybook/storyTest';
 
 const populatedState = createPopulatedState();
 
@@ -58,6 +60,7 @@ const manyImagesState = createPopulatedState({
 const meta: Meta<typeof EntryEditView> = {
   title: 'Views/EntryEditView',
   component: EntryEditView,
+  tags: ['smoke'],
 };
 
 export default meta;
@@ -132,6 +135,7 @@ export const WithManyImages: Story = {
  * stored entry content.
  */
 export const DraftResumed: Story = {
+  tags: ['interaction'],
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
@@ -162,9 +166,17 @@ export const DraftResumed: Story = {
             client_image_id: null,
           },
         ],
-      },
-    ],
-  }),
+        },
+      ],
+    }),
+  play: async ({ canvasElement }) => {
+    const storyDocument = canvasElement.ownerDocument;
+    const storyBody = canvasElement.ownerDocument.body;
+
+    await userEvent.click(findElementByText(storyDocument, 'button', 'Preview'));
+
+    await expect(storyBody.querySelector('.content-preview')).not.toBeNull();
+  },
 };
 
 /**
@@ -173,6 +185,7 @@ export const DraftResumed: Story = {
  * connectivity returns and the retry succeeds, autosave resumes normally.
  */
 export const DraftInitError: Story = {
+  tags: ['interaction', 'edge-error'],
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
@@ -193,6 +206,7 @@ export const DraftInitError: Story = {
  * interaction.
  */
 export const ConflictResolution: Story = {
+  tags: ['edge-error'],
   args: {
     _openConflictOnMount: true,
   } as Record<string, unknown>,
@@ -215,6 +229,7 @@ export const ConflictResolution: Story = {
  * A pre-seeded draft is used so the Save button is enabled.
  */
 export const SaveError: Story = {
+  tags: ['edge-error'],
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',
@@ -239,6 +254,7 @@ export const SaveError: Story = {
  * note. Draft init retries in the background when connectivity returns.
  */
 export const Offline: Story = {
+  tags: ['edge-offline'],
   parameters: createStoryParameters({
     state: populatedState,
     route: '/entry/daily-river/entry-daily-today/edit',

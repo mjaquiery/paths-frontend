@@ -86,6 +86,7 @@ const emptyDayState = createEmptyState();
 const meta: Meta<typeof DateView> = {
   title: 'Views/DateView',
   component: DateView,
+  tags: ['smoke'],
 };
 
 export default meta;
