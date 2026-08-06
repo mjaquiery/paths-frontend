@@ -7,7 +7,6 @@ export default {
       target: './src/generated/apiClient.ts',
       schemas: './src/generated/types',
       mode: 'single',
-      mock: true,
       override: {
         mutator: {
           path: './src/lib/customFetch.ts',
