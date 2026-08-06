@@ -9,6 +9,8 @@
     <div class="app-footer__content">
       <span class="app-footer__dot" aria-hidden="true" />
       <span class="app-footer__message">{{ statusMessage }}</span>
+      <!-- TEMP debug marker for the Android nav investigation — remove once confirmed fixed -->
+      <span class="app-footer__version">{{ appVersion }}</span>
       <ion-button
         v-if="needsRefresh"
         fill="clear"
@@ -31,6 +33,9 @@ import { useServiceWorkerUpdate } from '../composables/useServiceWorkerUpdate';
 
 const { isOnline, isFetching, hasError, statusType } = useRefreshStatus();
 const { needsRefresh, apply } = useServiceWorkerUpdate();
+
+// TEMP debug marker for the Android nav investigation — remove once confirmed fixed
+const appVersion = import.meta.env.VITE_APP_VERSION ?? 'dev';
 
 const isIdle = computed(
   () =>
@@ -118,6 +123,13 @@ const footerClass = computed(() => ({
 
 .app-footer--idle .app-footer__message {
   color: var(--footer-text-idle, var(--color-ink-muted));
+}
+
+.app-footer__version {
+  flex-shrink: 0;
+  font-family: monospace;
+  font-size: 0.65rem;
+  opacity: 0.6;
 }
 
 .app-footer--offline .app-footer__message,

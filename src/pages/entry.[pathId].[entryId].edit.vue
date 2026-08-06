@@ -167,19 +167,19 @@ import {
   useGetEntry,
   useListEntryImages,
   useUpdateEntry,
-} from '../../../../generated/apiClient';
-import { usePaths } from '../../../../composables/usePaths';
-import { useLocalDraft } from '../../../../composables/useLocalDraft';
-import { pickImages } from '../../../../composables/useImagePicker';
-import { extractErrorMessage } from '../../../../lib/errors';
-import MarkdownContent from '../../../../components/MarkdownContent.vue';
-import { useMarkdownEditor } from '../../../../composables/useMarkdownEditor';
+} from '../generated/apiClient';
+import { usePaths } from '../composables/usePaths';
+import { useLocalDraft } from '../composables/useLocalDraft';
+import { pickImages } from '../composables/useImagePicker';
+import { extractErrorMessage } from '../lib/errors';
+import MarkdownContent from '../components/MarkdownContent.vue';
+import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import type {
   EntryContentResponse,
   ImageResponse,
-} from '../../../../generated/types';
+} from '../generated/types';
 
-const route = useRoute<'/entry/[pathId]/[entryId]/edit'>();
+const route = useRoute<'/entry.[pathId].[entryId].edit'>();
 const router = useRouter();
 const queryClient = useQueryClient();
 

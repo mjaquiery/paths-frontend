@@ -79,19 +79,19 @@ import {
   useGetEntry,
   useListEntryImages,
   useDeleteEntry,
-} from '../../../../generated/apiClient';
-import { usePaths } from '../../../../composables/usePaths';
-import { extractErrorMessage } from '../../../../lib/errors';
-import MarkdownContent from '../../../../components/MarkdownContent.vue';
-import EntryImage from '../../../../components/EntryImage.vue';
-import { referencedImageFilenames } from '../../../../utils/markdown';
+} from '../generated/apiClient';
+import { usePaths } from '../composables/usePaths';
+import { extractErrorMessage } from '../lib/errors';
+import MarkdownContent from '../components/MarkdownContent.vue';
+import EntryImage from '../components/EntryImage.vue';
+import { referencedImageFilenames } from '../utils/markdown';
 import type {
   EntryContentResponse,
   ImageResponse,
   OAuthCallbackResponse,
-} from '../../../../generated/types';
+} from '../generated/types';
 
-const route = useRoute<'/entry/[pathId]/[entryId]/'>();
+const route = useRoute<'/entry.[pathId].[entryId]'>();
 const router = useRouter();
 const queryClient = useQueryClient();
 

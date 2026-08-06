@@ -134,14 +134,14 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 
-import { useCreateEntry } from '../../generated/apiClient';
-import { usePaths } from '../../composables/usePaths';
-import { useLocalDraft } from '../../composables/useLocalDraft';
-import { pickImages } from '../../composables/useImagePicker';
-import { extractErrorMessage } from '../../lib/errors';
-import MarkdownContent from '../../components/MarkdownContent.vue';
-import { useMarkdownEditor } from '../../composables/useMarkdownEditor';
-import type { OAuthCallbackResponse } from '../../generated/types';
+import { useCreateEntry } from '../generated/apiClient';
+import { usePaths } from '../composables/usePaths';
+import { useLocalDraft } from '../composables/useLocalDraft';
+import { pickImages } from '../composables/useImagePicker';
+import { extractErrorMessage } from '../lib/errors';
+import MarkdownContent from '../components/MarkdownContent.vue';
+import { useMarkdownEditor } from '../composables/useMarkdownEditor';
+import type { OAuthCallbackResponse } from '../generated/types';
 
 const route = useRoute();
 const router = useRouter();

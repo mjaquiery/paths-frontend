@@ -14,4 +14,15 @@
 
   --paths-border-radius: 8px;
   --paths-day-min-height: 72px;
+
+  /* AppFooter is fixed to the viewport bottom outside every page's ion-content, so its
+   * tallest state (--footer-height-active) plus the bottom safe-area inset must be kept
+   * clear of scrollable content or it silently intercepts taps meant for buttons underneath. */
+  --app-footer-clearance: calc(3rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Global (not scoped) so every page's ion-content reserves this space, since AppFooter
+ * overlays every route. */
+ion-content {
+  --padding-bottom: var(--app-footer-clearance);
 }

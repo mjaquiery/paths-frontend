@@ -17,9 +17,11 @@
     "build-storybook": "storybook build",
     "test:storybook": "test-storybook",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "deploy": "flyctl deploy --build-arg VITE_APP_VERSION=$(git rev-parse --short HEAD)"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.1",
     "@capacitor/camera": "^8.2.2",
     "@capacitor/cli": "^8.5.0",
     "@capacitor/core": "^8.5.0",

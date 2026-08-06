@@ -16,10 +16,14 @@
 import { IonApp, IonRouterOutlet, IonToast } from '@ionic/vue';
 import { Capacitor } from '@capacitor/core';
 import { Keyboard } from '@capacitor/keyboard';
+import { App as CapacitorApp } from '@capacitor/app';
 import { onBeforeUnmount, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useInstallBanner } from './composables/useInstallBanner';
 import { useVirtualKeyboard } from './composables/useVirtualKeyboard';
 import AppFooter from './components/AppFooter.vue';
+
+const router = useRouter();
 
 const { deferredPrompt, promptInstall, dismissInstall } = useInstallBanner();
 
@@ -34,6 +38,7 @@ const installToastButtons = [
 if (Capacitor.isNativePlatform()) {
   let showListener: { remove: () => void } | undefined;
   let hideListener: { remove: () => void } | undefined;
+  let backButtonListener: { remove: () => void } | undefined;
 
   onMounted(async () => {
     showListener = await Keyboard.addListener('keyboardDidShow', (info) => {
@@ -45,11 +50,24 @@ if (Capacitor.isNativePlatform()) {
     hideListener = await Keyboard.addListener('keyboardDidHide', () => {
       document.documentElement.style.setProperty('--keyboard-height', '0px');
     });
+    // Capacitor doesn't handle the Android hardware back button on its own —
+    // without this listener it's a dead no-op anywhere in the app.
+    backButtonListener = await CapacitorApp.addListener(
+      'backButton',
+      ({ canGoBack }) => {
+        if (canGoBack) {
+          router.back();
+        } else {
+          void CapacitorApp.exitApp();
+        }
+      },
+    );
   });
 
   onBeforeUnmount(() => {
     showListener?.remove();
     hideListener?.remove();
+    backButtonListener?.remove();
   });
 } else {
   useVirtualKeyboard();

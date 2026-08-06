@@ -5,6 +5,8 @@ RUN npm install
 COPY . .
 ARG VITE_API_BASE_URL=http://localhost:8080
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ARG VITE_APP_VERSION=dev
+ENV VITE_APP_VERSION=$VITE_APP_VERSION
 RUN npm run build:plain
 
 FROM nginx:1.27-alpine
