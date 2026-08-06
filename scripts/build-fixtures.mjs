@@ -16,18 +16,6 @@ const OUTPUT_PATH = fileURLToPath(
   new URL('../src/generated/fixtures.ts', import.meta.url),
 );
 
-// TEMPORARY: these schemas' declared `example` omits fields that are nullable-but-required
-// (no Python-side default), because FastAPI drops null-valued keys when it renders a model's
-// example into openapi.json. The backend fix (giving each field a `= None` default) is in
-// PR #60, not yet deployed — remove this list once `npm run schema:sync` pulls a backend with
-// that fix and these fixtures round-trip cleanly again.
-const SKIP_SCHEMAS_PENDING_BACKEND_FIX = new Set([
-  'DeletionRequestResponse',
-  'ExportJobResponse',
-  'InvitationResponse',
-  'UserProfileResponse',
-]);
-
 function fixtureName(schemaName) {
   return `${schemaName[0].toLowerCase()}${schemaName.slice(1)}Fixture`;
 }
@@ -37,24 +25,13 @@ async function main() {
   const schema = JSON.parse(schemaFile);
   const schemas = schema.components?.schemas ?? {};
 
-  const skipped = [];
   const entries = Object.entries(schemas)
     .map(([name, def]) => {
-      if (SKIP_SCHEMAS_PENDING_BACKEND_FIX.has(name)) {
-        skipped.push(name);
-        return null;
-      }
       const example = def.example ?? def.examples?.[0];
       return example === undefined ? null : { name, example };
     })
     .filter(Boolean)
     .sort((a, b) => a.name.localeCompare(b.name));
-
-  if (skipped.length > 0) {
-    console.warn(
-      `Skipped ${skipped.length} schema(s) pending backend fix (see SKIP_SCHEMAS_PENDING_BACKEND_FIX): ${skipped.join(', ')}`,
-    );
-  }
 
   const importedTypes = entries.map((e) => e.name);
   const lines = [];

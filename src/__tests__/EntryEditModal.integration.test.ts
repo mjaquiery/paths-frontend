@@ -89,8 +89,8 @@ const existingImage: ImageResponse = {
   id: 'img-uuid-1',
   entry_id: 'entry-1',
   filename: 'morning-walk.jpg',
+  caption: null,
   status: 'complete',
-  strip_metadata: false,
   content_type: 'image/jpeg',
   byte_size: 204800,
 };
@@ -307,15 +307,15 @@ describe('EntryEditModal – submit behaviour', () => {
     await flushPromises();
 
     expect(requests).toHaveLength(1);
-    const body = (await requests[0]!.json()) as Record<string, unknown>;
-    expect(body.expected_edit_id).toBe(5);
-    expect(body.content).toBe('Updated content');
+    const body = await requests[0]!.formData();
+    expect(body.get('expected_edit_id')).toBe('5');
+    expect(body.get('content')).toBe('Updated content');
 
     expect(wrapper.emitted('saved')).toHaveLength(1);
     expect(wrapper.emitted('dismiss')).toHaveLength(1);
   });
 
-  it('sends only the remaining image filenames after removal', async () => {
+  it('sends the removed image id in remove_image_ids', async () => {
     const requests: Request[] = [];
     server.use(
       http.put(
@@ -343,8 +343,8 @@ describe('EntryEditModal – submit behaviour', () => {
     await flushPromises();
 
     expect(requests).toHaveLength(1);
-    const body = (await requests[0]!.json()) as Record<string, unknown>;
-    expect(body.image_filenames).toEqual([]);
+    const body = await requests[0]!.formData();
+    expect(body.getAll('remove_image_ids')).toEqual(['img-uuid-1']);
   });
 
   it('shows conflict error on 409 response', async () => {

@@ -25,7 +25,7 @@ export interface EntryImageCache {
   entry_id: string;
   filename: string;
   status: string;
-  strip_metadata: boolean;
+  caption: string | null;
   content_type: string | null;
   byte_size: number | null;
 }

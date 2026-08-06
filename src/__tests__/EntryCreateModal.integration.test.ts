@@ -1,9 +1,10 @@
+/// <reference types="node" />
 /**
  * Integration tests for EntryCreateModal – entry creation with image upload.
  *
- * Uses MSW setupServer to intercept the real HTTP calls made by the generated
- * API client (POST /v1/paths/:pathCode/entries, POST upload-url, PUT to
- * presigned URL, POST /v1/images/:imageId/complete).
+ * Uses MSW setupServer to intercept the real HTTP call made by the generated
+ * API client: a single multipart POST /v1/paths/:pathCode/entries carrying
+ * text fields plus any selected images as File parts.
  */
 import {
   describe,
@@ -19,6 +20,10 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount, flushPromises } from '@vue/test-utils';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
+// jsdom's global File isn't recognized by undici's FormData.append() webidl checks (the
+// real fetch path customFetch.ts uses) — construct upload fixtures with Node's own File so
+// they survive the real multipart encoding this test exercises.
+import { File as NodeFile } from 'node:buffer';
 
 import EntryCreateModal from '../components/EntryCreateModal.vue';
 import type { PathResponse, OAuthCallbackResponse } from '../generated/types';
@@ -115,28 +120,12 @@ const createdEntry = {
   edit_id: 1,
 };
 
-const uploadUrlResponse = {
-  image_id: 'image-uuid-1',
-  upload_url: 'https://storage.example.com/put-here',
-  expires_in_seconds: 300,
-};
-
 // ---------------------------------------------------------------------------
 // MSW server
 // ---------------------------------------------------------------------------
 const server = setupServer(
   http.post('*/v1/paths/:pathCode/entries', () => {
     return HttpResponse.json(createdEntry, { status: 201 });
-  }),
-  http.post('*/v1/paths/:pathCode/entries/:entrySlug/images/upload-url', () => {
-    return HttpResponse.json(uploadUrlResponse, { status: 200 });
-  }),
-  // Presigned PUT URL (external storage simulation)
-  http.put('https://storage.example.com/put-here', () => {
-    return new HttpResponse(null, { status: 200 });
-  }),
-  http.post('*/v1/images/:imageId/complete', () => {
-    return HttpResponse.json({ status: 'ok' }, { status: 200 });
   }),
 );
 
@@ -231,9 +220,10 @@ describe('EntryCreateModal – basic entry creation (MSW integration)', () => {
     await flushPromises();
 
     expect(requests).toHaveLength(1);
-    const body = await requests[0]!.json();
-    expect(body.day).toBe('2024-06-01');
-    expect(body.content).toBe('My journal entry');
+    const body = await requests[0]!.formData();
+    expect(body.get('day')).toBe('2024-06-01');
+    expect(body.get('content')).toBe('My journal entry');
+    expect(typeof body.get('entry_id')).toBe('string');
 
     expect(wrapper.emitted('created')).toHaveLength(1);
     expect(wrapper.emitted('dismiss')).toHaveLength(1);
@@ -273,26 +263,12 @@ describe('EntryCreateModal – image upload (MSW integration)', () => {
     expect(fileInput.attributes('accept')).toContain('image');
   });
 
-  it('calls upload-url, PUT to presigned URL, and complete when images are selected', async () => {
-    const uploadUrlRequests: Request[] = [];
-    const completeRequests: Request[] = [];
-    const presignedPuts: Request[] = [];
-
+  it('sends selected images as file parts on the single create request', async () => {
+    const requests: Request[] = [];
     server.use(
-      http.post(
-        '*/v1/paths/:pathCode/entries/:entrySlug/images/upload-url',
-        async ({ request }) => {
-          uploadUrlRequests.push(request.clone());
-          return HttpResponse.json(uploadUrlResponse, { status: 200 });
-        },
-      ),
-      http.put('https://storage.example.com/put-here', async ({ request }) => {
-        presignedPuts.push(request.clone());
-        return new HttpResponse(null, { status: 200 });
-      }),
-      http.post('*/v1/images/:imageId/complete', async ({ request }) => {
-        completeRequests.push(request.clone());
-        return HttpResponse.json({ status: 'ok' }, { status: 200 });
+      http.post('*/v1/paths/:pathCode/entries', async ({ request }) => {
+        requests.push(request.clone());
+        return HttpResponse.json(createdEntry, { status: 201 });
       }),
     );
 
@@ -300,7 +276,7 @@ describe('EntryCreateModal – image upload (MSW integration)', () => {
     await nextTick();
 
     // Simulate selecting a file
-    const file = new File(['image content'], 'photo.jpg', {
+    const file = new NodeFile(['image content'], 'photo.jpg', {
       type: 'image/jpeg',
     });
     const fileInput = wrapper.find('input[type="file"]');
@@ -322,19 +298,18 @@ describe('EntryCreateModal – image upload (MSW integration)', () => {
     await createBtn!.trigger('click');
     await flushPromises();
 
-    // Entry should be created
     expect(wrapper.emitted('created')).toHaveLength(1);
-
-    // Upload URL should be requested
-    expect(uploadUrlRequests).toHaveLength(1);
-
-    // File should be PUT to presigned URL
-    expect(presignedPuts).toHaveLength(1);
-
-    // Upload should be completed
-    expect(completeRequests).toHaveLength(1);
-    const completeBody = await completeRequests[0]!.json();
-    expect(typeof completeBody.byte_size).toBe('number');
+    expect(requests).toHaveLength(1);
+    expect(requests[0]!.headers.get('content-type')).toContain(
+      'multipart/form-data',
+    );
+    // jsdom's FormData (which the generated client's `new FormData()` resolves to in this
+    // test environment) doesn't recognize a cross-realm File as Blob-like and silently
+    // stringifies it — a jsdom/undici interop limitation, not app behavior — so this only
+    // asserts the field made it into the multipart body, not its serialized file content.
+    // "shows selected filenames in the pending images list" below covers filename tracking.
+    const body = await requests[0]!.formData();
+    expect(body.has('images')).toBe(true);
   });
 
   it('shows selected filenames in the pending images list', async () => {
@@ -393,17 +368,17 @@ describe('EntryCreateModal – image upload (MSW integration)', () => {
     expect(wrapper.html()).toContain('Exceeds 10 MB');
   });
 
-  it('shows an error and does not emit created when the presigned PUT fails', async () => {
+  it('shows an error and does not emit created when the create request (with image) fails', async () => {
     server.use(
-      http.put('https://storage.example.com/put-here', () => {
-        return new HttpResponse(null, { status: 403 });
+      http.post('*/v1/paths/:pathCode/entries', () => {
+        return HttpResponse.json({ detail: 'Server error' }, { status: 500 });
       }),
     );
 
     const wrapper = await mountModal();
     await nextTick();
 
-    const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
+    const file = new NodeFile(['data'], 'photo.jpg', { type: 'image/jpeg' });
     const fileInput = wrapper.find('input[type="file"]');
     Object.defineProperty(fileInput.element, 'files', {
       value: [file],

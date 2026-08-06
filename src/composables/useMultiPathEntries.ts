@@ -144,7 +144,7 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
                       entry_id: img.entry_id,
                       filename: img.filename,
                       status: img.status,
-                      strip_metadata: img.strip_metadata,
+                      caption: img.caption,
                       content_type: img.content_type,
                       byte_size: img.byte_size,
                     }),

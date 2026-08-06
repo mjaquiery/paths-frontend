@@ -135,19 +135,14 @@ import {
 } from '@ionic/vue';
 import { computed, ref, watch } from 'vue';
 
-import type { PathResponse, ImageUploadResponse } from '../generated/types';
-import {
-  useCreateEntry,
-  useCreateImageUploadUrl,
-  useCompleteImageUpload,
-} from '../generated/apiClient';
+import type { PathResponse } from '../generated/types';
+import { useCreateEntry } from '../generated/apiClient';
 import { extractErrorMessage } from '../lib/errors';
 import { db } from '../lib/db';
 import MarkdownContent from './MarkdownContent.vue';
 import { useModalBackNavigation } from '../composables/useModalBackNavigation';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 
-const DEFAULT_IMAGE_CONTENT_TYPE = 'image/jpeg';
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
@@ -180,8 +175,6 @@ useModalBackNavigation(
 );
 
 const { mutateAsync: createEntry, isPending: saving } = useCreateEntry();
-const { mutateAsync: getUploadUrl } = useCreateImageUploadUrl();
-const { mutateAsync: completeUpload } = useCompleteImageUpload();
 
 const selectedPathId = ref('');
 const day = ref('');
@@ -242,50 +235,24 @@ function onFilesSelected(event: Event) {
   pendingImages.value = files;
 }
 
-async function uploadImages(
-  pathCode: string,
-  entrySlug: string,
-): Promise<string[]> {
-  const filenames: string[] = [];
-  for (const file of pendingImages.value) {
-    const contentType = file.type || DEFAULT_IMAGE_CONTENT_TYPE;
-    const uploadResp = await getUploadUrl({
-      pathCode,
-      entrySlug,
-      data: { filename: file.name, content_type: contentType },
-    });
-    const { image_id, upload_url } = uploadResp.data as ImageUploadResponse;
-    const response = await fetch(upload_url, {
-      method: 'PUT',
-      body: file,
-      headers: { 'Content-Type': contentType },
-    });
-    if (!response.ok) {
-      throw new Error(`Image upload failed with status ${response.status}`);
-    }
-    await completeUpload({
-      imageId: image_id,
-      data: { byte_size: file.size },
-    });
-    filenames.push(file.name);
-  }
-  return filenames;
-}
-
 async function submit() {
   if (!selectedPathId.value || !day.value || !content.value) return;
   error.value = '';
   try {
     const entryResp = await createEntry({
       pathCode: selectedPathId.value,
-      data: { day: day.value, content: content.value },
+      data: {
+        entry_id: crypto.randomUUID(),
+        day: day.value,
+        content: content.value,
+        // orval types multipart file-array fields as string[] (an OpenAPI binary-format
+        // quirk) — the real runtime value is the File objects themselves.
+        images: pendingImages.value as unknown as string[],
+      },
     });
 
     const entry = entryResp.data as { id: string; edit_id: number } | undefined;
-    let image_filenames: string[] = [];
-    if (pendingImages.value.length > 0 && entry?.id) {
-      image_filenames = await uploadImages(selectedPathId.value, entry.id);
-    }
+    const image_filenames = pendingImages.value.map((f) => f.name);
 
     // Persist image filenames locally so WeekView can show thumbnails
     if (image_filenames.length > 0 && entry?.id) {

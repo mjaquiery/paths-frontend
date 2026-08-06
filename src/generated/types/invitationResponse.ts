@@ -13,7 +13,7 @@ export interface InvitationResponse {
   inviter_user_id: string;
   inviter_email: string | null;
   invited_email: string;
-  invited_user_id: string | null;
+  invited_user_id?: string | null;
   status: string;
   created_at: string;
   updated_at: string;

@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "codegen:openapi": "orval",
+    "codegen:openapi": "rm -rf src/generated/types && orval",
     "schema:sync": "node scripts/sync-schema.mjs",
     "fixtures:build": "node scripts/build-fixtures.mjs",
     "storybook": "storybook dev -p 6006",

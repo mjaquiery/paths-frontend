@@ -6,11 +6,7 @@
  */
 import type { ImageResponse } from './imageResponse';
 
-export interface EntryContentResponse {
-  id: string;
-  path_id: string;
-  day: string;
+export interface ImageCaptionUpdateResponse {
+  image: ImageResponse;
   edit_id: number;
-  content: string;
-  images?: ImageResponse[];
 }

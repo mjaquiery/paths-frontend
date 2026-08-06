@@ -5,10 +5,12 @@
  * OpenAPI spec version: 0.3.4
  */
 
-export interface EntryUpdateRequest {
+export interface BodyUpdateEntry {
   /** @minimum 1 */
   expected_edit_id: number;
   /** @minLength 1 */
   content: string;
-  image_filenames?: string[];
+  captions?: string[];
+  remove_image_ids?: string[];
+  images?: string[];
 }

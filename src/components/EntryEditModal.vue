@@ -161,12 +161,8 @@ import {
 import { ref, watch } from 'vue';
 import { useQueryClient } from '@tanstack/vue-query';
 
-import type { ImageResponse, ImageUploadResponse } from '../generated/types';
-import {
-  useUpdateEntry,
-  useCreateImageUploadUrl,
-  useCompleteImageUpload,
-} from '../generated/apiClient';
+import type { ImageResponse } from '../generated/types';
+import { useUpdateEntry } from '../generated/apiClient';
 import { extractErrorMessage } from '../lib/errors';
 import { db } from '../lib/db';
 import MarkdownContent from './MarkdownContent.vue';
@@ -174,7 +170,6 @@ import type { EntryDetailData } from './EntryDetailModal.vue';
 import { useModalBackNavigation } from '../composables/useModalBackNavigation';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 
-const DEFAULT_IMAGE_CONTENT_TYPE = 'image/jpeg';
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
@@ -202,8 +197,6 @@ useModalBackNavigation(
 
 const queryClient = useQueryClient();
 const { mutateAsync: doUpdateEntry } = useUpdateEntry();
-const { mutateAsync: getUploadUrl } = useCreateImageUploadUrl();
-const { mutateAsync: completeUpload } = useCompleteImageUpload();
 
 const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
@@ -278,33 +271,6 @@ function onFilesSelected(event: Event) {
   pendingImages.value = files;
 }
 
-async function uploadImages(): Promise<string[]> {
-  const filenames: string[] = [];
-  for (const file of pendingImages.value) {
-    const contentType = file.type || DEFAULT_IMAGE_CONTENT_TYPE;
-    const uploadResp = await getUploadUrl({
-      pathCode: props.entry.pathId,
-      entrySlug: props.entry.entryId,
-      data: { filename: file.name, content_type: contentType },
-    });
-    const { image_id, upload_url } = uploadResp.data as ImageUploadResponse;
-    const response = await fetch(upload_url, {
-      method: 'PUT',
-      body: file,
-      headers: { 'Content-Type': contentType },
-    });
-    if (!response.ok) {
-      throw new Error(`Image upload failed with status ${response.status}`);
-    }
-    await completeUpload({
-      imageId: image_id,
-      data: { byte_size: file.size },
-    });
-    filenames.push(file.name);
-  }
-  return filenames;
-}
-
 async function submit() {
   if (!content.value.trim() || props.entry.edit_id === undefined) return;
   saving.value = true;
@@ -312,18 +278,18 @@ async function submit() {
   conflictError.value = '';
 
   try {
-    // Upload new images first, then combine with kept filenames
-    const newFilenames = await uploadImages();
-    const keptFilenames = keptImages.value.map((img) => img.filename);
-    const image_filenames = [...keptFilenames, ...newFilenames];
-
     await doUpdateEntry({
       pathCode: props.entry.pathId,
       entrySlug: props.entry.entryId,
       data: {
         expected_edit_id: props.entry.edit_id,
         content: content.value,
-        image_filenames,
+        // Images not in removedImages are left untouched server-side — only removals and
+        // brand-new uploads need to be sent.
+        remove_image_ids: removedImages.value.map((img) => img.id),
+        // orval types multipart file-array fields as string[] (an OpenAPI binary-format
+        // quirk) — the real runtime value is the File objects themselves.
+        images: pendingImages.value as unknown as string[],
       },
     });
 

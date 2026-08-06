@@ -175,16 +175,17 @@ describe('EntriesCard', () => {
     await createButton!.trigger('click');
     await flushPromises();
 
-    expect(vi.mocked(customFetch)).toHaveBeenCalledWith(
-      '/v1/paths/p1/entries',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({
-          day: '2024-01-01',
-          content: 'My entry content',
-        }),
-      }),
-    );
+    const postCall = vi
+      .mocked(customFetch)
+      .mock.calls.find(
+        ([, options]) => (options as RequestInit)?.method === 'POST',
+      );
+    expect(postCall).toBeDefined();
+    expect(postCall![0]).toBe('/v1/paths/p1/entries');
+    const body = (postCall![1] as RequestInit).body as FormData;
+    expect(body.get('day')).toBe('2024-01-01');
+    expect(body.get('content')).toBe('My entry content');
+    expect(typeof body.get('entry_id')).toBe('string');
   });
 
   it('shows an error and keeps the form open when entry creation fails', async () => {

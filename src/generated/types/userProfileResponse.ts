@@ -8,5 +8,5 @@
 export interface UserProfileResponse {
   user_id: string;
   display_name: string | null;
-  settings_json: string | null;
+  settings_json?: string | null;
 }

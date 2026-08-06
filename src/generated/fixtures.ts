@@ -9,19 +9,21 @@ import type {
   AdminLoginResponse,
   BlocklistAddRequest,
   BlocklistEntryResponse,
+  DeletionRequestResponse,
   DownloadURLResponse,
   EntryContentResponse,
-  EntryCreateRequest,
   EntryResponse,
-  EntryUpdateRequest,
+  ErrorDetail,
   ExportCreateRequest,
+  ExportJobResponse,
   HealthResponse,
-  ImageCompleteRequest,
+  ImageCaptionUpdateRequest,
+  ImageCaptionUpdateResponse,
   ImageDownloadResponse,
   ImageResponse,
-  ImageUploadRequest,
-  ImageUploadResponse,
+  InvitationResponse,
   InviteResponse,
+  OAuthCallbackRequest,
   OAuthCallbackResponse,
   OAuthLoginResponse,
   OptimisticLockErrorResponse,
@@ -35,6 +37,7 @@ import type {
   SubscriberResponse,
   SubscriptionInviteRequest,
   UserDisplayNameUpdateRequest,
+  UserProfileResponse,
   UserSettingsUpdateRequest,
 } from './types';
 
@@ -57,6 +60,14 @@ export const blocklistEntryResponseFixture: BlocklistEntryResponse = {
   id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
 };
 
+export const deletionRequestResponseFixture: DeletionRequestResponse = {
+  attempt_count: 0,
+  created_at: '2024-03-15T09:00:00Z',
+  id: 'f6a7b8c9-d0e1-2345-f012-456789012345',
+  state: 'requested',
+  updated_at: '2024-03-15T09:00:00Z',
+};
+
 export const downloadURLResponseFixture: DownloadURLResponse = {
   expires_in_seconds: 300,
   url: 'https://storage.example.com/exports/e5f6a7b8-c9d0-1234-ef01-345678901234/export.json?X-Amz-Expires=300',
@@ -67,14 +78,18 @@ export const entryContentResponseFixture: EntryContentResponse = {
   day: '2024-03-15',
   edit_id: 1,
   id: '2026_02_20_0',
-  image_filenames: ['morning-walk.jpg'],
+  images: [
+    {
+      byte_size: 204800,
+      caption: 'Sunrise over the ridge',
+      content_type: 'image/jpeg',
+      entry_id: 'c3d4e5f6-a7b8-9012-cdef-123456789012',
+      filename: 'morning-walk.jpg',
+      id: 'd4e5f6a7-b8c9-0123-def0-234567890123',
+      status: 'ready',
+    },
+  ],
   path_id: 'AB3X7K',
-};
-
-export const entryCreateRequestFixture: EntryCreateRequest = {
-  content: 'Feeling stronger today. Managed a 20-minute walk.',
-  day: '2024-03-15',
-  image_filenames: ['morning-walk.jpg'],
 };
 
 export const entryResponseFixture: EntryResponse = {
@@ -84,14 +99,23 @@ export const entryResponseFixture: EntryResponse = {
   path_id: 'AB3X7K',
 };
 
-export const entryUpdateRequestFixture: EntryUpdateRequest = {
-  content: 'Feeling stronger today. Managed a 20-minute walk and felt great.',
-  expected_edit_id: 1,
-  image_filenames: ['morning-walk.jpg'],
+export const errorDetailFixture: ErrorDetail = {
+  code: 'optimistic_lock_conflict',
+  message: 'Entry was modified by another request.',
 };
 
 export const exportCreateRequestFixture: ExportCreateRequest = {
   path_ids: ['AB3X7K'],
+};
+
+export const exportJobResponseFixture: ExportJobResponse = {
+  attempt_count: 1,
+  created_at: '2024-03-15T09:00:00Z',
+  expires_at: '2024-03-22T09:05:00Z',
+  id: 'e5f6a7b8-c9d0-1234-ef01-345678901234',
+  requested_path_ids: ['AB3X7K'],
+  state: 'ready',
+  updated_at: '2024-03-15T09:05:00Z',
 };
 
 export const healthResponseFixture: HealthResponse = {
@@ -101,8 +125,22 @@ export const healthResponseFixture: HealthResponse = {
   status: 'ok',
 };
 
-export const imageCompleteRequestFixture: ImageCompleteRequest = {
-  byte_size: 204800,
+export const imageCaptionUpdateRequestFixture: ImageCaptionUpdateRequest = {
+  caption: 'Sunrise over the ridge',
+  expected_edit_id: 2,
+};
+
+export const imageCaptionUpdateResponseFixture: ImageCaptionUpdateResponse = {
+  edit_id: 3,
+  image: {
+    byte_size: 204800,
+    caption: 'Sunrise over the ridge',
+    content_type: 'image/jpeg',
+    entry_id: 'c3d4e5f6-a7b8-9012-cdef-123456789012',
+    filename: 'morning-walk.jpg',
+    id: 'd4e5f6a7-b8c9-0123-def0-234567890123',
+    status: 'ready',
+  },
 };
 
 export const imageDownloadResponseFixture: ImageDownloadResponse = {
@@ -115,30 +153,36 @@ export const imageDownloadResponseFixture: ImageDownloadResponse = {
 
 export const imageResponseFixture: ImageResponse = {
   byte_size: 204800,
+  caption: 'Sunrise over the ridge',
   content_type: 'image/jpeg',
   entry_id: 'c3d4e5f6-a7b8-9012-cdef-123456789012',
   filename: 'morning-walk.jpg',
   id: 'd4e5f6a7-b8c9-0123-def0-234567890123',
-  status: 'complete',
-  strip_metadata: true,
+  status: 'ready',
 };
 
-export const imageUploadRequestFixture: ImageUploadRequest = {
-  content_type: 'image/jpeg',
-  filename: 'morning-walk.jpg',
-  strip_metadata: true,
-};
-
-export const imageUploadResponseFixture: ImageUploadResponse = {
-  expires_in_seconds: 900,
-  image_id: 'd4e5f6a7-b8c9-0123-def0-234567890123',
-  upload_url:
-    'https://storage.example.com/uploads/d4e5f6a7-b8c9-0123-def0-234567890123?X-Amz-Expires=900',
+export const invitationResponseFixture: InvitationResponse = {
+  created_at: '2024-03-15T09:00:00Z',
+  id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  invited_email: 'subscriber@example.com',
+  inviter_email: 'owner@example.com',
+  inviter_user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  path_code: 'AB3X7K',
+  path_id: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
+  path_title: 'My Travel Journal',
+  status: 'invited',
+  updated_at: '2024-03-15T09:00:00Z',
 };
 
 export const inviteResponseFixture: InviteResponse = {
   invitation_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   status: 'invited',
+};
+
+export const oAuthCallbackRequestFixture: OAuthCallbackRequest = {
+  callback_uri: 'https://app.example.com/callback',
+  code: '4/0AY0e-g7...',
+  state: 'a1b2c3d4e5f6',
 };
 
 export const oAuthCallbackResponseFixture: OAuthCallbackResponse = {
@@ -225,6 +269,11 @@ export const userDisplayNameUpdateRequestFixture: UserDisplayNameUpdateRequest =
   {
     display_name: 'Alex Smith',
   };
+
+export const userProfileResponseFixture: UserProfileResponse = {
+  display_name: 'Alex Smith',
+  user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+};
 
 export const userSettingsUpdateRequestFixture: UserSettingsUpdateRequest = {
   settings_json: '{"theme":"dark"}',
