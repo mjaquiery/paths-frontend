@@ -5,11 +5,11 @@
         <ion-buttons slot="start">
           <ion-back-button default-href="/" />
         </ion-buttons>
-        <ion-title>Manage invitations</ion-title>
+        <ion-title>Settings</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-      <!-- Active invitations -->
+      <!-- Invitations -->
       <ion-card>
         <ion-card-header>
           <ion-card-title>Active invitations</ion-card-title>
@@ -63,7 +63,6 @@
         </ion-card-content>
       </ion-card>
 
-      <!-- Ignored invitations -->
       <ion-card>
         <ion-card-header>
           <ion-card-title>Ignored invitations</ion-card-title>
@@ -97,7 +96,6 @@
         </ion-card-content>
       </ion-card>
 
-      <!-- Blocklist -->
       <ion-card>
         <ion-card-header>
           <ion-card-title>Blocked users</ion-card-title>
@@ -132,6 +130,30 @@
           </ion-list>
         </ion-card-content>
       </ion-card>
+
+      <!-- Export data -->
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Export data</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <ExportCard :paths="paths ?? []" />
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Delete data -->
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Delete account</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>
+            To request deletion of your account and all associated data, please
+            contact support. Full self-service deletion is coming in a future
+            release.
+          </p>
+        </ion-card-content>
+      </ion-card>
     </ion-content>
   </ion-page>
 </template>
@@ -163,6 +185,10 @@ import {
   useListBlocklist,
   useUnblockUser,
 } from '../generated/apiClient';
+import { usePaths } from '../composables/usePaths';
+import ExportCard from '../components/ExportCard.vue';
+
+const { data: paths } = usePaths();
 
 const { data: invitationsData, refetch: refetchInvitations } =
   useListInvitations();
@@ -177,12 +203,10 @@ const activeInvitations = computed(
   () =>
     invitationsData.value?.data?.filter((i) => i.status === 'invited') ?? [],
 );
-
 const ignoredInvitations = computed(
   () =>
     invitationsData.value?.data?.filter((i) => i.status === 'ignored') ?? [],
 );
-
 const blocklist = computed(() => blocklistData.value?.data ?? []);
 
 const invBusy = ref<Record<string, boolean>>({});
@@ -238,9 +262,7 @@ async function unblock(blockedUserId: string) {
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) {
-    return dateStr;
-  }
+  if (isNaN(date.getTime())) return dateStr;
   return date.toLocaleDateString();
 }
 </script>

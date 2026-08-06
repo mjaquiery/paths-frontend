@@ -24,8 +24,8 @@ import {
 import { onMounted, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
-import { useAuthCallback } from '../generated/apiClient';
-import type { OAuthCallbackResponse } from '../generated/types';
+import { useAuthCallback } from '../../generated/apiClient';
+import type { OAuthCallbackResponse } from '../../generated/types';
 
 const router = useRouter();
 const route = useRoute();

@@ -1,12 +1,22 @@
 import vue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import VueRouter from 'unplugin-vue-router/vite';
 
 export default defineConfig({
   plugins: [
+    // Must run before vue() — generates typed routes from src/pages/ that the Vue SFC
+    // compiler and app bootstrap (src/router.ts) then consume.
+    VueRouter({
+      routesFolder: 'src/pages',
+      dts: 'src/typed-router.d.ts',
+    }),
     vue(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // Prompt-on-update instead of silently auto-swapping the app shell: users get a
+      // visible "update available" affordance (surfaced via AppFooter) rather than
+      // landing on a stale cached version with no way to know a refresh would help.
+      registerType: 'prompt',
       // Disable auto-injection so the SW is booted explicitly in main.ts
       // via `virtual:pwa-register`, keeping all bootstrap logic in one place.
       injectRegister: null,

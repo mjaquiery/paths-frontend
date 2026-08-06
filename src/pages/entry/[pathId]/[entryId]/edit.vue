@@ -1,15 +1,16 @@
 <template>
-  <ion-modal :is-open="isOpen" @didDismiss="onDismiss">
+  <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title>Edit Entry</ion-title>
-        <ion-buttons slot="end">
-          <ion-button @click="onDismiss">Cancel</ion-button>
+        <ion-buttons slot="start">
+          <ion-back-button :default-href="`/entry/${pathId}/${entryId}`" />
         </ion-buttons>
+        <ion-title>Edit Entry</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-      <!-- Text content -->
+      <p class="entry-meta">{{ path?.title }} &mdash; {{ entryData?.day }}</p>
+
       <ion-item>
         <ion-label position="stacked">Content *</ion-label>
         <div class="content-tabs">
@@ -39,7 +40,7 @@
           auto-grow
           autocapitalize="sentences"
           autocorrect="on"
-          spellcheck="true"
+          :spellcheck="true"
           @ionInput="onTextareaInput"
         />
         <div v-else class="content-preview">
@@ -48,7 +49,6 @@
         </div>
       </ion-item>
 
-      <!-- Existing images -->
       <ion-item v-if="keptImages.length > 0 || removedImages.length > 0">
         <ion-label position="stacked">Images</ion-label>
         <div class="existing-images">
@@ -93,34 +93,33 @@
         </div>
       </ion-item>
 
-      <!-- New image upload -->
-      <ion-item>
+      <ion-item lines="none">
         <ion-label position="stacked">Add images (optional)</ion-label>
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept="image/*"
-          multiple
-          class="image-file-input"
-          @change="onFilesSelected"
-        />
+        <ion-button size="small" fill="outline" @click="addImages"
+          >+ Add photo</ion-button
+        >
       </ion-item>
       <div v-if="pendingImages.length > 0" class="pending-images">
-        <span
+        <div
           v-for="img in pendingImages"
-          :key="img.name"
-          class="pending-image-name"
+          :key="img.file.name"
+          class="pending-image"
         >
-          {{ img.name }}
+          <span class="pending-image-name">{{ img.file.name }}</span>
+          <ion-input
+            v-model="img.caption"
+            placeholder="Caption (optional)"
+            class="pending-image-caption"
+          />
           <button
             class="insert-image-btn"
             type="button"
-            :aria-label="`Insert image ${img.name} into content`"
-            @click="insertImageMarkdown(img.name)"
+            :aria-label="`Insert image ${img.file.name} into content`"
+            @click="insertImageMarkdown(img.file.name)"
           >
             ↳ Insert
           </button>
-        </span>
+        </div>
       </div>
 
       <p v-if="conflictError" class="entry-error entry-error--conflict">
@@ -130,7 +129,7 @@
     </ion-content>
     <ion-footer>
       <ion-toolbar>
-        <div class="entry-modal-actions">
+        <div class="entry-page-actions">
           <ion-button
             expand="block"
             :disabled="!content.trim() || saving"
@@ -141,89 +140,99 @@
         </div>
       </ion-toolbar>
     </ion-footer>
-  </ion-modal>
+  </ion-page>
 </template>
 
 <script setup lang="ts">
 import {
-  IonModal,
+  IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
   IonButtons,
+  IonBackButton,
   IonButton,
   IonContent,
   IonFooter,
   IonItem,
   IonLabel,
+  IonInput,
   IonTextarea,
 } from '@ionic/vue';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 
-import type { ImageResponse } from '../generated/types';
-import { useUpdateEntry } from '../generated/apiClient';
-import { extractErrorMessage } from '../lib/errors';
-import { db } from '../lib/db';
-import MarkdownContent from './MarkdownContent.vue';
-import type { EntryDetailData } from './EntryDetailModal.vue';
-import { useModalBackNavigation } from '../composables/useModalBackNavigation';
-import { useMarkdownEditor } from '../composables/useMarkdownEditor';
+import {
+  useGetEntry,
+  useListEntryImages,
+  useUpdateEntry,
+} from '../../../../generated/apiClient';
+import { usePaths } from '../../../../composables/usePaths';
+import { useLocalDraft } from '../../../../composables/useLocalDraft';
+import { pickImages } from '../../../../composables/useImagePicker';
+import { extractErrorMessage } from '../../../../lib/errors';
+import MarkdownContent from '../../../../components/MarkdownContent.vue';
+import { useMarkdownEditor } from '../../../../composables/useMarkdownEditor';
+import type {
+  EntryContentResponse,
+  ImageResponse,
+} from '../../../../generated/types';
 
-const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_IMAGE_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/heic',
-  'image/heif',
-]);
-
-const props = defineProps<{
-  isOpen: boolean;
-  entry: EntryDetailData;
-}>();
-
-const emit = defineEmits<{
-  dismiss: [];
-  saved: [];
-}>();
-
-useModalBackNavigation(
-  () => props.isOpen,
-  () => emit('dismiss'),
-);
-
+const route = useRoute<'/entry/[pathId]/[entryId]/edit'>();
+const router = useRouter();
 const queryClient = useQueryClient();
+
+const pathId = route.params.pathId;
+const entryId = route.params.entryId;
+
+const { data: allPaths } = usePaths();
+const path = computed(() => allPaths.value?.find((p) => p.path_id === pathId));
+
+const { data: entryData } = useGetEntry(pathId, entryId, {
+  query: { select: (r) => r.data as EntryContentResponse },
+});
+const { data: imagesData } = useListEntryImages(pathId, entryId, {
+  query: { select: (r) => r.data as ImageResponse[] },
+});
+
 const { mutateAsync: doUpdateEntry } = useUpdateEntry();
 
-const content = ref('');
 const contentTab = ref<'write' | 'preview'>('write');
 const keptImages = ref<ImageResponse[]>([]);
 const removedImages = ref<ImageResponse[]>([]);
-const pendingImages = ref<File[]>([]);
+const pendingImages = ref<{ file: File; caption: string }[]>([]);
 const saving = ref(false);
 const error = ref('');
 const conflictError = ref('');
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
-const fileInputRef = ref<HTMLInputElement | null>(null);
 
+const {
+  content,
+  restore,
+  clear: clearDraft,
+} = useLocalDraft(
+  ref(pathId),
+  computed(() => entryData.value?.day ?? ''),
+  ref(entryId),
+);
+
+let contentInitialised = false;
 watch(
-  () => props.isOpen,
-  (open) => {
-    if (open) {
-      content.value = props.entry.content ?? '';
-      contentTab.value = 'write';
-      keptImages.value = props.entry.images ? [...props.entry.images] : [];
-      removedImages.value = [];
-      pendingImages.value = [];
-      error.value = '';
-      conflictError.value = '';
-    }
+  entryData,
+  async (data) => {
+    if (!data || contentInitialised) return;
+    contentInitialised = true;
+    await restore();
+    // Only fall back to the server content if no local draft was restored — an
+    // in-progress edit takes priority over what's already saved server-side.
+    if (!content.value) content.value = data.content ?? '';
   },
   { immediate: true },
 );
+watch(imagesData, (images) => {
+  if (images) keptImages.value = [...images];
+});
 
 const { onTextareaInput, insertImageMarkdown } = useMarkdownEditor(
   content,
@@ -247,76 +256,44 @@ function restoreImage(imageId: string) {
   }
 }
 
-function onFilesSelected(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const files = input.files ? Array.from(input.files) : [];
-  const wrongType = files.filter((f) => !ALLOWED_IMAGE_TYPES.has(f.type));
-  const tooLarge = files.filter(
-    (f) => ALLOWED_IMAGE_TYPES.has(f.type) && f.size > MAX_IMAGE_SIZE_BYTES,
-  );
-  if (wrongType.length > 0 || tooLarge.length > 0) {
-    const messages: string[] = [];
-    if (wrongType.length > 0) {
-      messages.push(`Not an image: ${wrongType.map((f) => f.name).join(', ')}`);
-    }
-    if (tooLarge.length > 0) {
-      messages.push(`Exceeds 10 MB: ${tooLarge.map((f) => f.name).join(', ')}`);
-    }
-    error.value = `Some files were rejected. ${messages.join('; ')}`;
-    input.value = '';
-    pendingImages.value = [];
-    return;
-  }
-  error.value = '';
-  pendingImages.value = files;
+async function addImages() {
+  const files = await pickImages();
+  pendingImages.value.push(...files.map((file) => ({ file, caption: '' })));
 }
 
 async function submit() {
-  if (!content.value.trim() || props.entry.edit_id === undefined) return;
+  if (!content.value.trim() || entryData.value?.edit_id === undefined) return;
   saving.value = true;
   error.value = '';
   conflictError.value = '';
 
   try {
     await doUpdateEntry({
-      pathCode: props.entry.pathId,
-      entrySlug: props.entry.entryId,
+      pathCode: pathId,
+      entrySlug: entryId,
       data: {
-        expected_edit_id: props.entry.edit_id,
+        expected_edit_id: entryData.value.edit_id,
         content: content.value,
-        // Images not in removedImages are left untouched server-side — only removals and
-        // brand-new uploads need to be sent.
+        captions: pendingImages.value.map((img) => img.caption),
         remove_image_ids: removedImages.value.map((img) => img.id),
         // orval types multipart file-array fields as string[] (an OpenAPI binary-format
         // quirk) — the real runtime value is the File objects themselves.
-        images: pendingImages.value as unknown as string[],
+        images: pendingImages.value.map(
+          (img) => img.file,
+        ) as unknown as string[],
       },
     });
 
-    // Invalidate cached queries so the week view reflects the update
-    void queryClient.invalidateQueries({
-      queryKey: ['v1', 'paths', props.entry.pathId, 'entries'],
+    await queryClient.invalidateQueries({
+      queryKey: ['v1', 'paths', pathId, 'entries'],
     });
-
-    // Evict local Dexie cache for this entry so fresh data is fetched
-    try {
-      const cacheKey = `${props.entry.pathId}:${props.entry.entryId}`;
-      await db.entryContent.delete(cacheKey);
-      await db.entryImages
-        .where('entry_id')
-        .equals(props.entry.entryId)
-        .delete();
-    } catch {
-      // IndexedDB may be unavailable; stale cache will be overwritten on next fetch.
-    }
-
-    emit('saved');
-    emit('dismiss');
+    await clearDraft();
+    router.push(`/entry/${pathId}/${entryId}`);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('409')) {
       conflictError.value =
-        'This entry was edited by someone else. Please close and reopen it to get the latest version before editing.';
+        'This entry was edited by someone else. Please go back and reopen it to get the latest version before editing.';
     } else {
       const detail = extractErrorMessage(err);
       error.value = detail
@@ -327,13 +304,14 @@ async function submit() {
     saving.value = false;
   }
 }
-
-function onDismiss() {
-  emit('dismiss');
-}
 </script>
 
 <style scoped>
+.entry-meta {
+  font-size: 0.85rem;
+  color: var(--ion-color-medium, #888);
+}
+
 .entry-error {
   color: var(--ion-color-danger, red);
   font-size: 0.85rem;
@@ -346,30 +324,39 @@ function onDismiss() {
   padding: 8px 12px;
 }
 
-.entry-modal-actions {
+.entry-page-actions {
   padding: 8px;
-}
-
-.image-file-input {
-  margin: 8px 0;
-  font-size: 0.875rem;
 }
 
 .pending-images {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
   padding: 4px 16px;
 }
 
-.pending-image-name {
+.pending-image {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 0.8rem;
   background: var(--ion-color-light, #f4f4f4);
   border-radius: 4px;
-  padding: 2px 6px;
+  padding: 4px 6px;
+}
+
+.pending-image-name {
+  flex-shrink: 0;
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pending-image-caption {
+  flex: 1;
+  --padding-start: 4px;
+  --padding-end: 4px;
+  font-size: 0.8rem;
 }
 
 .existing-images {

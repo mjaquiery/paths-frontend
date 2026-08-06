@@ -13,7 +13,7 @@ import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount } from '@vue/test-utils';
 
 import WeekView from '../components/WeekView.vue';
-import type { PathResponse } from '../generated/types';
+import type { ImageResponse, PathResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
 
 // ---------------------------------------------------------------------------
@@ -28,24 +28,22 @@ const ionicStubs = {
   },
 };
 
-// Stub EntryCreateModal so we don't have to wire up the full modal chain
-vi.mock('../components/EntryCreateModal.vue', () => ({
-  default: {
-    template: '<div data-testid="entry-create-modal"></div>',
-    props: ['isOpen', 'paths', 'currentUserId', 'initialDay'],
-    emits: ['dismiss', 'created'],
-  },
+const push = vi.fn();
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push }),
 }));
 
-// Stub EntryDetailModal so we can test open/close without Ionic
-vi.mock('../components/EntryDetailModal.vue', () => ({
-  default: {
-    template:
-      '<div data-testid="entry-detail-modal" :data-open="isOpen" :data-start-index="startIndex" :data-entries-count="entries.length"></div>',
-    props: ['isOpen', 'entries', 'startIndex'],
-    emits: ['dismiss'],
-  },
-}));
+function makeImage(filename: string): ImageResponse {
+  return {
+    id: `img-${filename}`,
+    entry_id: 'e1',
+    filename,
+    caption: null,
+    status: 'ready',
+    content_type: 'image/jpeg',
+    byte_size: 100,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -293,7 +291,7 @@ describe('WeekView – image thumbnail indicator', () => {
             day: todayStr,
             edit_id: 1,
             content: 'Entry with photo',
-            image_filenames: ['photo.jpg'],
+            images: [makeImage('photo.jpg')],
           },
         ],
       },
@@ -319,7 +317,7 @@ describe('WeekView – image thumbnail indicator', () => {
             day: todayStr,
             edit_id: 1,
             content: 'Entry without photo',
-            image_filenames: [],
+            images: [],
           },
         ],
       },
@@ -345,7 +343,7 @@ describe('WeekView – image thumbnail indicator', () => {
             day: todayStr,
             edit_id: 1,
             content: 'Has photo',
-            image_filenames: ['cat.jpg'],
+            images: [makeImage('cat.jpg')],
           },
           {
             id: 'e2',
@@ -353,7 +351,7 @@ describe('WeekView – image thumbnail indicator', () => {
             day: todayStr,
             edit_id: 2,
             content: 'No photo',
-            image_filenames: [],
+            images: [],
           },
         ],
       },
@@ -439,121 +437,73 @@ describe('WeekView – entry detail modal', () => {
     ];
   }
 
-  it('opens the detail modal when a day-entry is clicked', async () => {
+  it('navigates to the entry view page when a day-entry is clicked', async () => {
     const path = makePathResponse({
       path_id: 'p1',
       title: 'My Path',
       color: '#3949ab',
     });
     const todayStr = today();
+    push.mockClear();
     const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
-
-    // Modal is always rendered but closed
-    const modalBefore = wrapper.find('[data-testid="entry-detail-modal"]');
-    expect(modalBefore.attributes('data-open')).toBe('false');
 
     await wrapper.find('.day-entry').trigger('click');
     await nextTick();
 
-    const modal = wrapper.find('[data-testid="entry-detail-modal"]');
-    expect(modal.attributes('data-open')).toBe('true');
-    expect(modal.attributes('data-start-index')).toBe('0');
+    expect(push).toHaveBeenCalledWith('/entry/p1/e1');
   });
 
-  it('opens the detail modal when Enter is pressed on a day-entry', async () => {
+  it('navigates to the entry view page when Enter is pressed on a day-entry', async () => {
     const path = makePathResponse({
       path_id: 'p1',
       title: 'My Path',
       color: '#3949ab',
     });
     const todayStr = today();
+    push.mockClear();
     const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
-
-    expect(
-      wrapper
-        .find('[data-testid="entry-detail-modal"]')
-        .attributes('data-open'),
-    ).toBe('false');
 
     await wrapper.find('.day-entry').trigger('keydown.enter');
     await nextTick();
 
-    expect(
-      wrapper
-        .find('[data-testid="entry-detail-modal"]')
-        .attributes('data-open'),
-    ).toBe('true');
+    expect(push).toHaveBeenCalledWith('/entry/p1/e1');
   });
 
-  it('opens the detail modal when Space is pressed on a day-entry', async () => {
+  it('navigates to the entry view page when Space is pressed on a day-entry', async () => {
     const path = makePathResponse({
       path_id: 'p1',
       title: 'My Path',
       color: '#3949ab',
     });
     const todayStr = today();
+    push.mockClear();
     const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
-
-    expect(
-      wrapper
-        .find('[data-testid="entry-detail-modal"]')
-        .attributes('data-open'),
-    ).toBe('false');
 
     await wrapper.find('.day-entry').trigger('keydown.space');
     await nextTick();
 
-    expect(
-      wrapper
-        .find('[data-testid="entry-detail-modal"]')
-        .attributes('data-open'),
-    ).toBe('true');
+    expect(push).toHaveBeenCalledWith('/entry/p1/e1');
   });
 
-  it('passes all same-day entries to the modal', async () => {
-    const path = makePathResponse({
-      path_id: 'p1',
-      title: 'My Path',
-      color: '#3949ab',
-    });
+  it('navigates to the create page with the clicked day when "+" is pressed', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
-
-    const pathEntries: PathEntries[] = [
-      {
-        pathId: 'p1',
-        entries: [
-          {
-            id: 'e1',
-            path_id: 'p1',
-            day: todayStr,
-            edit_id: 1,
-            content: 'First',
-          },
-          {
-            id: 'e2',
-            path_id: 'p1',
-            day: todayStr,
-            edit_id: 2,
-            content: 'Second',
-          },
-        ],
-      },
-    ];
-
-    const wrapper = mountWeekView([path], pathEntries);
+    push.mockClear();
+    const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
     await nextTick();
 
-    await wrapper.find('.day-entry').trigger('click');
+    // The week grid renders 7 day boxes; target "Today"'s specifically rather than
+    // assuming DOM order, since the oldest displayed day renders first.
+    await wrapper.find('.day-box--today .day-create-btn').trigger('click');
     await nextTick();
 
-    const modal = wrapper.find('[data-testid="entry-detail-modal"]');
-    expect(modal.attributes('data-open')).toBe('true');
-    expect(modal.attributes('data-entries-count')).toBe('2');
-    // First entry was clicked, so startIndex should be 0
-    expect(modal.attributes('data-start-index')).toBe('0');
+    expect(push).toHaveBeenCalledWith({
+      path: '/entry/new',
+      query: { day: todayStr },
+    });
   });
 
   it('entries are keyboard-accessible (role=button, tabindex=0)', async () => {

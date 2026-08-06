@@ -3,7 +3,6 @@
     <!-- ── Header ── -->
     <ion-header>
       <ion-toolbar>
-        <!-- Logo -->
         <ion-thumbnail slot="start" class="header-logo">
           <img src="/favicon.svg" alt="Paths logo" />
         </ion-thumbnail>
@@ -20,6 +19,7 @@
             <ion-label class="ion-padding-end">{{
               currentUser.display_name || currentUser.user_id
             }}</ion-label>
+            <ion-button router-link="/settings">Settings</ion-button>
             <ion-button @click="logout">Logout</ion-button>
           </template>
           <ion-button v-else :disabled="loggingIn" @click="loginWithGoogle">
@@ -41,30 +41,25 @@
 
     <!-- ── Main content ── -->
     <ion-content ref="contentRef" class="ion-padding-horizontal">
-      <!-- Previously on this day -->
       <OnThisDaySpotlight
         v-if="visiblePaths.length > 0"
         :visible-paths="visiblePaths"
         :path-entries="multiPathEntries"
       />
 
-      <!-- Primary week view -->
       <WeekView
         :visible-paths="visiblePaths"
         :path-entries="multiPathEntries"
         :can-create="canCreateAny"
         :current-user-id="currentUser ? currentUser.user_id : ''"
-        @entry-created="onEntryCreated"
       />
 
-      <!-- Generic create-entry button -->
       <div v-if="canCreateAny" class="create-entry-cta">
-        <ion-button expand="block" @click="showCreateModal = true">
+        <ion-button expand="block" router-link="/entry/new">
           + Create Entry
         </ion-button>
       </div>
 
-      <!-- Fallback: not logged in -->
       <div v-if="!currentUser" class="home-welcome">
         <ion-card>
           <ion-card-content>
@@ -73,53 +68,6 @@
         </ion-card>
       </div>
     </ion-content>
-
-    <!-- ── Footer ── -->
-    <ion-footer>
-      <ion-toolbar>
-        <div class="footer-links">
-          <ion-button
-            fill="clear"
-            size="small"
-            router-link="/invitations"
-            router-direction="forward"
-          >
-            Manage invitations
-          </ion-button>
-          <ion-button
-            fill="clear"
-            size="small"
-            router-link="/export"
-            router-direction="forward"
-          >
-            Export data
-          </ion-button>
-          <ion-button
-            fill="clear"
-            size="small"
-            router-link="/delete"
-            router-direction="forward"
-          >
-            Delete data
-          </ion-button>
-        </div>
-        <RefreshStatus
-          slot="end"
-          :status-type="refreshStatusType"
-          :status-text="refreshStatusText"
-          :last-checked-at="refreshLastCheckedAt"
-        />
-      </ion-toolbar>
-    </ion-footer>
-
-    <!-- Global entry creation modal -->
-    <EntryCreateModal
-      :is-open="showCreateModal"
-      :paths="visiblePaths"
-      :current-user-id="currentUser ? currentUser.user_id : ''"
-      @dismiss="showCreateModal = false"
-      @created="onEntryCreated"
-    />
   </ion-page>
 </template>
 
@@ -135,18 +83,14 @@ import {
   IonLabel,
   IonText,
   IonThumbnail,
-  IonFooter,
   IonCard,
   IonCardContent,
 } from '@ionic/vue';
 import { ref, computed, onMounted, nextTick } from 'vue';
-import { useQueryClient } from '@tanstack/vue-query';
 
 import PathsSelectorBar from '../components/PathsSelectorBar.vue';
 import OnThisDaySpotlight from '../components/OnThisDaySpotlight.vue';
 import WeekView from '../components/WeekView.vue';
-import EntryCreateModal from '../components/EntryCreateModal.vue';
-import RefreshStatus from '../components/RefreshStatus.vue';
 import type {
   PathResponse,
   OAuthCallbackResponse,
@@ -154,7 +98,6 @@ import type {
 } from '../generated/types';
 import { authLogin } from '../generated/apiClient';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
-import { useRefreshStatus } from '../composables/useRefreshStatus';
 import { useDarkMode } from '../composables/useDarkMode';
 
 const {
@@ -172,7 +115,6 @@ const darkModeLabel = computed(() => {
 const loggingIn = ref(false);
 const loginError = ref('');
 const currentUser = ref<OAuthCallbackResponse | null>(null);
-const queryClient = useQueryClient();
 
 /** Ordered, visible paths managed by PathsSelectorBar */
 const visiblePaths = ref<PathResponse[]>([]);
@@ -180,15 +122,9 @@ const visiblePaths = ref<PathResponse[]>([]);
 const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
 const multiPathEntries = useMultiPathEntries(visiblePathIds);
 
-const {
-  statusType: refreshStatusType,
-  statusText: refreshStatusText,
-  lastCheckedAt: refreshLastCheckedAt,
-} = useRefreshStatus();
-
-const showCreateModal = ref(false);
-
-const contentRef = ref<InstanceType<typeof IonContent> | null>(null);
+const contentRef = ref<{
+  $el?: { scrollToBottom: (duration: number) => void };
+} | null>(null);
 
 const canCreateAny = computed(
   () =>
@@ -236,11 +172,6 @@ function logout() {
   currentUser.value = null;
   visiblePaths.value = [];
 }
-
-function onEntryCreated() {
-  // Invalidate all path-entry queries so the week view refreshes immediately
-  void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
-}
 </script>
 
 <style scoped>
@@ -261,11 +192,5 @@ function onEntryCreated() {
 
 .home-welcome {
   margin-top: 32px;
-}
-
-.footer-links {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
 }
 </style>

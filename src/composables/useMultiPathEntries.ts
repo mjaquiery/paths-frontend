@@ -1,4 +1,4 @@
-import { computed, ref, watch, type Ref } from 'vue';
+import { computed, type Ref } from 'vue';
 import { useQueries } from '@tanstack/vue-query';
 import { listEntries, getEntry, listEntryImages } from '../generated/apiClient';
 import type {
@@ -6,12 +6,9 @@ import type {
   EntryResponse,
   ImageResponse,
 } from '../generated/types';
-import type { EntryImageCache } from '../lib/db';
-import { db } from '../lib/db';
 
 export interface EntryWithContent extends EntryResponse {
   content?: string;
-  image_filenames?: string[];
   images?: ImageResponse[];
 }
 
@@ -20,28 +17,14 @@ export interface PathEntries {
   entries: EntryWithContent[];
 }
 
-/** Tracks which edit_id we last loaded content for, keyed by entry id. */
-interface ContentState {
-  editId: number;
-  content?: string;
-  image_filenames?: string[];
-  images?: ImageResponse[];
-}
-
+/**
+ * Fetches entry lists + content for a set of paths using TanStack Query as the only cache
+ * layer (persisted via lib/queryPersister.ts's Dexie-backed persister). Content queries are
+ * keyed on `entry.edit_id`, so an edit_id bump — the server's signal that content changed —
+ * naturally busts the cache and refetches; no manual diffing against a second store.
+ */
 export function useMultiPathEntries(pathIds: Ref<string[]>) {
-  const contentCache = ref<Record<string, ContentState>>({});
-
-  /**
-   * Stable map from pathId → raw entry list, updated synchronously
-   * inside the `watch(results, …)` callback.  Using a keyed map (rather
-   * than positional index into `results`) means that a path-priority
-   * reorder — which changes `pathIds.value` order but not the underlying
-   * data — never causes one path to accidentally read another path's
-   * entries while TanStack Query's internal result array catches up.
-   */
-  const rawEntriesMap = ref<Record<string, EntryResponse[]>>({});
-
-  const results = useQueries({
+  const listResults = useQueries({
     queries: computed(() =>
       pathIds.value.map((pathId) => ({
         queryKey: ['v1', 'paths', pathId, 'entries'],
@@ -50,136 +33,63 @@ export function useMultiPathEntries(pathIds: Ref<string[]>) {
         refetchInterval: 25_000,
         refetchIntervalInBackground: false,
         refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
       })),
     ),
   });
 
-  // When entry lists change, populate content from Dexie or fetch from API.
-  watch(
-    results,
-    async (queryResults) => {
-      // Synchronously update the pathId → entries map so that the return
-      // computed always has correctly-keyed data even if this watcher runs
-      // before or after a path-order change.
-      const newMap: Record<string, EntryResponse[]> = {};
-      for (let i = 0; i < pathIds.value.length; i++) {
-        const pathId = pathIds.value[i];
-        if (!pathId) continue;
-        newMap[pathId] =
-          (queryResults[i]?.data as { data?: EntryResponse[] } | undefined)
-            ?.data ?? [];
-      }
-      rawEntriesMap.value = newMap;
+  const entryLists = computed<{ pathId: string; entries: EntryResponse[] }[]>(
+    () =>
+      pathIds.value.map((pathId, i) => ({
+        pathId,
+        entries:
+          (listResults.value[i]?.data as { data: EntryResponse[] } | undefined)
+            ?.data ?? [],
+      })),
+  );
 
-      for (let i = 0; i < pathIds.value.length; i++) {
-        const pathId = pathIds.value[i];
-        if (!pathId) continue;
-        const entries =
-          (queryResults[i]?.data as { data?: EntryResponse[] } | undefined)
-            ?.data ?? [];
-
-        for (const entry of entries) {
-          const cacheKey = `${pathId}:${entry.id}`;
-          // Skip if we already have up-to-date content for this edit_id.
-          if (contentCache.value[cacheKey]?.editId === entry.edit_id) continue;
-
-          // Try Dexie cache first.
-          try {
-            const cached = await db.entryContent.get(cacheKey);
-            if (cached && cached.edit_id === entry.edit_id) {
-              const cachedImages = await db.entryImages
-                .where('entry_id')
-                .equals(entry.id)
-                .toArray();
-              contentCache.value[cacheKey] = {
-                editId: entry.edit_id,
-                content: cached.content,
-                image_filenames: cached.image_filenames,
-                images: cachedImages,
-              };
-              continue;
-            }
-          } catch {
-            // IndexedDB may be unavailable; fall through to fetch from API.
-          }
-
-          // Fetch from API (content and images independently so a partial
-          // failure doesn't discard the successful response).
-          const [entryResult, imagesResult] = await Promise.allSettled([
+  const contentQueries = computed(() =>
+    entryLists.value.flatMap(({ pathId, entries }) =>
+      entries.map((entry) => ({
+        queryKey: [
+          'v1',
+          'paths',
+          pathId,
+          'entries',
+          entry.id,
+          'content',
+          entry.edit_id,
+        ],
+        queryFn: async () => {
+          const [entryResult, imagesResult] = await Promise.all([
             getEntry(pathId, entry.id),
             listEntryImages(pathId, entry.id),
           ]);
-
-          const content =
-            entryResult.status === 'fulfilled'
-              ? ((entryResult.value.data as EntryContentResponse | undefined)
-                  ?.content ?? '')
-              : (contentCache.value[cacheKey]?.content ?? '');
-
-          const images: ImageResponse[] =
-            imagesResult.status === 'fulfilled'
-              ? ((imagesResult.value.data as ImageResponse[] | undefined) ?? [])
-              : (contentCache.value[cacheKey]?.images ?? []);
-
-          const image_filenames = images.map((img) => img.filename);
-
-          // Persist to Dexie.
-          try {
-            await db.entryContent.put({
-              cache_key: cacheKey,
-              id: entry.id,
-              path_id: entry.path_id,
-              day: entry.day,
-              edit_id: entry.edit_id,
-              content,
-              image_filenames,
-            });
-            if (imagesResult.status === 'fulfilled') {
-              await db.entryImages.where('entry_id').equals(entry.id).delete();
-              if (images.length > 0) {
-                await db.entryImages.bulkPut(
-                  images.map(
-                    (img): EntryImageCache => ({
-                      id: img.id,
-                      entry_id: img.entry_id,
-                      filename: img.filename,
-                      status: img.status,
-                      caption: img.caption,
-                      content_type: img.content_type,
-                      byte_size: img.byte_size,
-                    }),
-                  ),
-                );
-              }
-            }
-          } catch {
-            // IndexedDB may be unavailable; content will not be cached locally.
-          }
-
-          contentCache.value[cacheKey] = {
-            editId: entry.edit_id,
-            content,
-            image_filenames,
-            images,
+          return {
+            content: (entryResult.data as EntryContentResponse).content,
+            images: imagesResult.data as ImageResponse[],
           };
-        }
-      }
-    },
-    { deep: true },
+        },
+        staleTime: Infinity, // immutable for this edit_id — a new edit_id gets a new key
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+      })),
+    ),
   );
 
-  return computed<PathEntries[]>(() =>
-    pathIds.value.map((pathId) => ({
+  const contentResults = useQueries({ queries: contentQueries });
+
+  return computed<PathEntries[]>(() => {
+    let cursor = 0;
+    return entryLists.value.map(({ pathId, entries }) => ({
       pathId,
-      entries: (rawEntriesMap.value[pathId] ?? []).map((entry) => {
-        const cacheKey = `${pathId}:${entry.id}`;
-        return {
-          ...entry,
-          content: contentCache.value[cacheKey]?.content,
-          image_filenames: contentCache.value[cacheKey]?.image_filenames,
-          images: contentCache.value[cacheKey]?.images,
-        };
+      entries: entries.map((entry): EntryWithContent => {
+        const contentResult = contentResults.value[cursor++];
+        const data = contentResult?.data as
+          | { content: string; images: ImageResponse[] }
+          | undefined;
+        return { ...entry, content: data?.content, images: data?.images };
       }),
-    })),
-  );
+    }));
+  });
 }

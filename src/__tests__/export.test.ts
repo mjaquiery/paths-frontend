@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { QueryClient } from '@tanstack/vue-query';
 
 import {
   isExportReady,
@@ -6,7 +7,23 @@ import {
   downloadFileFromUrl,
   exportLocalData,
 } from '../utils/export';
-import { db } from '../lib/db';
+
+function seedEntryCache(
+  queryClient: QueryClient,
+  pathId: string,
+  entry: { id: string; day: string; edit_id: number },
+  content: { content: string; images: { filename: string }[] },
+) {
+  queryClient.setQueryData(['v1', 'paths', pathId, 'entries'], {
+    data: [
+      { id: entry.id, path_id: pathId, day: entry.day, edit_id: entry.edit_id },
+    ],
+  });
+  queryClient.setQueryData(
+    ['v1', 'paths', pathId, 'entries', entry.id, 'content', entry.edit_id],
+    content,
+  );
+}
 
 describe('export status', () => {
   it('recognizes ready state', () => {
@@ -125,28 +142,17 @@ describe('exportLocalData', () => {
     vi.restoreAllMocks();
   });
 
-  it('queries entryContent by path_id and triggers a JSON download', async () => {
-    const mockEntries = [
-      {
-        cache_key: 'path-1:entry-1',
-        id: 'entry-1',
-        path_id: 'path-1',
-        day: '2024-01-01',
-        edit_id: 42,
-        content: 'Hello world',
-        image_filenames: ['img.png'],
-      },
-    ];
+  it('reads entries from the TanStack Query cache and triggers a JSON download', () => {
+    const queryClient = new QueryClient();
+    seedEntryCache(
+      queryClient,
+      'path-1',
+      { id: 'entry-1', day: '2024-01-01', edit_id: 42 },
+      { content: 'Hello world', images: [{ filename: 'img.png' }] },
+    );
 
-    vi.spyOn(db.entryContent, 'where').mockReturnValue({
-      anyOf: vi.fn().mockReturnValue({
-        toArray: vi.fn().mockResolvedValue(mockEntries),
-      }),
-    } as unknown as ReturnType<typeof db.entryContent.where>);
+    exportLocalData(queryClient, ['path-1']);
 
-    await exportLocalData(['path-1']);
-
-    expect(db.entryContent.where).toHaveBeenCalledWith('path_id');
     expect(global.URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
     expect(anchorElement.download).toMatch(/^paths_local_backup_\d{8}\.json$/);
     expect(anchorClickSpy).toHaveBeenCalled();
@@ -154,23 +160,16 @@ describe('exportLocalData', () => {
   });
 
   it('includes all entry fields in the exported JSON', async () => {
-    const mockEntries = [
+    const queryClient = new QueryClient();
+    seedEntryCache(
+      queryClient,
+      'path-1',
+      { id: 'entry-1', day: '2024-01-15', edit_id: 7 },
       {
-        cache_key: 'path-1:entry-1',
-        id: 'entry-1',
-        path_id: 'path-1',
-        day: '2024-01-15',
-        edit_id: 7,
         content: 'My journal entry',
-        image_filenames: ['photo.jpg', 'selfie.png'],
+        images: [{ filename: 'photo.jpg' }, { filename: 'selfie.png' }],
       },
-    ];
-
-    vi.spyOn(db.entryContent, 'where').mockReturnValue({
-      anyOf: vi.fn().mockReturnValue({
-        toArray: vi.fn().mockResolvedValue(mockEntries),
-      }),
-    } as unknown as ReturnType<typeof db.entryContent.where>);
+    );
 
     let capturedBlob: Blob | undefined;
     global.URL.createObjectURL = vi.fn().mockImplementation((blob: Blob) => {
@@ -178,7 +177,7 @@ describe('exportLocalData', () => {
       return 'blob:local-url';
     });
 
-    await exportLocalData(['path-1']);
+    exportLocalData(queryClient, ['path-1']);
 
     const text = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -199,24 +198,14 @@ describe('exportLocalData', () => {
     ]);
   });
 
-  it('defaults image_filenames to empty array when undefined', async () => {
-    const mockEntries = [
-      {
-        cache_key: 'path-1:entry-2',
-        id: 'entry-2',
-        path_id: 'path-1',
-        day: '2024-02-01',
-        edit_id: 1,
-        content: 'No images here',
-        // image_filenames intentionally omitted
-      },
-    ];
-
-    vi.spyOn(db.entryContent, 'where').mockReturnValue({
-      anyOf: vi.fn().mockReturnValue({
-        toArray: vi.fn().mockResolvedValue(mockEntries),
-      }),
-    } as unknown as ReturnType<typeof db.entryContent.where>);
+  it('defaults image_filenames to empty array when content was never cached', async () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(['v1', 'paths', 'path-1', 'entries'], {
+      data: [
+        { id: 'entry-2', path_id: 'path-1', day: '2024-02-01', edit_id: 1 },
+      ],
+    });
+    // No corresponding 'content' query seeded — simulates content that hasn't loaded yet.
 
     let capturedBlob: Blob | undefined;
     global.URL.createObjectURL = vi.fn().mockImplementation((blob: Blob) => {
@@ -224,7 +213,7 @@ describe('exportLocalData', () => {
       return 'blob:local-url';
     });
 
-    await exportLocalData(['path-1']);
+    exportLocalData(queryClient, ['path-1']);
 
     const text = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();

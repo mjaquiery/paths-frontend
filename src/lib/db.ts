@@ -10,31 +10,25 @@ export interface QueryCacheEntry {
   value: string;
 }
 
-export interface EntryContentCache {
-  cache_key: string;
-  id: string;
-  path_id: string;
+/** A local-only, never-synced draft of in-progress entry text/images.
+ *
+ * Keyed by "pathId:day" for new entries or "pathId:entryId" for edits, so there's at most
+ * one draft per thing-being-edited. Purely a loss-prevention measure: no server contact, no
+ * sync/conflict surface, cleared on successful submit.
+ */
+export interface LocalEntryDraft {
+  draftKey: string;
+  pathId: string;
+  entryId: string | null;
   day: string;
-  edit_id: number;
   content: string;
-  image_filenames?: string[];
-}
-
-export interface EntryImageCache {
-  id: string;
-  entry_id: string;
-  filename: string;
-  status: string;
-  caption: string | null;
-  content_type: string | null;
-  byte_size: number | null;
+  updatedAt: number;
 }
 
 const db = new Dexie('pathsFrontend') as Dexie & {
   pathPreferences: EntityTable<PathPreference, 'pathId'>;
   queryCache: EntityTable<QueryCacheEntry, 'key'>;
-  entryContent: EntityTable<EntryContentCache, 'cache_key'>;
-  entryImages: EntityTable<EntryImageCache, 'id'>;
+  localDrafts: EntityTable<LocalEntryDraft, 'draftKey'>;
 };
 
 export { db };
@@ -74,6 +68,18 @@ db.version(6).stores({
   queryCache: '&key',
   entryContent: '&cache_key,edit_id,path_id,id',
   entryImages: '&id,entry_id',
+});
+
+// Version 7: collapse the server-data cache to one layer (TanStack Query's own
+// queryCache, via lib/queryPersister.ts) — entryContent/entryImages were a second,
+// independent cache with manual edit_id diffing that could silently go stale. Add
+// localDrafts for client-side-only autosave (unrelated to server caching).
+db.version(7).stores({
+  pathPreferences: '&pathId,hidden',
+  queryCache: '&key',
+  entryContent: null,
+  entryImages: null,
+  localDrafts: '&draftKey,pathId',
 });
 
 export async function isPathHidden(pathId: string) {

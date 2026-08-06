@@ -1,15 +1,14 @@
 <template>
-  <ion-modal :is-open="isOpen" @didDismiss="$emit('dismiss')">
+  <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title>New Entry</ion-title>
-        <ion-buttons slot="end">
-          <ion-button @click="$emit('dismiss')">Cancel</ion-button>
+        <ion-buttons slot="start">
+          <ion-back-button default-href="/" />
         </ion-buttons>
+        <ion-title>New Entry</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
-      <!-- Path selection -->
       <ion-item>
         <ion-label position="stacked">Path *</ion-label>
         <ion-select
@@ -27,13 +26,11 @@
         </ion-select>
       </ion-item>
 
-      <!-- Day selection -->
       <ion-item>
         <ion-label position="stacked">Day *</ion-label>
         <ion-input v-model="day" type="date" />
       </ion-item>
 
-      <!-- Text content -->
       <ion-item>
         <ion-label position="stacked">Content *</ion-label>
         <div class="content-tabs">
@@ -63,7 +60,7 @@
           auto-grow
           autocapitalize="sentences"
           autocorrect="on"
-          spellcheck="true"
+          :spellcheck="true"
           @ionInput="onTextareaInput"
         />
         <div v-else class="content-preview">
@@ -72,39 +69,38 @@
         </div>
       </ion-item>
 
-      <!-- Image upload -->
-      <ion-item>
+      <ion-item lines="none">
         <ion-label position="stacked">Images (optional)</ion-label>
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept="image/*"
-          multiple
-          class="image-file-input"
-          @change="onFilesSelected"
-        />
+        <ion-button size="small" fill="outline" @click="addImages">
+          + Add photo
+        </ion-button>
       </ion-item>
       <div v-if="pendingImages.length > 0" class="pending-images">
-        <span
+        <div
           v-for="img in pendingImages"
-          :key="img.name"
-          class="pending-image-name"
+          :key="img.file.name"
+          class="pending-image"
         >
-          {{ img.name }}
+          <span class="pending-image-name">{{ img.file.name }}</span>
+          <ion-input
+            v-model="img.caption"
+            placeholder="Caption (optional)"
+            class="pending-image-caption"
+          />
           <button
             class="insert-image-btn"
             type="button"
-            :aria-label="`Insert image ${img.name} into content`"
-            @click="insertImageMarkdown(img.name)"
+            :aria-label="`Insert image ${img.file.name} into content`"
+            @click="insertImageMarkdown(img.file.name)"
           >
             ↳ Insert
           </button>
-        </span>
+        </div>
       </div>
 
       <p v-if="error" class="entry-error">{{ error }}</p>
 
-      <div class="entry-modal-actions">
+      <div class="entry-page-actions">
         <ion-button
           expand="block"
           :disabled="!selectedPathId || !day || !content || saving"
@@ -114,16 +110,17 @@
         </ion-button>
       </div>
     </ion-content>
-  </ion-modal>
+  </ion-page>
 </template>
 
 <script setup lang="ts">
 import {
-  IonModal,
+  IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
   IonButtons,
+  IonBackButton,
   IonButton,
   IonContent,
   IonItem,
@@ -133,77 +130,75 @@ import {
   IonSelect,
   IonSelectOption,
 } from '@ionic/vue';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useQueryClient } from '@tanstack/vue-query';
 
-import type { PathResponse } from '../generated/types';
-import { useCreateEntry } from '../generated/apiClient';
-import { extractErrorMessage } from '../lib/errors';
-import { db } from '../lib/db';
-import MarkdownContent from './MarkdownContent.vue';
-import { useModalBackNavigation } from '../composables/useModalBackNavigation';
-import { useMarkdownEditor } from '../composables/useMarkdownEditor';
+import { useCreateEntry } from '../../generated/apiClient';
+import { usePaths } from '../../composables/usePaths';
+import { useLocalDraft } from '../../composables/useLocalDraft';
+import { pickImages } from '../../composables/useImagePicker';
+import { extractErrorMessage } from '../../lib/errors';
+import MarkdownContent from '../../components/MarkdownContent.vue';
+import { useMarkdownEditor } from '../../composables/useMarkdownEditor';
+import type { OAuthCallbackResponse } from '../../generated/types';
 
-const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_IMAGE_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/heic',
-  'image/heif',
-]);
+const route = useRoute();
+const router = useRouter();
+const queryClient = useQueryClient();
 
-const props = defineProps<{
-  isOpen: boolean;
-  /** All visible paths the user owns */
-  paths: PathResponse[];
-  currentUserId: string;
-  /** Pre-select a specific day (YYYY-MM-DD) */
-  initialDay?: string;
-  /** Pre-select a specific path id */
-  initialPathId?: string;
-}>();
+const currentUser = ref<OAuthCallbackResponse | null>(null);
+onMounted(() => {
+  const stored = localStorage.getItem('user');
+  if (stored) {
+    try {
+      currentUser.value = JSON.parse(stored) as OAuthCallbackResponse;
+    } catch {
+      currentUser.value = null;
+    }
+  }
+});
 
-const emit = defineEmits<{
-  dismiss: [];
-  created: [];
-}>();
-
-useModalBackNavigation(
-  () => props.isOpen,
-  () => emit('dismiss'),
+const { data: allPaths } = usePaths();
+const ownedPaths = computed(
+  () =>
+    allPaths.value?.filter(
+      (p) => p.owner_user_id === currentUser.value?.user_id,
+    ) ?? [],
 );
 
-const { mutateAsync: createEntry, isPending: saving } = useCreateEntry();
+const initialDay =
+  (route.query.day as string | undefined) ??
+  new Date().toISOString().slice(0, 10);
+const initialPathId = (route.query.pathId as string | undefined) ?? '';
 
-const selectedPathId = ref('');
-const day = ref('');
-const content = ref('');
-const error = ref('');
-const pendingImages = ref<File[]>([]);
+const { mutateAsync: createEntryMutation, isPending: saving } =
+  useCreateEntry();
+
+const selectedPathId = ref(initialPathId);
+const day = ref(initialDay);
 const contentTab = ref<'write' | 'preview'>('write');
+const error = ref('');
+const pendingImages = ref<{ file: File; caption: string }[]>([]);
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
-const fileInputRef = ref<HTMLInputElement | null>(null);
 
-const ownedPaths = computed(() =>
-  props.paths.filter((p) => p.owner_user_id === props.currentUserId),
-);
-
-// Reset form when modal opens
 watch(
-  () => props.isOpen,
-  (open) => {
-    if (open) {
-      selectedPathId.value =
-        props.initialPathId ?? ownedPaths.value[0]?.path_id ?? '';
-      day.value = props.initialDay ?? new Date().toISOString().slice(0, 10);
-      content.value = '';
-      error.value = '';
-      pendingImages.value = [];
-      contentTab.value = 'write';
+  ownedPaths,
+  (paths) => {
+    if (!selectedPathId.value && paths.length > 0) {
+      selectedPathId.value = paths[0]!.path_id;
     }
   },
+  { immediate: true },
 );
+
+const pathId = computed(() => selectedPathId.value);
+const {
+  content,
+  restore,
+  clear: clearDraft,
+} = useLocalDraft(pathId, day, ref(null));
+onMounted(restore);
 
 const { onTextareaInput, insertImageMarkdown } = useMarkdownEditor(
   content,
@@ -211,78 +206,34 @@ const { onTextareaInput, insertImageMarkdown } = useMarkdownEditor(
   contentTab,
 );
 
-function onFilesSelected(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const files = input.files ? Array.from(input.files) : [];
-  const wrongType = files.filter((f) => !ALLOWED_IMAGE_TYPES.has(f.type));
-  const tooLarge = files.filter(
-    (f) => ALLOWED_IMAGE_TYPES.has(f.type) && f.size > MAX_IMAGE_SIZE_BYTES,
-  );
-  if (wrongType.length > 0 || tooLarge.length > 0) {
-    const messages: string[] = [];
-    if (wrongType.length > 0) {
-      messages.push(`Not an image: ${wrongType.map((f) => f.name).join(', ')}`);
-    }
-    if (tooLarge.length > 0) {
-      messages.push(`Exceeds 10 MB: ${tooLarge.map((f) => f.name).join(', ')}`);
-    }
-    error.value = `Some files were rejected. ${messages.join('; ')}`;
-    input.value = '';
-    pendingImages.value = [];
-    return;
-  }
-  error.value = '';
-  pendingImages.value = files;
+async function addImages() {
+  const files = await pickImages();
+  pendingImages.value.push(...files.map((file) => ({ file, caption: '' })));
 }
 
 async function submit() {
   if (!selectedPathId.value || !day.value || !content.value) return;
   error.value = '';
   try {
-    const entryResp = await createEntry({
+    await createEntryMutation({
       pathCode: selectedPathId.value,
       data: {
         entry_id: crypto.randomUUID(),
         day: day.value,
         content: content.value,
+        captions: pendingImages.value.map((img) => img.caption),
         // orval types multipart file-array fields as string[] (an OpenAPI binary-format
         // quirk) — the real runtime value is the File objects themselves.
-        images: pendingImages.value as unknown as string[],
+        images: pendingImages.value.map(
+          (img) => img.file,
+        ) as unknown as string[],
       },
     });
-
-    const entry = entryResp.data as { id: string; edit_id: number } | undefined;
-    const image_filenames = pendingImages.value.map((f) => f.name);
-
-    // Persist image filenames locally so WeekView can show thumbnails
-    if (image_filenames.length > 0 && entry?.id) {
-      try {
-        const cacheKey = `${selectedPathId.value}:${entry.id}`;
-        const cached = await db.entryContent.get(cacheKey);
-        if (cached) {
-          await db.entryContent.put({
-            ...cached,
-            cache_key: cacheKey,
-            image_filenames,
-          });
-        } else if (entry.edit_id != null) {
-          await db.entryContent.put({
-            cache_key: cacheKey,
-            id: entry.id,
-            path_id: selectedPathId.value,
-            day: day.value,
-            edit_id: entry.edit_id,
-            content: content.value,
-            image_filenames,
-          });
-        }
-      } catch {
-        // IndexedDB may be unavailable; image filenames will not be cached locally.
-      }
-    }
-
-    emit('created');
-    emit('dismiss');
+    await queryClient.invalidateQueries({
+      queryKey: ['v1', 'paths', selectedPathId.value, 'entries'],
+    });
+    await clearDraft();
+    router.back();
   } catch (err: unknown) {
     const detail = extractErrorMessage(err);
     error.value = detail
@@ -299,30 +250,39 @@ async function submit() {
   margin: 8px 16px;
 }
 
-.entry-modal-actions {
+.entry-page-actions {
   margin: 16px 0;
-}
-
-.image-file-input {
-  margin: 8px 0;
-  font-size: 0.875rem;
 }
 
 .pending-images {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
   padding: 4px 16px;
 }
 
-.pending-image-name {
+.pending-image {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 0.8rem;
   background: var(--ion-color-light, #f4f4f4);
   border-radius: 4px;
-  padding: 2px 6px;
+  padding: 4px 6px;
+}
+
+.pending-image-name {
+  flex-shrink: 0;
+  max-width: 8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pending-image-caption {
+  flex: 1;
+  --padding-start: 4px;
+  --padding-end: 4px;
+  font-size: 0.8rem;
 }
 
 .insert-image-btn {
