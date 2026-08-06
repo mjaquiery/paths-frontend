@@ -49,7 +49,7 @@ async function main() {
   if (!title.toLowerCase().includes('paths')) {
     throw new Error(
       `Refusing to write schema: ${url} returned an OpenAPI doc titled "${title}", ` +
-        'which doesn\'t look like the paths backend. Check BACKEND_ENV / that nothing ' +
+        "which doesn't look like the paths backend. Check BACKEND_ENV / that nothing " +
         'else is listening on that host:port.',
     );
   }
