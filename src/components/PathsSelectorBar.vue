@@ -1,22 +1,11 @@
 <template>
   <div v-if="currentUser" class="paths-selector-bar">
-    <!-- Compact bar -->
+    <!-- ── Compact pill row ── -->
     <div class="paths-bar-row">
-      <!-- Mobile summary (shown via CSS on small screens when not expanded) -->
-      <span
-        class="paths-count-label"
-        :class="{ 'paths-count-label--expanded': expanded }"
-      >
-        {{ visibleCount }} path{{ visibleCount === 1 ? '' : 's' }} shown
-      </span>
-
-      <!-- Chip list (always rendered; CSS controls visibility on mobile) -->
-      <div
-        class="paths-chip-list"
-        :class="{ 'paths-chip-list--expanded': expanded }"
-      >
+      <!-- Visible path pills (up to MAX_PILLS) -->
+      <div class="paths-chip-list">
         <button
-          v-for="path in orderedPaths"
+          v-for="path in visiblePills"
           :key="path.path_id"
           class="path-chip"
           :class="{ 'path-chip--hidden': hiddenByPath[path.path_id] }"
@@ -34,46 +23,47 @@
             class="path-chip-dot"
             :style="{ backgroundColor: path.color }"
           ></span>
-          {{ path.title }}
+          <span class="path-chip-label">{{ path.title }}</span>
+        </button>
+
+        <!-- +N overflow chip -->
+        <button
+          v-if="overflowCount > 0"
+          class="path-chip path-chip--overflow"
+          :title="`${overflowCount} more path${overflowCount === 1 ? '' : 's'} — open Manage to see all`"
+          @click="showManageModal = true"
+        >
+          +{{ overflowCount }}
         </button>
       </div>
 
       <div class="paths-bar-actions">
-        <ion-button
-          v-if="pendingInvitations.length > 0"
-          size="small"
-          fill="solid"
-          color="warning"
-          @click="expanded = true"
-        >
-          {{ pendingInvitations.length }} invitation{{
-            pendingInvitations.length === 1 ? '' : 's'
-          }}
+        <ion-button size="small" fill="clear" @click="openNewPath">
+          + New Path
         </ion-button>
-        <ion-button size="small" fill="clear" @click="expanded = !expanded">
-          {{ expanded ? 'Less' : 'More' }}
+        <ion-button size="small" fill="clear" @click="showManageModal = true">
+          Manage
         </ion-button>
-        <ion-button
-          v-if="currentUser"
-          size="small"
-          fill="clear"
-          @click="openCreateForm"
-          >+ New Path</ion-button
-        >
       </div>
     </div>
 
-    <!-- Expanded management view -->
-    <div v-if="expanded" class="paths-expanded">
-      <!-- Pending invitations -->
-      <div v-if="pendingInvitations.length > 0" class="invitations-section">
-        <p class="invitations-heading">Pending invitations</p>
+    <!-- ── Invitations notification row ── -->
+    <div v-if="pendingInvitations.length > 0" class="invitations-row">
+      <span class="invitations-row-text">
+        {{ pendingInvitations.length }} pending invitation{{
+          pendingInvitations.length === 1 ? '' : 's'
+        }}
+      </span>
+      <div class="invitation-cards">
         <div
           v-for="inv in pendingInvitations"
           :key="inv.id"
           class="invitation-card"
         >
-          <span class="invitation-path">Path: {{ inv.path_code }}</span>
+          <span class="invitation-path"
+            ><strong>{{ inv.path_title ?? inv.path_code }}</strong> from
+            {{ inv.inviter_email }}</span
+          >
           <div class="invitation-actions">
             <ion-button
               size="small"
@@ -101,49 +91,24 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- New path form -->
-      <ion-card v-if="showCreateForm" class="paths-create-card">
-        <ion-card-content>
-          <ion-item>
-            <ion-label position="stacked">Title *</ion-label>
-            <ion-input v-model="newPath.title" placeholder="Path title" />
-          </ion-item>
-          <ion-item>
-            <ion-label position="stacked">Description</ion-label>
-            <ion-input
-              v-model="newPath.description"
-              placeholder="Optional description"
-            />
-          </ion-item>
-          <ion-item>
-            <ion-label for="path-colour-picker" position="stacked"
-              >Colour</ion-label
-            >
-            <div class="colour-picker-row">
-              <input
-                id="path-colour-picker"
-                type="color"
-                v-model="newPath.color"
-                class="colour-picker-input"
-              />
-              <span class="colour-picker-hex">{{ newPath.color }}</span>
-            </div>
-          </ion-item>
-          <div class="paths-form-actions">
-            <ion-button
-              size="small"
-              :disabled="!newPath.title || creating"
-              @click="createPath"
-              >{{ creating ? 'Creating…' : 'Create' }}</ion-button
-            >
-            <ion-button size="small" fill="outline" @click="cancelCreate"
-              >Cancel</ion-button
-            >
-          </div>
-          <p v-if="createError" class="paths-error">{{ createError }}</p>
-        </ion-card-content>
-      </ion-card>
+  <!-- ── Manage paths modal ── -->
+  <ion-modal :is-open="showManageModal" @did-dismiss="showManageModal = false">
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Manage Paths</ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="showManageModal = false">Done</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <!-- New path button -->
+      <ion-button expand="block" fill="outline" @click="openNewPath">
+        + New Path
+      </ion-button>
 
       <!-- Path list with reorder controls -->
       <ion-list class="paths-list">
@@ -198,7 +163,7 @@
 
           <!-- Unsubscribe (for non-owned paths) -->
           <ion-button
-            v-if="path.owner_user_id !== currentUser.user_id"
+            v-if="path.owner_user_id !== currentUser?.user_id"
             slot="end"
             size="small"
             fill="outline"
@@ -210,7 +175,7 @@
           </ion-button>
 
           <!-- Edit / Delete (owned paths only) -->
-          <template v-if="path.owner_user_id === currentUser.user_id">
+          <template v-if="path.owner_user_id === currentUser?.user_id">
             <ion-button
               slot="end"
               size="small"
@@ -218,7 +183,7 @@
               color="primary"
               @click="openShare(path)"
             >
-              Share
+              🔗 Share
             </ion-button>
             <ion-button
               slot="end"
@@ -226,7 +191,7 @@
               fill="outline"
               @click="openEdit(path)"
             >
-              Edit
+              ✏️ Edit
             </ion-button>
             <ion-button
               slot="end"
@@ -235,7 +200,7 @@
               color="danger"
               @click="openDelete(path)"
             >
-              Delete
+              🗑️ Delete
             </ion-button>
           </template>
         </ion-item>
@@ -248,8 +213,8 @@
         :path-code="path.path_id"
         :path-title="path.title"
       />
-    </div>
-  </div>
+    </ion-content>
+  </ion-modal>
 
   <!-- Path edit modal -->
   <PathEditModal
@@ -281,17 +246,21 @@
 <script setup lang="ts">
 import {
   IonButton,
-  IonCard,
-  IonCardContent,
+  IonButtons,
   IonChip,
-  IonInput,
+  IonContent,
+  IonHeader,
   IonItem,
   IonLabel,
   IonList,
+  IonModal,
+  IonTitle,
   IonToggle,
+  IonToolbar,
   type ToggleCustomEvent,
 } from '@ionic/vue';
 import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 
 import type { OAuthCallbackResponse, PathResponse } from '../generated/types';
@@ -301,9 +270,7 @@ import {
   getPathOrder,
   setPathOrder,
 } from '../lib/db';
-import { extractErrorMessage } from '../lib/errors';
 import {
-  useCreatePath,
   useListInvitations,
   useAcceptInvitation,
   useIgnoreInvitation,
@@ -316,6 +283,9 @@ import PathEditModal from './PathEditModal.vue';
 import PathDeleteModal from './PathDeleteModal.vue';
 import PathShareModal from './PathShareModal.vue';
 
+/** Maximum number of pills shown in the compact bar before the +N overflow chip. */
+const MAX_PILLS = 4;
+
 const props = defineProps<{
   currentUser: OAuthCallbackResponse | null;
 }>();
@@ -324,11 +294,10 @@ const emit = defineEmits<{
   pathsChanged: [paths: PathResponse[]];
 }>();
 
+const router = useRouter();
 const queryClient = useQueryClient();
 
 const { data: allPaths, refetch } = usePaths();
-const { mutateAsync: createPathMutation, isPending: creating } =
-  useCreatePath();
 
 // Invitations
 const { data: invitationsData, refetch: refetchInvitations } =
@@ -356,24 +325,14 @@ const deletingPath = ref<PathResponse | null>(null);
 const showShareModal = ref(false);
 const sharingPath = ref<PathResponse | null>(null);
 
-const expanded = ref(false);
-const showCreateForm = ref(false);
-const createError = ref('');
+// Manage modal
+const showManageModal = ref(false);
+
 const hiddenByPath = ref<Record<string, boolean>>({});
 const pathOrder = ref<string[]>([]);
 
-const DEFAULT_COLOR = '#3949ab';
-const newPath = ref({ title: '', description: '', color: DEFAULT_COLOR });
-
 // Invitation action busy state
 const invitationBusy = ref<Record<string, boolean>>({});
-
-// Auto-expand when there are pending invitations
-watch(pendingInvitations, (invitations) => {
-  if (invitations.length > 0) {
-    expanded.value = true;
-  }
-});
 
 // Build ordered + hidden state when paths load
 watch(
@@ -413,8 +372,12 @@ const ownedPaths = computed<PathResponse[]>(() =>
   ),
 );
 
-const visibleCount = computed(
-  () => orderedPaths.value.filter((p) => !hiddenByPath.value[p.path_id]).length,
+/** Pills shown in the compact bar (at most MAX_PILLS). */
+const visiblePills = computed(() => orderedPaths.value.slice(0, MAX_PILLS));
+
+/** Number of paths hidden behind the +N chip. */
+const overflowCount = computed(() =>
+  Math.max(0, orderedPaths.value.length - MAX_PILLS),
 );
 
 // Emit visible ordered paths whenever they change
@@ -461,36 +424,9 @@ function moveDown(index: number) {
   setPathOrder(ids);
 }
 
-async function createPath() {
-  if (!newPath.value.title) return;
-  createError.value = '';
-  try {
-    await createPathMutation({
-      data: {
-        title: newPath.value.title,
-        description: newPath.value.description || null,
-        color: newPath.value.color || DEFAULT_COLOR,
-      },
-    });
-    cancelCreate();
-    await queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
-  } catch (err: unknown) {
-    const detail = extractErrorMessage(err);
-    createError.value = detail
-      ? `Failed to create path: ${detail}`
-      : 'Failed to create path. Please try again.';
-  }
-}
-
-function openCreateForm() {
-  expanded.value = true;
-  showCreateForm.value = true;
-}
-
-function cancelCreate() {
-  showCreateForm.value = false;
-  newPath.value = { title: '', description: '', color: DEFAULT_COLOR };
-  createError.value = '';
+function openNewPath() {
+  showManageModal.value = false;
+  void router.push('/paths/new');
 }
 
 async function acceptInv(invitationId: string) {
@@ -560,7 +496,6 @@ function openShare(path: PathResponse) {
 function onPathUpdated(_updated: PathResponse) {
   editingPath.value = null;
   void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
-  // Refetch so the chip bar reflects the new title/colour immediately
   void refetch();
 }
 
@@ -598,45 +533,20 @@ function hexToRgba(hex: string, alpha: number): string {
   padding: 4px 8px;
 }
 
+/* ── Compact pill row ── */
 .paths-bar-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* Default (≥768 px): hide count label, show chips */
-.paths-count-label {
-  display: none;
-  flex: 1;
-  font-size: 0.875rem;
-  color: var(--ion-color-medium, #666);
 }
 
 .paths-chip-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   flex: 1;
-}
-
-/* Mobile (<768 px): show count, hide chips unless expanded */
-@media (max-width: 767px) {
-  .paths-count-label {
-    display: inline;
-  }
-
-  .paths-count-label--expanded {
-    display: none;
-  }
-
-  .paths-chip-list {
-    display: none;
-  }
-
-  .paths-chip-list--expanded {
-    display: flex;
-  }
+  min-width: 0;
+  overflow: hidden;
 }
 
 .path-chip {
@@ -654,6 +564,10 @@ function hexToRgba(hex: string, alpha: number): string {
     background-color 0.15s,
     opacity 0.15s;
   background: none;
+  /* Fixed width so exactly 4 fit in the bar */
+  max-width: calc(25% - 8px);
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .path-chip--hidden {
@@ -667,35 +581,75 @@ function hexToRgba(hex: string, alpha: number): string {
   flex-shrink: 0;
 }
 
+.path-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.path-chip--overflow {
+  border-color: var(--ion-color-medium, #999);
+  color: var(--ion-color-medium, #999);
+  flex-shrink: 0;
+  max-width: none;
+  min-width: auto;
+}
+
 .paths-bar-actions {
   display: flex;
   align-items: center;
   gap: 2px;
   margin-left: auto;
+  flex-shrink: 0;
 }
 
-.paths-expanded {
-  padding: 4px 0;
-}
-
-.paths-create-card {
-  margin: 8px 0;
-}
-
-.paths-form-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.paths-error {
-  color: var(--ion-color-danger, red);
-  font-size: 0.85rem;
+/* ── Invitations row ── */
+.invitations-row {
+  padding: 6px 0 4px;
+  border-top: 1px solid var(--ion-color-light-shade, #e0e0e0);
   margin-top: 4px;
 }
 
+.invitations-row-text {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-warning-shade, #b45309);
+  margin-bottom: 4px;
+}
+
+.invitation-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.invitation-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--ion-color-light, #f4f4f4);
+}
+
+.invitation-path {
+  font-size: 0.85rem;
+  color: var(--ion-text-color, #333);
+}
+
+.invitation-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* ── Manage modal internals ── */
 .paths-list {
   padding: 0;
+  margin-top: 16px;
 }
 
 .path-swatch {
@@ -714,63 +668,5 @@ function hexToRgba(hex: string, alpha: number): string {
 
 .paths-public-chip {
   font-size: 0.75rem;
-}
-
-.colour-picker-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-}
-
-.colour-picker-input {
-  width: 44px;
-  height: 36px;
-  border: 1px solid var(--ion-color-light-shade, #ccc);
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 2px;
-  background: none;
-}
-
-.colour-picker-hex {
-  font-size: 0.875rem;
-  color: var(--ion-text-color, #333);
-  font-family: monospace;
-}
-
-/* Invitations */
-.invitations-section {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--ion-color-light-shade, #e0e0e0);
-  margin-bottom: 8px;
-}
-
-.invitations-heading {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin: 0 0 6px;
-  color: var(--ion-text-color, #333);
-}
-
-.invitation-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--ion-color-light, #f4f4f4);
-}
-
-.invitation-path {
-  font-size: 0.85rem;
-  color: var(--ion-text-color, #333);
-}
-
-.invitation-actions {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
 }
 </style>

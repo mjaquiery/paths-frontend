@@ -1,0 +1,97 @@
+/*
+ * Design F — Zen Minimalist design system tokens.
+ * Serif typography, warm paper-white, two-pixel coloured left bars for path identity.
+ */
+
+/* ── Light mode ── */
+:root {
+  /* Typography */
+  --font-serif: 'Lora', 'Georgia', serif;
+  --font-sans: system-ui, sans-serif;
+
+  /* Palette */
+  --color-paper: #fdfcf7; /* warm paper-white background */
+  --color-ink: #1a1a18; /* near-black body text */
+  --color-ink-muted: #6b6b65; /* secondary text */
+  --color-rule: #e0ded8; /* horizontal rules, dividers */
+
+  /* Path identity bars are set inline via --path-color CSS variable */
+
+  /* Spacing */
+  --page-margin: 0.75rem; /* left/right gutter on all pages */
+  --section-gap: 1.5rem;
+
+  /* Elevation — none; no card chrome in Design F */
+
+  /* Ionic overrides for Design F */
+  --ion-background-color: var(--color-paper);
+  --ion-text-color: var(--color-ink);
+  --ion-toolbar-background: var(--color-paper);
+  --ion-item-background: var(--color-paper);
+  --ion-border-color: var(--color-rule);
+
+  /* ── AppFooter tokens ── */
+  --footer-height-idle: 2rem;
+  --footer-height-active: 3rem;
+  --footer-bg-idle: transparent;
+  --footer-bg-active: var(--color-paper);
+  --footer-bg-offline: #3d2b00;
+  --footer-bg-error: #3d1f00;
+  --footer-text-idle: var(--color-ink-muted);
+  --footer-text-active: var(--color-ink);
+  --footer-text-offline: #f5c842;
+  --footer-text-error: #f5a623;
+  --footer-border: 1px solid var(--color-rule);
+}
+
+/* ── Dark mode (media query) ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-paper: #1e1c16;
+    --color-ink: #f0ede4;
+    --color-ink-muted: #9b9890;
+    --color-rule: #38362e;
+
+    --footer-bg-offline: #2a1e00;
+    --footer-bg-error: #2a1400;
+  }
+}
+
+/* ── Dark mode (manual toggle) ── */
+[data-theme='dark'] {
+  --color-paper: #1e1c16;
+  --color-ink: #f0ede4;
+  --color-ink-muted: #9b9890;
+  --color-rule: #38362e;
+
+  --footer-bg-offline: #2a1e00;
+  --footer-bg-error: #2a1400;
+}
+
+/* ── Typography rules ── */
+
+/* Body / entry text uses serif */
+.df-body {
+  font-family: var(--font-serif);
+  color: var(--color-ink);
+  line-height: 1.7;
+}
+
+/* UI chrome uses sans */
+.df-ui {
+  font-family: var(--font-sans);
+}
+
+/* ── Path identity bar ── */
+
+/* Usage: add class df-path-bar plus inline style="--path-color: #hexval" */
+.df-path-bar {
+  border-left: 2px solid var(--path-color, var(--ion-color-primary));
+  padding-left: calc(var(--page-margin) - 2px);
+}
+
+/* ── Page gutter utility ── */
+.df-page-gutter {
+  padding-left: var(--page-margin);
+  padding-right: var(--page-margin);
+}
