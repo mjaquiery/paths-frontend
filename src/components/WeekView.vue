@@ -49,13 +49,9 @@
             role="button"
             tabindex="0"
             :aria-label="`View entry from ${pe.pathTitle}`"
-            @click="openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)"
-            @keydown.enter="
-              openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)
-            "
-            @keydown.space.prevent="
-              openDetail(pe, dayInfo.pathEntries, dayInfo.dateStr)
-            "
+            @click="openDetail(pe)"
+            @keydown.enter="openDetail(pe)"
+            @keydown.space.prevent="openDetail(pe)"
           >
             <span
               class="day-entry-path-dot"
@@ -92,60 +88,16 @@
       </ion-button>
     </div>
   </div>
-
-  <!-- Entry creation modal -->
-  <EntryCreateModal
-    :is-open="showCreateModal"
-    :paths="visiblePaths"
-    :current-user-id="currentUserId"
-    :initial-day="createModalDay"
-    @dismiss="showCreateModal = false"
-    @created="onEntryCreated"
-  />
-
-  <!-- Entry detail modal -->
-  <EntryDetailModal
-    :is-open="showDetailModal"
-    :entries="detailDayEntries"
-    :start-index="detailStartIndex"
-    @dismiss="closeDetail"
-    @edit="openEdit"
-    @delete="confirmDelete"
-  />
-
-  <!-- Entry edit modal -->
-  <EntryEditModal
-    v-if="editEntry"
-    :is-open="showEditModal"
-    :entry="editEntry"
-    @dismiss="closeEdit"
-    @saved="onEntrySaved"
-  />
-
-  <!-- Entry delete confirmation -->
-  <ion-alert
-    :is-open="showDeleteAlert"
-    header="Delete Entry"
-    :message="`Delete the entry for ${deleteEntry?.day ?? ''}? This action cannot be undone.`"
-    :buttons="deleteAlertButtons"
-    @didDismiss="showDeleteAlert = false"
-  />
 </template>
 
 <script setup lang="ts">
-import { IonButton, IonAlert } from '@ionic/vue';
+import { IonButton } from '@ionic/vue';
 import { computed, ref } from 'vue';
+
+import { useRouter } from 'vue-router';
 
 import type { PathResponse, ImageResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
-import { useDeleteEntry } from '../generated/apiClient';
-import { extractErrorMessage } from '../lib/errors';
-import { db } from '../lib/db';
-import EntryCreateModal from './EntryCreateModal.vue';
-import EntryDetailModal from './EntryDetailModal.vue';
-import EntryEditModal from './EntryEditModal.vue';
-import type { EntryDetailData } from './EntryDetailModal.vue';
-import { useQueryClient } from '@tanstack/vue-query';
 
 const props = defineProps<{
   visiblePaths: PathResponse[];
@@ -154,16 +106,9 @@ const props = defineProps<{
   currentUserId: string;
 }>();
 
-const emit = defineEmits<{
-  entryCreated: [];
-}>();
+const router = useRouter();
 
 const weekOffset = ref(0); // 0 = current week, -1 = last week, etc.
-const showCreateModal = ref(false);
-const createModalDay = ref('');
-const showDetailModal = ref(false);
-const detailDayEntries = ref<EntryDetailData[]>([]);
-const detailStartIndex = ref(0);
 
 /** Build ISO date string for a day offset from today */
 function isoDate(offsetDays: number): string {
@@ -226,7 +171,7 @@ const weekDays = computed<DayInfo[]>(() => {
           pathTitle: path.title,
           color: path.color,
           preview: entry.content,
-          hasImages: (entry.image_filenames?.length ?? 0) > 0,
+          hasImages: (entry.images?.length ?? 0) > 0,
           images: entry.images,
           edit_id: entry.edit_id,
           canEdit,
@@ -254,111 +199,11 @@ const hasPreviousEntries = computed(() => {
 });
 
 function openCreate(dateStr: string) {
-  createModalDay.value = dateStr;
-  showCreateModal.value = true;
+  router.push({ path: '/entry/new', query: { day: dateStr } });
 }
 
-function openDetail(
-  pe: DayPathEntry,
-  dayEntries: DayPathEntry[],
-  dateStr: string,
-) {
-  detailDayEntries.value = dayEntries.map((e) => ({
-    pathId: e.pathId,
-    entryId: e.entryId,
-    pathTitle: e.pathTitle,
-    color: e.color,
-    day: dateStr,
-    content: e.preview,
-    hasImages: e.hasImages,
-    images: e.images,
-    edit_id: e.edit_id,
-    canEdit: e.canEdit,
-  }));
-  detailStartIndex.value = dayEntries.indexOf(pe);
-  showDetailModal.value = true;
-}
-
-function closeDetail() {
-  showDetailModal.value = false;
-  detailDayEntries.value = [];
-}
-
-const showEditModal = ref(false);
-const editEntry = ref<EntryDetailData | null>(null);
-
-function openEdit(entry: EntryDetailData) {
-  editEntry.value = entry;
-  showDetailModal.value = false;
-  showEditModal.value = true;
-}
-
-function closeEdit() {
-  showEditModal.value = false;
-  editEntry.value = null;
-}
-
-function onEntrySaved() {
-  emit('entryCreated');
-}
-
-const queryClient = useQueryClient();
-const { mutateAsync: doDeleteEntry } = useDeleteEntry();
-const showDeleteAlert = ref(false);
-const deleteEntry = ref<EntryDetailData | null>(null);
-const deleteError = ref('');
-
-const deleteAlertButtons = computed(() => [
-  {
-    text: 'Cancel',
-    role: 'cancel',
-  },
-  {
-    text: 'Delete',
-    role: 'destructive',
-    handler: () => {
-      void performDelete();
-    },
-  },
-]);
-
-function confirmDelete(entry: EntryDetailData) {
-  deleteEntry.value = entry;
-  showDetailModal.value = false;
-  showDeleteAlert.value = true;
-}
-
-async function performDelete() {
-  if (!deleteEntry.value) return;
-  deleteError.value = '';
-  try {
-    await doDeleteEntry({
-      pathCode: deleteEntry.value.pathId,
-      entrySlug: deleteEntry.value.entryId,
-    });
-    void queryClient.invalidateQueries({
-      queryKey: ['v1', 'paths', deleteEntry.value.pathId, 'entries'],
-    });
-    try {
-      const cacheKey = `${deleteEntry.value.pathId}:${deleteEntry.value.entryId}`;
-      await db.entryContent.delete(cacheKey);
-      await db.entryImages
-        .where('entry_id')
-        .equals(deleteEntry.value.entryId)
-        .delete();
-    } catch {
-      // IndexedDB may be unavailable.
-    }
-    emit('entryCreated');
-  } catch (err: unknown) {
-    deleteError.value = extractErrorMessage(err) ?? 'Failed to delete entry.';
-  } finally {
-    deleteEntry.value = null;
-  }
-}
-
-function onEntryCreated() {
-  emit('entryCreated');
+function openDetail(pe: DayPathEntry) {
+  router.push(`/entry/${pe.pathId}/${pe.entryId}`);
 }
 </script>
 

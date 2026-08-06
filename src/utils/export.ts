@@ -1,5 +1,9 @@
-import type { ExportJobResponse } from '../generated/types';
-import { db } from '../lib/db';
+import type { QueryClient } from '@tanstack/vue-query';
+import type {
+  EntryResponse,
+  ExportJobResponse,
+  ImageResponse,
+} from '../generated/types';
 
 export function isExportReady(job: ExportJobResponse | null): boolean {
   return job?.state === 'ready';
@@ -47,26 +51,64 @@ export interface LocalExportData {
 }
 
 /**
- * Export locally cached entry data for the given path IDs as a JSON file.
- * Used as an offline fallback when the remote export API is unreachable.
+ * Export locally cached entry data for the given path IDs as a JSON file. Used as an
+ * offline fallback when the remote export API is unreachable.
+ *
+ * Reads directly from TanStack Query's cache (the only server-data cache layer) rather than
+ * a dedicated Dexie table — whatever's cached is exactly what useMultiPathEntries fetched,
+ * keyed the same way it queries it.
  */
-export async function exportLocalData(pathIds: string[]): Promise<void> {
-  const entries = await db.entryContent
-    .where('path_id')
-    .anyOf(pathIds)
-    .toArray();
+export function exportLocalData(
+  queryClient: QueryClient,
+  pathIds: string[],
+): void {
+  const cache = queryClient.getQueryCache();
+  const entries: LocalExportEntry[] = [];
+
+  for (const pathId of pathIds) {
+    const listQuery = cache.find({
+      queryKey: ['v1', 'paths', pathId, 'entries'],
+    });
+    const list =
+      (listQuery?.state.data as { data?: EntryResponse[] } | undefined)?.data ??
+      [];
+
+    for (const entry of list) {
+      const contentQuery = cache
+        .findAll({
+          predicate: (q) => {
+            const key = q.queryKey;
+            return (
+              Array.isArray(key) &&
+              key[0] === 'v1' &&
+              key[1] === 'paths' &&
+              key[2] === pathId &&
+              key[3] === 'entries' &&
+              key[4] === entry.id &&
+              key[5] === 'content'
+            );
+          },
+        })
+        .sort((a, b) => b.state.dataUpdatedAt - a.state.dataUpdatedAt)[0];
+      const data = contentQuery?.state.data as
+        | { content: string; images: ImageResponse[] }
+        | undefined;
+
+      entries.push({
+        entry_id: entry.id,
+        path_id: pathId,
+        day: entry.day,
+        edit_id: entry.edit_id,
+        content: data?.content ?? '',
+        image_filenames: data?.images?.map((img) => img.filename) ?? [],
+      });
+    }
+  }
 
   const exportData: LocalExportData = {
     exported_at: new Date().toISOString(),
     source: 'local_cache',
-    entries: entries.map((e) => ({
-      entry_id: e.id,
-      path_id: e.path_id,
-      day: e.day,
-      edit_id: e.edit_id,
-      content: e.content,
-      image_filenames: e.image_filenames ?? [],
-    })),
+    entries,
   };
 
   const blob = new Blob([JSON.stringify(exportData, null, 2)], {

@@ -27,21 +27,20 @@ import type {
   AuthLoginParams,
   BlocklistAddRequest,
   BlocklistEntryResponse,
+  BodyCreateEntry,
+  BodyUpdateEntry,
   DeletionRequestResponse,
   DownloadURLResponse,
   EntryContentResponse,
-  EntryCreateRequest,
   EntryResponse,
-  EntryUpdateRequest,
   ExportCreateRequest,
   ExportJobResponse,
   HTTPValidationError,
   HealthResponse,
-  ImageCompleteRequest,
+  ImageCaptionUpdateRequest,
+  ImageCaptionUpdateResponse,
   ImageDownloadResponse,
   ImageResponse,
-  ImageUploadRequest,
-  ImageUploadResponse,
   InvitationResponse,
   InviteResponse,
   OAuthCallbackRequest,
@@ -827,14 +826,26 @@ export const getCreateEntryUrl = (pathCode: string) => {
 
 export const createEntry = async (
   pathCode: string,
-  entryCreateRequest: EntryCreateRequest,
+  bodyCreateEntry: BodyCreateEntry,
   options?: RequestInit,
 ): Promise<createEntryResponse> => {
+  const formData = new FormData();
+  formData.append(`entry_id`, bodyCreateEntry.entry_id);
+  formData.append(`day`, bodyCreateEntry.day);
+  formData.append(`content`, bodyCreateEntry.content);
+  if (bodyCreateEntry.captions !== undefined) {
+    bodyCreateEntry.captions.forEach((value) =>
+      formData.append(`captions`, value),
+    );
+  }
+  if (bodyCreateEntry.images !== undefined) {
+    bodyCreateEntry.images.forEach((value) => formData.append(`images`, value));
+  }
+
   return customFetch<createEntryResponse>(getCreateEntryUrl(pathCode), {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(entryCreateRequest),
+    body: formData,
   });
 };
 
@@ -845,14 +856,14 @@ export const getCreateEntryMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createEntry>>,
     TError,
-    { pathCode: string; data: EntryCreateRequest },
+    { pathCode: string; data: BodyCreateEntry },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createEntry>>,
   TError,
-  { pathCode: string; data: EntryCreateRequest },
+  { pathCode: string; data: BodyCreateEntry },
   TContext
 > => {
   const mutationKey = ['createEntry'];
@@ -866,7 +877,7 @@ export const getCreateEntryMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createEntry>>,
-    { pathCode: string; data: EntryCreateRequest }
+    { pathCode: string; data: BodyCreateEntry }
   > = (props) => {
     const { pathCode, data } = props ?? {};
 
@@ -879,7 +890,7 @@ export const getCreateEntryMutationOptions = <
 export type CreateEntryMutationResult = NonNullable<
   Awaited<ReturnType<typeof createEntry>>
 >;
-export type CreateEntryMutationBody = EntryCreateRequest;
+export type CreateEntryMutationBody = BodyCreateEntry;
 export type CreateEntryMutationError = HTTPValidationError;
 
 /**
@@ -893,7 +904,7 @@ export const useCreateEntry = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof createEntry>>,
       TError,
-      { pathCode: string; data: EntryCreateRequest },
+      { pathCode: string; data: BodyCreateEntry },
       TContext
     >;
     request?: SecondParameter<typeof customFetch>;
@@ -902,7 +913,7 @@ export const useCreateEntry = <
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof createEntry>>,
   TError,
-  { pathCode: string; data: EntryCreateRequest },
+  { pathCode: string; data: BodyCreateEntry },
   TContext
 > => {
   return useMutation(getCreateEntryMutationOptions(options), queryClient);
@@ -1062,16 +1073,35 @@ export const getUpdateEntryUrl = (pathCode: string, entrySlug: string) => {
 export const updateEntry = async (
   pathCode: string,
   entrySlug: string,
-  entryUpdateRequest: EntryUpdateRequest,
+  bodyUpdateEntry: BodyUpdateEntry,
   options?: RequestInit,
 ): Promise<updateEntryResponse> => {
+  const formData = new FormData();
+  formData.append(
+    `expected_edit_id`,
+    bodyUpdateEntry.expected_edit_id.toString(),
+  );
+  formData.append(`content`, bodyUpdateEntry.content);
+  if (bodyUpdateEntry.captions !== undefined) {
+    bodyUpdateEntry.captions.forEach((value) =>
+      formData.append(`captions`, value),
+    );
+  }
+  if (bodyUpdateEntry.remove_image_ids !== undefined) {
+    bodyUpdateEntry.remove_image_ids.forEach((value) =>
+      formData.append(`remove_image_ids`, value),
+    );
+  }
+  if (bodyUpdateEntry.images !== undefined) {
+    bodyUpdateEntry.images.forEach((value) => formData.append(`images`, value));
+  }
+
   return customFetch<updateEntryResponse>(
     getUpdateEntryUrl(pathCode, entrySlug),
     {
       ...options,
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(entryUpdateRequest),
+      body: formData,
     },
   );
 };
@@ -1083,14 +1113,14 @@ export const getUpdateEntryMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updateEntry>>,
     TError,
-    { pathCode: string; entrySlug: string; data: EntryUpdateRequest },
+    { pathCode: string; entrySlug: string; data: BodyUpdateEntry },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateEntry>>,
   TError,
-  { pathCode: string; entrySlug: string; data: EntryUpdateRequest },
+  { pathCode: string; entrySlug: string; data: BodyUpdateEntry },
   TContext
 > => {
   const mutationKey = ['updateEntry'];
@@ -1104,7 +1134,7 @@ export const getUpdateEntryMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateEntry>>,
-    { pathCode: string; entrySlug: string; data: EntryUpdateRequest }
+    { pathCode: string; entrySlug: string; data: BodyUpdateEntry }
   > = (props) => {
     const { pathCode, entrySlug, data } = props ?? {};
 
@@ -1117,7 +1147,7 @@ export const getUpdateEntryMutationOptions = <
 export type UpdateEntryMutationResult = NonNullable<
   Awaited<ReturnType<typeof updateEntry>>
 >;
-export type UpdateEntryMutationBody = EntryUpdateRequest;
+export type UpdateEntryMutationBody = BodyUpdateEntry;
 export type UpdateEntryMutationError =
   | OptimisticLockHTTPErrorResponse
   | HTTPValidationError;
@@ -1133,7 +1163,7 @@ export const useUpdateEntry = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof updateEntry>>,
       TError,
-      { pathCode: string; entrySlug: string; data: EntryUpdateRequest },
+      { pathCode: string; entrySlug: string; data: BodyUpdateEntry },
       TContext
     >;
     request?: SecondParameter<typeof customFetch>;
@@ -1142,7 +1172,7 @@ export const useUpdateEntry = <
 ): UseMutationReturnType<
   Awaited<ReturnType<typeof updateEntry>>,
   TError,
-  { pathCode: string; entrySlug: string; data: EntryUpdateRequest },
+  { pathCode: string; entrySlug: string; data: BodyUpdateEntry },
   TContext
 > => {
   return useMutation(getUpdateEntryMutationOptions(options), queryClient);
@@ -1258,129 +1288,6 @@ export const useDeleteEntry = <
   TContext
 > => {
   return useMutation(getDeleteEntryMutationOptions(options), queryClient);
-};
-
-/**
- * @summary Create Image Upload Url
- */
-export type createImageUploadUrlResponse200 = {
-  data: ImageUploadResponse;
-  status: 200;
-};
-
-export type createImageUploadUrlResponse422 = {
-  data: HTTPValidationError;
-  status: 422;
-};
-
-export type createImageUploadUrlResponseSuccess =
-  createImageUploadUrlResponse200 & {
-    headers: Headers;
-  };
-export type createImageUploadUrlResponseError =
-  createImageUploadUrlResponse422 & {
-    headers: Headers;
-  };
-
-export type createImageUploadUrlResponse =
-  | createImageUploadUrlResponseSuccess
-  | createImageUploadUrlResponseError;
-
-export const getCreateImageUploadUrlUrl = (
-  pathCode: string,
-  entrySlug: string,
-) => {
-  return `/v1/paths/${pathCode}/entries/${entrySlug}/images/upload-url`;
-};
-
-export const createImageUploadUrl = async (
-  pathCode: string,
-  entrySlug: string,
-  imageUploadRequest: ImageUploadRequest,
-  options?: RequestInit,
-): Promise<createImageUploadUrlResponse> => {
-  return customFetch<createImageUploadUrlResponse>(
-    getCreateImageUploadUrlUrl(pathCode, entrySlug),
-    {
-      ...options,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(imageUploadRequest),
-    },
-  );
-};
-
-export const getCreateImageUploadUrlMutationOptions = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createImageUploadUrl>>,
-    TError,
-    { pathCode: string; entrySlug: string; data: ImageUploadRequest },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createImageUploadUrl>>,
-  TError,
-  { pathCode: string; entrySlug: string; data: ImageUploadRequest },
-  TContext
-> => {
-  const mutationKey = ['createImageUploadUrl'];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      'mutationKey' in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createImageUploadUrl>>,
-    { pathCode: string; entrySlug: string; data: ImageUploadRequest }
-  > = (props) => {
-    const { pathCode, entrySlug, data } = props ?? {};
-
-    return createImageUploadUrl(pathCode, entrySlug, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type CreateImageUploadUrlMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createImageUploadUrl>>
->;
-export type CreateImageUploadUrlMutationBody = ImageUploadRequest;
-export type CreateImageUploadUrlMutationError = HTTPValidationError;
-
-/**
- * @summary Create Image Upload Url
- */
-export const useCreateImageUploadUrl = <
-  TError = HTTPValidationError,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof createImageUploadUrl>>,
-      TError,
-      { pathCode: string; entrySlug: string; data: ImageUploadRequest },
-      TContext
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-  queryClient?: QueryClient,
-): UseMutationReturnType<
-  Awaited<ReturnType<typeof createImageUploadUrl>>,
-  TError,
-  { pathCode: string; entrySlug: string; data: ImageUploadRequest },
-  TContext
-> => {
-  return useMutation(
-    getCreateImageUploadUrlMutationOptions(options),
-    queryClient,
-  );
 };
 
 /**
@@ -2626,69 +2533,68 @@ export function useGetLatestDeletionRequest<
 }
 
 /**
- * @summary Complete Image Upload
+ * @summary Update Image Caption
  */
-export type completeImageUploadResponse200 = {
-  data: ImageResponse;
+export type updateImageCaptionResponse200 = {
+  data: ImageCaptionUpdateResponse;
   status: 200;
 };
 
-export type completeImageUploadResponse422 = {
+export type updateImageCaptionResponse422 = {
   data: HTTPValidationError;
   status: 422;
 };
 
-export type completeImageUploadResponseSuccess =
-  completeImageUploadResponse200 & {
+export type updateImageCaptionResponseSuccess =
+  updateImageCaptionResponse200 & {
     headers: Headers;
   };
-export type completeImageUploadResponseError =
-  completeImageUploadResponse422 & {
-    headers: Headers;
-  };
-
-export type completeImageUploadResponse =
-  | completeImageUploadResponseSuccess
-  | completeImageUploadResponseError;
-
-export const getCompleteImageUploadUrl = (imageId: string) => {
-  return `/v1/images/${imageId}/complete`;
+export type updateImageCaptionResponseError = updateImageCaptionResponse422 & {
+  headers: Headers;
 };
 
-export const completeImageUpload = async (
+export type updateImageCaptionResponse =
+  | updateImageCaptionResponseSuccess
+  | updateImageCaptionResponseError;
+
+export const getUpdateImageCaptionUrl = (imageId: string) => {
+  return `/v1/images/${imageId}`;
+};
+
+export const updateImageCaption = async (
   imageId: string,
-  imageCompleteRequest: ImageCompleteRequest,
+  imageCaptionUpdateRequest: ImageCaptionUpdateRequest,
   options?: RequestInit,
-): Promise<completeImageUploadResponse> => {
-  return customFetch<completeImageUploadResponse>(
-    getCompleteImageUploadUrl(imageId),
+): Promise<updateImageCaptionResponse> => {
+  return customFetch<updateImageCaptionResponse>(
+    getUpdateImageCaptionUrl(imageId),
     {
       ...options,
-      method: 'POST',
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...options?.headers },
-      body: JSON.stringify(imageCompleteRequest),
+      body: JSON.stringify(imageCaptionUpdateRequest),
     },
   );
 };
 
-export const getCompleteImageUploadMutationOptions = <
+export const getUpdateImageCaptionMutationOptions = <
   TError = HTTPValidationError,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof completeImageUpload>>,
+    Awaited<ReturnType<typeof updateImageCaption>>,
     TError,
-    { imageId: string; data: ImageCompleteRequest },
+    { imageId: string; data: ImageCaptionUpdateRequest },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof completeImageUpload>>,
+  Awaited<ReturnType<typeof updateImageCaption>>,
   TError,
-  { imageId: string; data: ImageCompleteRequest },
+  { imageId: string; data: ImageCaptionUpdateRequest },
   TContext
 > => {
-  const mutationKey = ['completeImageUpload'];
+  const mutationKey = ['updateImageCaption'];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       'mutationKey' in options.mutation &&
@@ -2698,48 +2604,48 @@ export const getCompleteImageUploadMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof completeImageUpload>>,
-    { imageId: string; data: ImageCompleteRequest }
+    Awaited<ReturnType<typeof updateImageCaption>>,
+    { imageId: string; data: ImageCaptionUpdateRequest }
   > = (props) => {
     const { imageId, data } = props ?? {};
 
-    return completeImageUpload(imageId, data, requestOptions);
+    return updateImageCaption(imageId, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type CompleteImageUploadMutationResult = NonNullable<
-  Awaited<ReturnType<typeof completeImageUpload>>
+export type UpdateImageCaptionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateImageCaption>>
 >;
-export type CompleteImageUploadMutationBody = ImageCompleteRequest;
-export type CompleteImageUploadMutationError = HTTPValidationError;
+export type UpdateImageCaptionMutationBody = ImageCaptionUpdateRequest;
+export type UpdateImageCaptionMutationError = HTTPValidationError;
 
 /**
- * @summary Complete Image Upload
+ * @summary Update Image Caption
  */
-export const useCompleteImageUpload = <
+export const useUpdateImageCaption = <
   TError = HTTPValidationError,
   TContext = unknown,
 >(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof completeImageUpload>>,
+      Awaited<ReturnType<typeof updateImageCaption>>,
       TError,
-      { imageId: string; data: ImageCompleteRequest },
+      { imageId: string; data: ImageCaptionUpdateRequest },
       TContext
     >;
     request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationReturnType<
-  Awaited<ReturnType<typeof completeImageUpload>>,
+  Awaited<ReturnType<typeof updateImageCaption>>,
   TError,
-  { imageId: string; data: ImageCompleteRequest },
+  { imageId: string; data: ImageCaptionUpdateRequest },
   TContext
 > => {
   return useMutation(
-    getCompleteImageUploadMutationOptions(options),
+    getUpdateImageCaptionMutationOptions(options),
     queryClient,
   );
 };

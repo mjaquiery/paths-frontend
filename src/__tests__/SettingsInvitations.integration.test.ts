@@ -1,5 +1,6 @@
 /**
- * Integration tests for InvitationsView.
+ * Integration tests for the invitations section of the Settings page (formerly a
+ * standalone InvitationsView, consolidated per the Design F rewrite).
  *
  * Tests that path_title and inviter_email are displayed in the invitation list,
  * replacing the less informative path_code.
@@ -12,8 +13,14 @@ import { describe, it, expect, vi } from 'vitest';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount, flushPromises } from '@vue/test-utils';
 
-import InvitationsView from '../views/InvitationsView.vue';
+import SettingsPage from '../pages/settings.vue';
 import type { InvitationResponse } from '../generated/types';
+
+// Settings also renders ExportCard; stub it so this file stays focused on invitations
+// and doesn't need its own paths/export query mocking.
+vi.mock('../components/ExportCard.vue', () => ({
+  default: { template: '<div data-testid="export-card-stub" />' },
+}));
 
 // ---------------------------------------------------------------------------
 // Mock Dexie
@@ -118,7 +125,13 @@ async function mountView(invitations: InvitationResponse[]) {
     headers: new Headers(),
   });
 
-  const wrapper = mount(InvitationsView, {
+  queryClient.setQueryData(['v1', 'paths'], {
+    data: [],
+    status: 200,
+    headers: new Headers(),
+  });
+
+  const wrapper = mount(SettingsPage, {
     global: {
       plugins: [[VueQueryPlugin, { queryClient }]],
       stubs: ionicStubs,

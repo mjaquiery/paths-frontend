@@ -14,11 +14,16 @@ export const customFetch = async <T>(
     ? { Authorization: `Bearer ${storedToken}` }
     : {};
 
+  // FormData bodies (multipart entry create/update) must NOT get an explicit Content-Type:
+  // fetch sets one itself, including the required multipart boundary. Setting it manually
+  // here would produce a malformed multipart request the server can't parse.
+  const isFormData = options?.body instanceof FormData;
+
   const response = await fetch(`${baseUrl}${url}`, {
     ...options,
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...authHeader,
       ...(options?.headers ?? {}),
     },

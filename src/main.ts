@@ -2,7 +2,6 @@ import { IonicVue } from '@ionic/vue';
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query';
 import { persistQueryClient } from '@tanstack/query-persist-client-core';
 import { createApp } from 'vue';
-import { registerSW } from 'virtual:pwa-register';
 
 import '@ionic/vue/css/core.css';
 import '@ionic/vue/css/normalize.css';
@@ -10,14 +9,17 @@ import '@ionic/vue/css/structure.css';
 import '@ionic/vue/css/typography.css';
 import '@ionic/vue/css/palettes/dark.class.css';
 import './assets/theme.css';
+import './assets/design-f.css';
 
 import App from './App.vue';
 import router from './router';
 import { dexiePersister } from './lib/queryPersister';
 import { useDarkMode } from './composables/useDarkMode';
+import { registerServiceWorkerUpdates } from './composables/useServiceWorkerUpdate';
 
-// Boot the service worker immediately; it will auto-update in the background.
-registerSW({ immediate: true });
+// Boot the service worker immediately. registerType: 'prompt' means updates download in the
+// background but wait for the user to confirm (surfaced via AppFooter) before activating.
+registerServiceWorkerUpdates();
 
 // Initialise dark mode before mounting to prevent flash of wrong theme
 useDarkMode();

@@ -5,9 +5,12 @@
  * OpenAPI spec version: 0.3.4
  */
 
-export interface EntryCreateRequest {
+export interface BodyCreateEntry {
+  /** Client-generated id; retries are idempotent. */
+  entry_id: string;
   day: string;
   /** @minLength 1 */
   content: string;
-  image_filenames?: string[];
+  captions?: string[];
+  images?: string[];
 }

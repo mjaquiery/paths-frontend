@@ -9,8 +9,8 @@ export interface ImageResponse {
   id: string;
   entry_id: string;
   filename: string;
+  caption: string | null;
   status: string;
-  strip_metadata: boolean;
   content_type: string | null;
   byte_size: number | null;
 }

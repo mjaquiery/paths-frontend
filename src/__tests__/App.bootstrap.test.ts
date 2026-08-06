@@ -9,8 +9,18 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createApp, defineComponent, inject } from 'vue';
 import { IonicVue } from '@ionic/vue';
+import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
-import router from '../router';
+
+// This test only cares about @ionic/vue-router's navManager wiring — src/router.ts's real
+// page list comes from unplugin-vue-router's virtual module, which Vite's dev/build
+// pipeline resolves but which isn't available the same way inside vitest. A trivial static
+// route list exercises the exact same createRouter/createWebHistory call the real router.ts
+// makes, without depending on that virtual module.
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [{ path: '/', component: { template: '<div />' } }],
+});
 
 describe('App bootstrap', () => {
   let app: ReturnType<typeof createApp> | null = null;

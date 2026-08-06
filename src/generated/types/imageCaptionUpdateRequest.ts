@@ -5,8 +5,8 @@
  * OpenAPI spec version: 0.3.4
  */
 
-export interface ImageUploadResponse {
-  image_id: string;
-  upload_url: string;
-  expires_in_seconds: number;
+export interface ImageCaptionUpdateRequest {
+  caption?: string | null;
+  /** @minimum 1 */
+  expected_edit_id: number;
 }

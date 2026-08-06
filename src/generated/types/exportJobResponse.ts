@@ -13,6 +13,6 @@ export interface ExportJobResponse {
   created_at: string;
   updated_at: string;
   expires_at: string | null;
-  failure_code: string | null;
+  failure_code?: string | null;
   attempt_count: number;
 }

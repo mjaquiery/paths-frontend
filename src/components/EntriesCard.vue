@@ -97,6 +97,7 @@ async function createEntry() {
     await createEntryMutation({
       pathCode: props.pathId,
       data: {
+        entry_id: crypto.randomUUID(),
         day: newEntry.value.day,
         content: newEntry.value.content,
       },

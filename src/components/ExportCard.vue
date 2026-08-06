@@ -72,6 +72,7 @@ import {
 } from '@ionic/vue';
 import { ref } from 'vue';
 
+import { useQueryClient } from '@tanstack/vue-query';
 import type {
   ExportJobResponse,
   PathResponse,
@@ -91,6 +92,8 @@ import {
 } from '../utils/export';
 
 defineProps<{ paths: PathResponse[] }>();
+
+const queryClient = useQueryClient();
 
 const selectedForExport = ref(new Set<string>());
 const exportJob = ref<ExportJobResponse | null>(null);
@@ -156,10 +159,10 @@ async function pollExport() {
   }
 }
 
-async function handleLocalExport() {
+function handleLocalExport() {
   downloadError.value = '';
   try {
-    await exportLocalData([...selectedForExport.value]);
+    exportLocalData(queryClient, [...selectedForExport.value]);
   } catch (e) {
     downloadError.value = e instanceof Error ? e.message : String(e);
   }
