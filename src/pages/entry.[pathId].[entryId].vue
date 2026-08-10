@@ -1,51 +1,82 @@
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button default-href="/" />
-        </ion-buttons>
-        <ion-title>{{ entryDay || 'Entry' }}</ion-title>
-        <ion-buttons slot="end">
-          <ion-button
-            v-if="canEdit"
-            color="primary"
-            aria-label="Edit entry"
-            @click="goEdit"
-          >
-            Edit
-          </ion-button>
-          <ion-button
-            v-if="canEdit"
-            color="danger"
-            aria-label="Delete entry"
-            @click="confirmDelete"
-          >
-            Delete
-          </ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content class="ion-padding">
-      <p class="entry-meta">
-        <span
-          class="entry-path-dot"
-          :style="{ backgroundColor: path?.color }"
-          aria-hidden="true"
+    <ion-content>
+      <div class="entry-page df-ui">
+        <div class="entry-header">
+          <button class="text-btn" @click="router.back()">← Back</button>
+          <div class="entry-header-actions">
+            <button v-if="canEdit" class="text-btn" @click="goEdit">
+              ✎ Edit
+            </button>
+            <button
+              v-if="canEdit"
+              class="text-btn"
+              aria-label="More actions"
+              @click="showMenu = !showMenu"
+            >
+              ⋯
+            </button>
+            <div v-if="showMenu" class="entry-menu">
+              <button
+                class="entry-menu-item entry-menu-item--danger"
+                @click="confirmDelete"
+              >
+                Delete entry
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <p class="entry-path-label">{{ path?.title }}</p>
+        <h1 class="entry-date">{{ formattedDate }}</h1>
+
+        <p v-if="deleteError" class="entry-error">{{ deleteError }}</p>
+        <p v-if="content === undefined" class="entry-body-placeholder">
+          Fetching…
+        </p>
+        <p v-else-if="!content" class="entry-body-placeholder">(no text)</p>
+        <MarkdownContent
+          v-else
+          class="entry-body"
+          :content="content"
+          :images="images"
         />
-        {{ path?.title }} &mdash; {{ entryDay }}
-      </p>
-      <p v-if="deleteError" class="entry-error">{{ deleteError }}</p>
-      <p v-if="content === undefined" class="entry-content">Fetching…</p>
-      <p v-else-if="!content" class="entry-content">(no text)</p>
-      <MarkdownContent v-else :content="content" :images="images" />
-      <div v-if="unreferencedImages.length > 0" class="entry-images">
-        <EntryImage
-          v-for="img in unreferencedImages"
-          :key="img.id"
-          :image-id="img.id"
-          :alt="img.filename"
-        />
+
+        <template v-if="unreferencedImages.length > 0">
+          <p class="entry-section-label">
+            {{ unreferencedImages.length }}
+            {{ unreferencedImages.length === 1 ? 'PHOTO' : 'PHOTOS' }}
+          </p>
+          <div class="entry-images">
+            <EntryImage
+              v-for="img in unreferencedImages"
+              :key="img.id"
+              :image-id="img.id"
+              :alt="img.filename"
+            />
+          </div>
+        </template>
+
+        <template v-if="onThisDay.length > 0">
+          <hr class="entry-rule" />
+          <p class="entry-section-label">On this day</p>
+          <div
+            v-for="item in onThisDay"
+            :key="item.pathId + '-' + item.entryId"
+            class="on-this-day-row"
+            role="button"
+            tabindex="0"
+            @click="router.push(`/entry/${item.pathId}/${item.entryId}`)"
+            @keydown.enter="
+              router.push(`/entry/${item.pathId}/${item.entryId}`)
+            "
+          >
+            <span class="on-this-day-year">{{ item.year }}</span>
+            <span class="on-this-day-preview">{{
+              item.content || '(no text)'
+            }}</span>
+          </div>
+        </template>
       </div>
     </ion-content>
 
@@ -60,17 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonButtons,
-  IonBackButton,
-  IonButton,
-  IonContent,
-  IonAlert,
-} from '@ionic/vue';
+import { IonPage, IonContent, IonAlert } from '@ionic/vue';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -81,6 +102,9 @@ import {
   useDeleteEntry,
 } from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
+import { usePathVisibility } from '../composables/usePathVisibility';
+import { useMultiPathEntries } from '../composables/useMultiPathEntries';
+import { useOnThisDay } from '../composables/useOnThisDay';
 import { extractErrorMessage } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import EntryImage from '../components/EntryImage.vue';
@@ -111,6 +135,7 @@ onMounted(() => {
 });
 
 const { data: allPaths } = usePaths();
+const { visiblePaths } = usePathVisibility(allPaths);
 const path = computed(() =>
   allPaths.value?.find((p) => p.path_id === pathId.value),
 );
@@ -131,6 +156,17 @@ const content = computed(() => entryData.value?.content);
 const images = computed(() => imagesData.value ?? []);
 const entryDay = computed(() => entryData.value?.day ?? '');
 
+const formattedDate = computed(() => {
+  if (!entryDay.value) return '';
+  const d = new Date(entryDay.value + 'T00:00:00');
+  return d.toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+});
+
 const referencedFilenames = computed<Set<string>>(() =>
   content.value ? referencedImageFilenames(content.value) : new Set(),
 );
@@ -138,15 +174,22 @@ const unreferencedImages = computed(() =>
   images.value.filter((img) => !referencedFilenames.value.has(img.filename)),
 );
 
+// "On this day" across every visible path, for *this entry's* date.
+const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
+const multiPathEntries = useMultiPathEntries(visiblePathIds);
+const onThisDay = useOnThisDay(entryDay, visiblePaths, multiPathEntries);
+
 function goEdit() {
   router.push(`/entry/${pathId.value}/${entryId.value}/edit`);
 }
 
+const showMenu = ref(false);
 const showDeleteAlert = ref(false);
 const deleteError = ref('');
 const { mutateAsync: doDeleteEntry } = useDeleteEntry();
 
 function confirmDelete() {
+  showMenu.value = false;
   showDeleteAlert.value = true;
 }
 
@@ -174,41 +217,140 @@ async function performDelete() {
 </script>
 
 <style scoped>
-.entry-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  color: var(--ion-color-medium, #888);
-  margin-bottom: 12px;
+.entry-page {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1rem var(--page-margin, 0.75rem) 2rem;
 }
 
-.entry-path-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-rule);
+  margin-bottom: 1.25rem;
+  position: relative;
+}
+
+.entry-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--color-ink-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0.2rem;
+}
+
+.entry-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.entry-menu-item {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.6rem 1rem;
+  text-align: left;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.entry-menu-item--danger {
+  color: #d33;
+}
+
+.entry-path-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  margin: 0;
+}
+
+.entry-date {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 1.7rem;
+  margin: 0.2rem 0 1.25rem;
+  color: var(--color-ink);
 }
 
 .entry-error {
-  color: var(--ion-color-danger, red);
+  color: #d33;
   font-size: 0.85rem;
 }
 
-.entry-content {
-  white-space: pre-wrap;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--ion-color-dark, #333);
-  padding: 0 4px;
+.entry-body-placeholder {
+  color: var(--color-ink-muted);
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+}
+
+.entry-section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  margin: 1.5rem 0 0.75rem;
 }
 
 .entry-images {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
-  padding: 0 4px;
+  gap: 0.6rem;
+}
+
+.entry-rule {
+  border: none;
+  border-top: 1px solid var(--color-rule);
+  margin: 1.75rem 0 0;
+}
+
+.on-this-day-row {
+  display: flex;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--color-rule);
+  cursor: pointer;
+}
+
+.on-this-day-row:last-child {
+  border-bottom: none;
+}
+
+.on-this-day-year {
+  flex-shrink: 0;
+  width: 3rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.on-this-day-preview {
+  color: var(--color-ink-muted);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 </style>

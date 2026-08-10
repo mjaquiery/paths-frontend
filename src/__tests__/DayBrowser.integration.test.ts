@@ -1,32 +1,21 @@
 /**
- * Tests for WeekView multi-path and multi-entry rendering.
+ * Tests for DayBrowser multi-path and multi-entry rendering.
  *
- * WeekView receives already-resolved PathEntries data via props, so these
- * tests focus on the computed rendering logic: entries from multiple paths on
- * the same day are shown side-by-side, multiple entries from the same path on
- * the same day all appear, and entries with images show the 📷 thumbnail
- * indicator.
+ * DayBrowser receives already-resolved PathEntries data via props, so these
+ * tests focus on the computed rendering logic for the *selected* day (today,
+ * by default): entries from multiple paths on the same day are shown
+ * side-by-side, multiple entries from the same path on the same day all
+ * appear, and entries with images show photo thumbnails.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount } from '@vue/test-utils';
 
-import WeekView from '../components/WeekView.vue';
+import DayBrowser from '../components/DayBrowser.vue';
 import type { ImageResponse, PathResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
-
-// ---------------------------------------------------------------------------
-// Stub Ionic components
-// ---------------------------------------------------------------------------
-const ionicStubs = {
-  IonButton: {
-    template:
-      '<button :disabled="disabled" @click="$emit(\'click\')"><slot /></button>',
-    props: ['disabled', 'size', 'fill', 'expand'],
-    emits: ['click'],
-  },
-};
+import { toLocalISODate } from '../utils/date';
 
 const push = vi.fn();
 vi.mock('vue-router', () => ({
@@ -45,11 +34,8 @@ function makeImage(filename: string): ImageResponse {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalISODate(new Date());
 }
 
 function makePathResponse(overrides: Partial<PathResponse> = {}): PathResponse {
@@ -71,12 +57,12 @@ function createQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
-function mountWeekView(
+function mountDayBrowser(
   visiblePaths: PathResponse[],
   pathEntries: PathEntries[],
 ) {
   const queryClient = createQueryClient();
-  return mount(WeekView, {
+  return mount(DayBrowser, {
     props: {
       visiblePaths,
       pathEntries,
@@ -85,16 +71,12 @@ function mountWeekView(
     },
     global: {
       plugins: [[VueQueryPlugin, { queryClient }]],
-      stubs: ionicStubs,
     },
   });
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-describe('WeekView – multi-path entries on the same day', () => {
-  it('shows entries from two different paths on the same day', async () => {
+describe('DayBrowser – multi-path entries on the same day', () => {
+  it('shows entries from two different paths on today (the default selected day)', async () => {
     const pathA = makePathResponse({
       path_id: 'p1',
       title: 'Path A',
@@ -136,7 +118,7 @@ describe('WeekView – multi-path entries on the same day', () => {
       },
     ];
 
-    const wrapper = mountWeekView([pathA, pathB], pathEntries);
+    const wrapper = mountDayBrowser([pathA, pathB], pathEntries);
     await nextTick();
 
     const html = wrapper.html();
@@ -144,7 +126,7 @@ describe('WeekView – multi-path entries on the same day', () => {
     expect(html).toContain('Entry from Path B');
   });
 
-  it('displays both entries in the same day box when from different paths', async () => {
+  it('renders a .db-entry element for each entry from different paths', async () => {
     const pathA = makePathResponse({
       path_id: 'p1',
       title: 'Path A',
@@ -186,24 +168,19 @@ describe('WeekView – multi-path entries on the same day', () => {
       },
     ];
 
-    const wrapper = mountWeekView([pathA, pathB], pathEntries);
+    const wrapper = mountDayBrowser([pathA, pathB], pathEntries);
     await nextTick();
 
-    // Both entries should appear in the same week view
-    const dayEntries = wrapper.findAll('.day-entry');
+    const dayEntries = wrapper.findAll('.db-entry');
     const entryTexts = dayEntries.map((e) => e.text());
     expect(entryTexts.some((t) => t.includes('Alpha content'))).toBe(true);
     expect(entryTexts.some((t) => t.includes('Beta content'))).toBe(true);
   });
 });
 
-describe('WeekView – multiple entries from the same path on the same day', () => {
-  it('shows all entries from the same path on the same day', async () => {
-    const path = makePathResponse({
-      path_id: 'p1',
-      title: 'My Path',
-      color: '#3949ab',
-    });
+describe('DayBrowser – multiple entries from the same path on the same day', () => {
+  it('shows all entries from the same path on today', async () => {
+    const path = makePathResponse({ path_id: 'p1', title: 'My Path' });
     const todayStr = today();
 
     const pathEntries: PathEntries[] = [
@@ -228,14 +205,14 @@ describe('WeekView – multiple entries from the same path on the same day', () 
       },
     ];
 
-    const wrapper = mountWeekView([path], pathEntries);
+    const wrapper = mountDayBrowser([path], pathEntries);
     await nextTick();
 
     expect(wrapper.html()).toContain('First entry today');
     expect(wrapper.html()).toContain('Second entry today');
   });
 
-  it('renders a separate .day-entry element for each entry', async () => {
+  it('renders a separate .db-entry element for each entry', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
 
@@ -268,16 +245,15 @@ describe('WeekView – multiple entries from the same path on the same day', () 
       },
     ];
 
-    const wrapper = mountWeekView([path], pathEntries);
+    const wrapper = mountDayBrowser([path], pathEntries);
     await nextTick();
 
-    const dayEntries = wrapper.findAll('.day-entry');
-    expect(dayEntries.length).toBeGreaterThanOrEqual(3);
+    expect(wrapper.findAll('.db-entry').length).toBeGreaterThanOrEqual(3);
   });
 });
 
-describe('WeekView – image thumbnail indicator', () => {
-  it('shows 📷 indicator when an entry has images', async () => {
+describe('DayBrowser – photo thumbnails', () => {
+  it('shows a photo thumbnail when an entry has images', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
 
@@ -297,13 +273,13 @@ describe('WeekView – image thumbnail indicator', () => {
       },
     ];
 
-    const wrapper = mountWeekView([path], pathEntries);
+    const wrapper = mountDayBrowser([path], pathEntries);
     await nextTick();
 
-    expect(wrapper.html()).toContain('📷');
+    expect(wrapper.findAll('.db-entry-photo')).toHaveLength(1);
   });
 
-  it('does not show 📷 indicator when an entry has no images', async () => {
+  it('does not render a photo section when an entry has no images', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
 
@@ -323,50 +299,15 @@ describe('WeekView – image thumbnail indicator', () => {
       },
     ];
 
-    const wrapper = mountWeekView([path], pathEntries);
+    const wrapper = mountDayBrowser([path], pathEntries);
     await nextTick();
 
-    expect(wrapper.html()).not.toContain('📷');
-  });
-
-  it('shows 📷 for entries with images and not for those without, on the same day', async () => {
-    const path = makePathResponse({ path_id: 'p1' });
-    const todayStr = today();
-
-    const pathEntries: PathEntries[] = [
-      {
-        pathId: 'p1',
-        entries: [
-          {
-            id: 'e1',
-            path_id: 'p1',
-            day: todayStr,
-            edit_id: 1,
-            content: 'Has photo',
-            images: [makeImage('cat.jpg')],
-          },
-          {
-            id: 'e2',
-            path_id: 'p1',
-            day: todayStr,
-            edit_id: 2,
-            content: 'No photo',
-            images: [],
-          },
-        ],
-      },
-    ];
-
-    const wrapper = mountWeekView([path], pathEntries);
-    await nextTick();
-
-    const indicators = wrapper.findAll('.day-entry-image-indicator');
-    expect(indicators).toHaveLength(1);
+    expect(wrapper.find('.db-entry-photos').exists()).toBe(false);
   });
 });
 
-describe('WeekView – content placeholder text', () => {
-  it('shows "Fetching..." when entry content is undefined (not yet loaded)', async () => {
+describe('DayBrowser – content placeholder text', () => {
+  it('shows "Fetching…" when entry content is undefined (not yet loaded)', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
 
@@ -385,10 +326,10 @@ describe('WeekView – content placeholder text', () => {
       },
     ];
 
-    const wrapper = mountWeekView([path], pathEntries);
+    const wrapper = mountDayBrowser([path], pathEntries);
     await nextTick();
 
-    expect(wrapper.html()).toContain('Fetching...');
+    expect(wrapper.html()).toContain('Fetching…');
     expect(wrapper.html()).not.toContain('(no text)');
   });
 
@@ -400,26 +341,20 @@ describe('WeekView – content placeholder text', () => {
       {
         pathId: 'p1',
         entries: [
-          {
-            id: 'e1',
-            path_id: 'p1',
-            day: todayStr,
-            edit_id: 1,
-            content: '',
-          },
+          { id: 'e1', path_id: 'p1', day: todayStr, edit_id: 1, content: '' },
         ],
       },
     ];
 
-    const wrapper = mountWeekView([path], pathEntries);
+    const wrapper = mountDayBrowser([path], pathEntries);
     await nextTick();
 
     expect(wrapper.html()).toContain('(no text)');
-    expect(wrapper.html()).not.toContain('Fetching...');
+    expect(wrapper.html()).not.toContain('Fetching…');
   });
 });
 
-describe('WeekView – entry detail modal', () => {
+describe('DayBrowser – navigation', () => {
   function makeDetailPathEntries(todayStr: string): PathEntries[] {
     return [
       {
@@ -437,67 +372,53 @@ describe('WeekView – entry detail modal', () => {
     ];
   }
 
-  it('navigates to the entry view page when a day-entry is clicked', async () => {
-    const path = makePathResponse({
-      path_id: 'p1',
-      title: 'My Path',
-      color: '#3949ab',
-    });
+  it('navigates to the entry view page when a .db-entry is clicked', async () => {
+    const path = makePathResponse({ path_id: 'p1', title: 'My Path' });
     const todayStr = today();
     push.mockClear();
-    const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
+    const wrapper = mountDayBrowser([path], makeDetailPathEntries(todayStr));
     await nextTick();
 
-    await wrapper.find('.day-entry').trigger('click');
+    await wrapper.find('.db-entry').trigger('click');
     await nextTick();
 
     expect(push).toHaveBeenCalledWith('/entry/p1/e1');
   });
 
-  it('navigates to the entry view page when Enter is pressed on a day-entry', async () => {
-    const path = makePathResponse({
-      path_id: 'p1',
-      title: 'My Path',
-      color: '#3949ab',
-    });
-    const todayStr = today();
-    push.mockClear();
-    const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
-    await nextTick();
-
-    await wrapper.find('.day-entry').trigger('keydown.enter');
-    await nextTick();
-
-    expect(push).toHaveBeenCalledWith('/entry/p1/e1');
-  });
-
-  it('navigates to the entry view page when Space is pressed on a day-entry', async () => {
-    const path = makePathResponse({
-      path_id: 'p1',
-      title: 'My Path',
-      color: '#3949ab',
-    });
-    const todayStr = today();
-    push.mockClear();
-    const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
-    await nextTick();
-
-    await wrapper.find('.day-entry').trigger('keydown.space');
-    await nextTick();
-
-    expect(push).toHaveBeenCalledWith('/entry/p1/e1');
-  });
-
-  it('navigates to the create page with the clicked day when "+" is pressed', async () => {
+  it('navigates to the entry view page when Enter is pressed on a .db-entry', async () => {
     const path = makePathResponse({ path_id: 'p1' });
     const todayStr = today();
     push.mockClear();
-    const wrapper = mountWeekView([path], makeDetailPathEntries(todayStr));
+    const wrapper = mountDayBrowser([path], makeDetailPathEntries(todayStr));
     await nextTick();
 
-    // The week grid renders 7 day boxes; target "Today"'s specifically rather than
-    // assuming DOM order, since the oldest displayed day renders first.
-    await wrapper.find('.day-box--today .day-create-btn').trigger('click');
+    await wrapper.find('.db-entry').trigger('keydown.enter');
+    await nextTick();
+
+    expect(push).toHaveBeenCalledWith('/entry/p1/e1');
+  });
+
+  it('navigates to the entry view page when Space is pressed on a .db-entry', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const todayStr = today();
+    push.mockClear();
+    const wrapper = mountDayBrowser([path], makeDetailPathEntries(todayStr));
+    await nextTick();
+
+    await wrapper.find('.db-entry').trigger('keydown.space');
+    await nextTick();
+
+    expect(push).toHaveBeenCalledWith('/entry/p1/e1');
+  });
+
+  it('navigates to the create page with today\'s date when "+" is pressed', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const todayStr = today();
+    push.mockClear();
+    const wrapper = mountDayBrowser([path], makeDetailPathEntries(todayStr));
+    await nextTick();
+
+    await wrapper.find('.db-day-create-btn').trigger('click');
     await nextTick();
 
     expect(push).toHaveBeenCalledWith({
@@ -525,11 +446,71 @@ describe('WeekView – entry detail modal', () => {
       },
     ];
 
-    const wrapper = mountWeekView([path], pathEntries);
+    const wrapper = mountDayBrowser([path], pathEntries);
     await nextTick();
 
-    const entry = wrapper.find('.day-entry');
+    const entry = wrapper.find('.db-entry');
     expect(entry.attributes('role')).toBe('button');
     expect(entry.attributes('tabindex')).toBe('0');
+  });
+});
+
+describe('DayBrowser – week strip', () => {
+  // Fixed to a Wednesday so "yesterday" is always in the same Sun–Sat window
+  // as today, regardless of which day the test suite actually runs on.
+  beforeEach(() => vi.setSystemTime(new Date('2024-01-17T00:00:00')));
+  afterEach(() => vi.useRealTimers());
+
+  it('renders 7 day cells with today selected by default', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const wrapper = mountDayBrowser([path], []);
+    await nextTick();
+
+    expect(wrapper.findAll('.db-week-day')).toHaveLength(7);
+    expect(wrapper.find('.db-week-day--selected').exists()).toBe(true);
+  });
+
+  it('selecting a different day updates the entry list', async () => {
+    const path = makePathResponse({ path_id: 'p1' });
+    const todayStr = today();
+    const yesterday = new Date(todayStr + 'T00:00:00');
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = toLocalISODate(yesterday);
+
+    const pathEntries: PathEntries[] = [
+      {
+        pathId: 'p1',
+        entries: [
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: todayStr,
+            edit_id: 1,
+            content: 'Today entry',
+          },
+          {
+            id: 'e2',
+            path_id: 'p1',
+            day: yesterdayStr,
+            edit_id: 2,
+            content: 'Yesterday entry',
+          },
+        ],
+      },
+    ];
+
+    const wrapper = mountDayBrowser([path], pathEntries);
+    await nextTick();
+    expect(wrapper.html()).toContain('Today entry');
+    expect(wrapper.html()).not.toContain('Yesterday entry');
+
+    const weekDays = wrapper.findAll('.db-week-day');
+    // Same week (Sun–Sat window containing today), one day before today.
+    const yesterdayIndex = new Date(yesterdayStr + 'T00:00:00').getDay();
+    await weekDays[yesterdayIndex]!.trigger('click');
+    await nextTick();
+
+    expect(wrapper.html()).toContain('Yesterday entry');
+    expect(wrapper.html()).not.toContain('Today entry');
   });
 });

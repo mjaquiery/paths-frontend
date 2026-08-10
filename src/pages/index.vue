@@ -1,130 +1,112 @@
 <template>
   <ion-page>
-    <!-- ── Header ── -->
-    <ion-header>
-      <ion-toolbar>
-        <ion-thumbnail slot="start" class="header-logo">
-          <img src="/favicon.svg" alt="Paths logo" />
-        </ion-thumbnail>
-        <ion-title>Paths</ion-title>
-        <ion-buttons slot="end">
-          <ion-button
-            :title="darkModeLabel"
-            :aria-label="darkModeLabel"
-            @click="toggleDarkMode"
-          >
-            {{ darkPreference === 'system' ? '🖥️' : isDark ? '☀️' : '🌙' }}
-          </ion-button>
-          <template v-if="currentUser">
-            <ion-label class="ion-padding-end">{{
-              currentUser.display_name || currentUser.user_id
-            }}</ion-label>
-            <ion-button router-link="/settings">Settings</ion-button>
-            <ion-button @click="logout">Logout</ion-button>
-          </template>
-          <ion-button v-else :disabled="loggingIn" @click="loginWithGoogle">
-            {{ loggingIn ? 'Redirecting…' : 'Login with Google' }}
-          </ion-button>
-          <ion-text v-if="loginError" color="danger" class="ion-padding-start">
-            {{ loginError }}
-          </ion-text>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
+    <!-- ── Logged out: centred welcome (f-1a) ── -->
+    <ion-content v-if="!currentUser" class="df-ui logged-out-content">
+      <div class="logged-out">
+        <span class="logo-emoji" aria-hidden="true">📖</span>
+        <h1 class="logo-title">Paths</h1>
+        <p class="logo-subtitle">
+          A private journal across multiple streams of life.
+        </p>
+        <hr class="logo-divider" />
 
-    <!-- ── Paths selector bar (logged-in only) ── -->
-    <PathsSelectorBar
-      v-if="currentUser"
-      :current-user="currentUser"
-      @paths-changed="visiblePaths = $event"
-    />
+        <ul class="feature-list">
+          <li>
+            <span class="feature-mark" aria-hidden="true">✦</span>
+            Write daily entries across separate paths — Daily Life, Projects,
+            Travel, anything.
+          </li>
+          <li>
+            <span class="feature-mark" aria-hidden="true">✦</span>
+            Revisit past years. The same date, one year ago, five years ago.
+          </li>
+          <li>
+            <span class="feature-mark" aria-hidden="true">✦</span>
+            Share one path with someone special, keep the rest private.
+          </li>
+        </ul>
 
-    <!-- ── Main content ── -->
-    <ion-content ref="contentRef" class="ion-padding-horizontal">
-      <OnThisDaySpotlight
-        v-if="visiblePaths.length > 0"
-        :visible-paths="visiblePaths"
-        :path-entries="multiPathEntries"
-      />
-
-      <WeekView
-        :visible-paths="visiblePaths"
-        :path-entries="multiPathEntries"
-        :can-create="canCreateAny"
-        :current-user-id="currentUser ? currentUser.user_id : ''"
-      />
-
-      <div v-if="canCreateAny" class="create-entry-cta">
-        <ion-button expand="block" router-link="/entry/new">
-          + Create Entry
-        </ion-button>
-      </div>
-
-      <div v-if="!currentUser" class="home-welcome">
-        <ion-card>
-          <ion-card-content>
-            <p>Log in to start writing your paths.</p>
-          </ion-card-content>
-        </ion-card>
+        <button
+          class="google-btn"
+          :disabled="loggingIn"
+          @click="loginWithGoogle"
+        >
+          {{ loggingIn ? 'Redirecting…' : 'Continue with Google' }}
+        </button>
+        <p v-if="loginError" class="login-error">{{ loginError }}</p>
+        <p class="logo-footnote">
+          Your data stays yours. Export or delete any time.
+        </p>
       </div>
     </ion-content>
+
+    <!-- ── Logged in: day browser (f-2a) ── -->
+    <template v-else>
+      <ion-content ref="contentRef">
+        <DayBrowser
+          :visible-paths="visiblePaths"
+          :path-entries="multiPathEntries"
+          :can-create="canCreateAny"
+          :current-user-id="currentUser.user_id"
+          @toggle-paths="router.push('/settings')"
+        />
+      </ion-content>
+
+      <div class="bottom-bar df-ui">
+        <button
+          class="bottom-bar-icon"
+          aria-label="Browse paths"
+          @click="router.push('/settings')"
+        >
+          🗂️
+        </button>
+        <button
+          v-if="canCreateAny"
+          class="bottom-bar-cta"
+          @click="router.push('/entry/new')"
+        >
+          + Write Entry
+        </button>
+        <button
+          class="bottom-bar-icon"
+          aria-label="Settings"
+          @click="router.push('/settings')"
+        >
+          ⚙️
+        </button>
+      </div>
+    </template>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent,
-  IonButton,
-  IonButtons,
-  IonLabel,
-  IonText,
-  IonThumbnail,
-  IonCard,
-  IonCardContent,
-} from '@ionic/vue';
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { IonPage, IonContent } from '@ionic/vue';
+import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-import PathsSelectorBar from '../components/PathsSelectorBar.vue';
-import OnThisDaySpotlight from '../components/OnThisDaySpotlight.vue';
-import WeekView from '../components/WeekView.vue';
+import DayBrowser from '../components/DayBrowser.vue';
 import type {
-  PathResponse,
   OAuthCallbackResponse,
   OAuthLoginResponse,
 } from '../generated/types';
 import { authLogin } from '../generated/apiClient';
+import { usePaths } from '../composables/usePaths';
+import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
-import { useDarkMode } from '../composables/useDarkMode';
 
-const {
-  isDark,
-  preference: darkPreference,
-  toggle: toggleDarkMode,
-} = useDarkMode();
-
-const darkModeLabel = computed(() => {
-  if (darkPreference.value === 'light') return 'Light mode – switch to dark';
-  if (darkPreference.value === 'dark') return 'Dark mode – switch to system';
-  return 'System mode – switch to light';
-});
+const router = useRouter();
 
 const loggingIn = ref(false);
 const loginError = ref('');
 const currentUser = ref<OAuthCallbackResponse | null>(null);
 
-/** Ordered, visible paths managed by PathsSelectorBar */
-const visiblePaths = ref<PathResponse[]>([]);
+const { data: allPaths } = usePaths();
+const { visiblePaths } = usePathVisibility(allPaths);
 
 const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
 const multiPathEntries = useMultiPathEntries(visiblePathIds);
 
-const contentRef = ref<{
-  $el?: { scrollToBottom: (duration: number) => void };
-} | null>(null);
+const contentRef = ref(null);
 
 const canCreateAny = computed(
   () =>
@@ -144,7 +126,6 @@ onMounted(() => {
       localStorage.removeItem('session_token');
     }
   }
-  void nextTick(() => contentRef.value?.$el?.scrollToBottom(0));
 });
 
 async function loginWithGoogle() {
@@ -165,32 +146,132 @@ async function loginWithGoogle() {
     loggingIn.value = false;
   }
 }
-
-function logout() {
-  localStorage.removeItem('user');
-  localStorage.removeItem('session_token');
-  currentUser.value = null;
-  visiblePaths.value = [];
-}
 </script>
 
 <style scoped>
-.header-logo {
-  --size: 36px;
-  margin: 0 4px 0 8px;
+.logged-out-content {
+  --background: var(--color-paper);
 }
 
-.header-logo img {
+ion-content {
+  --padding-bottom: calc(var(--app-footer-clearance, 3rem) + 3.5rem);
+}
+
+.logged-out {
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: 15vh 2rem 2rem;
+  text-align: center;
+}
+
+.logo-emoji {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.logo-title {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 2.5rem;
+  margin: 0;
+  color: var(--color-ink);
+}
+
+.logo-subtitle {
+  color: var(--color-ink-muted);
+  margin: 0.75rem 0 1.5rem;
+  font-size: 1rem;
+}
+
+.logo-divider {
+  width: 3rem;
+  border: none;
+  border-top: 1px solid var(--color-rule);
+  margin: 0 auto 2rem;
+}
+
+.feature-list {
+  list-style: none;
+  margin: 0 0 2.5rem;
+  padding: 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.feature-list li {
+  display: flex;
+  gap: 0.75rem;
+  color: var(--color-ink);
+  line-height: 1.5;
+}
+
+.feature-mark {
+  color: var(--color-ink);
+  flex-shrink: 0;
+}
+
+.google-btn {
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  border: none;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.9rem;
+  cursor: pointer;
 }
 
-.create-entry-cta {
-  margin: 16px 0 8px;
+.google-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
-.home-welcome {
-  margin-top: 32px;
+.login-error {
+  color: #d33;
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.logo-footnote {
+  color: var(--color-ink-muted);
+  font-size: 0.8rem;
+  margin-top: 1.25rem;
+}
+
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--app-footer-clearance, 3rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem var(--page-margin, 0.75rem);
+  background: var(--color-paper);
+  border-top: 1px solid var(--color-rule);
+  z-index: var(--ion-z-index-overlay, 999);
+}
+
+.bottom-bar-icon {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  padding: 0.3rem;
+  cursor: pointer;
+}
+
+.bottom-bar-cta {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.65rem 1.5rem;
+  cursor: pointer;
 }
 </style>

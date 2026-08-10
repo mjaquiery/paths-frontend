@@ -6,7 +6,7 @@
 /* ── Light mode ── */
 :root {
   /* Typography */
-  --font-serif: 'Lora', 'Georgia', serif;
+  --font-serif: 'Georgia', 'Times New Roman', serif;
   --font-sans: system-ui, sans-serif;
 
   /* Palette */
@@ -16,6 +16,16 @@
   --color-rule: #e0ded8; /* horizontal rules, dividers */
 
   /* Path identity bars are set inline via --path-color CSS variable */
+
+  /* Fixed swatches offered when picking a path colour (see f-5a) */
+  --path-swatch-1: #5b52f0;
+  --path-swatch-2: #f5a623;
+  --path-swatch-3: #12b6d4;
+  --path-swatch-4: #3ecf5f;
+  --path-swatch-5: #f5443c;
+  --path-swatch-6: #4c3fd7;
+  --path-swatch-7: #b455d9;
+  --path-swatch-8: #1a1a1a;
 
   /* Spacing */
   --page-margin: 0.75rem; /* left/right gutter on all pages */
@@ -29,6 +39,16 @@
   --ion-toolbar-background: var(--color-paper);
   --ion-item-background: var(--color-paper);
   --ion-border-color: var(--color-rule);
+
+  /* Primary = the ink colour, so default buttons render as the black pills every
+   * screenshot uses. --color-ink/--color-paper invert between light/dark below, so this
+   * pairing automatically becomes a light pill on dark backgrounds in dark mode. */
+  --ion-color-primary: #1a1a18;
+  --ion-color-primary-rgb: 26, 26, 24;
+  --ion-color-primary-contrast: #fdfcf7;
+  --ion-color-primary-contrast-rgb: 253, 252, 247;
+  --ion-color-primary-shade: #000000;
+  --ion-color-primary-tint: #333331;
 
   /* ── AppFooter tokens ── */
   --footer-height-idle: 2rem;
@@ -52,6 +72,13 @@
     --color-ink-muted: #9b9890;
     --color-rule: #38362e;
 
+    --ion-color-primary: #f0ede4;
+    --ion-color-primary-rgb: 240, 237, 228;
+    --ion-color-primary-contrast: #1e1c16;
+    --ion-color-primary-contrast-rgb: 30, 28, 22;
+    --ion-color-primary-shade: #d8d5cc;
+    --ion-color-primary-tint: #f2f0e9;
+
     --footer-bg-offline: #2a1e00;
     --footer-bg-error: #2a1400;
   }
@@ -63,6 +90,13 @@
   --color-ink: #f0ede4;
   --color-ink-muted: #9b9890;
   --color-rule: #38362e;
+
+  --ion-color-primary: #f0ede4;
+  --ion-color-primary-rgb: 240, 237, 228;
+  --ion-color-primary-contrast: #1e1c16;
+  --ion-color-primary-contrast-rgb: 30, 28, 22;
+  --ion-color-primary-shade: #d8d5cc;
+  --ion-color-primary-tint: #f2f0e9;
 
   --footer-bg-offline: #2a1e00;
   --footer-bg-error: #2a1400;
@@ -94,4 +128,59 @@
 .df-page-gutter {
   padding-left: var(--page-margin);
   padding-right: var(--page-margin);
+}
+
+/* ── Global chrome resets — Ionic components render in shadow DOM, so these
+ * documented CSS custom properties are the only way to reach them; scoped SFC
+ * styles cannot. Centralising here beats patching every page individually. ── */
+
+body {
+  font-family: var(--font-sans);
+}
+
+ion-content {
+  --background: var(--color-paper);
+  --color: var(--color-ink);
+}
+
+ion-header {
+  box-shadow: none;
+}
+
+ion-header::after {
+  display: none; /* Ionic's default toolbar hairline shadow */
+}
+
+ion-toolbar {
+  --background: var(--color-paper);
+  --color: var(--color-ink);
+  --border-color: var(--color-rule);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+ion-item {
+  --background: var(--color-paper);
+  --color: var(--color-ink);
+  --border-color: var(--color-rule);
+  --highlight-color-focused: var(--color-ink);
+}
+
+ion-card {
+  box-shadow: none;
+  border: 1px solid var(--color-rule);
+  border-radius: 4px;
+  background: var(--color-paper);
+}
+
+ion-button {
+  --border-radius: 999px;
+  --box-shadow: none;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+ion-modal {
+  --background: var(--color-paper);
 }

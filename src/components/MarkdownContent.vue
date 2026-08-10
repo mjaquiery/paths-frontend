@@ -74,10 +74,10 @@ const renderedHtml = computed(() => {
 
 <style scoped>
 .markdown-content {
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--ion-color-dark, #333);
-  padding: 0 4px;
+  font-family: var(--font-serif, serif);
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--color-ink, #333);
 }
 
 .markdown-content :deep(p) {

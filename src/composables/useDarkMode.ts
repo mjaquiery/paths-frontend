@@ -9,9 +9,16 @@ function getSystemDark(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
-function applyDark(dark: boolean) {
+function applyDark(dark: boolean, pref: DarkModePreference) {
   if (typeof document !== 'undefined') {
     document.documentElement.classList.toggle('ion-palette-dark', dark);
+    // design-f.css keys its dark palette off data-theme for explicit choices,
+    // falling back to prefers-color-scheme when the user follows the system.
+    if (pref === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', pref);
+    }
   }
 }
 
@@ -31,7 +38,7 @@ const initialPreference: DarkModePreference =
 const preference = ref<DarkModePreference>(initialPreference);
 const isDark = ref<boolean>(resolvePreference(initialPreference));
 
-applyDark(isDark.value);
+applyDark(isDark.value, initialPreference);
 
 // Listen for OS-level changes when preference is 'system'
 if (typeof window !== 'undefined' && window.matchMedia) {
@@ -39,7 +46,7 @@ if (typeof window !== 'undefined' && window.matchMedia) {
   mediaQuery.addEventListener('change', (e) => {
     if (preference.value === 'system') {
       isDark.value = e.matches;
-      applyDark(isDark.value);
+      applyDark(isDark.value, 'system');
     }
   });
 }
@@ -53,7 +60,7 @@ watch(preference, (pref) => {
     }
   }
   isDark.value = resolvePreference(pref);
-  applyDark(isDark.value);
+  applyDark(isDark.value, pref);
 });
 
 export function useDarkMode() {

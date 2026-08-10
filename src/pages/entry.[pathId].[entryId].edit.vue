@@ -1,164 +1,181 @@
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button :default-href="`/entry/${pathId}/${entryId}`" />
-        </ion-buttons>
-        <ion-title>Edit Entry</ion-title>
-      </ion-toolbar>
-    </ion-header>
-    <ion-content class="ion-padding">
-      <p class="entry-meta">{{ path?.title }} &mdash; {{ entryData?.day }}</p>
-
-      <ion-item>
-        <ion-label position="stacked">Content *</ion-label>
-        <div class="content-tabs">
+    <ion-content>
+      <div class="editor-page df-ui">
+        <div class="editor-header">
           <button
-            class="content-tab"
-            :class="{ active: contentTab === 'write' }"
-            type="button"
-            @click="contentTab = 'write'"
+            class="text-btn"
+            @click="router.push(`/entry/${pathId}/${entryId}`)"
           >
-            Write
+            Cancel
+          </button>
+          <div class="editor-header-title">
+            <span class="editor-header-label">{{ path?.title }}</span>
+            <span class="editor-header-date">{{ entryData?.day }}</span>
+          </div>
+          <button
+            class="pill-btn"
+            :disabled="!content.trim() || saving"
+            @click="submit"
+          >
+            {{ saving ? 'Saving…' : 'Save' }}
+          </button>
+        </div>
+
+        <div class="editor-toolbar">
+          <button
+            type="button"
+            :disabled="contentTab === 'preview'"
+            @click="wrapSelection('**')"
+          >
+            <strong>B</strong>
           </button>
           <button
-            class="content-tab"
-            :class="{ active: contentTab === 'preview' }"
             type="button"
-            @click="contentTab = 'preview'"
+            :disabled="contentTab === 'preview'"
+            @click="wrapSelection('*')"
+          >
+            <em>I</em>
+          </button>
+          <button
+            type="button"
+            :disabled="contentTab === 'preview'"
+            @click="prefixLine('# ')"
+          >
+            H1
+          </button>
+          <button
+            type="button"
+            :disabled="contentTab === 'preview'"
+            @click="prefixLine('## ')"
+          >
+            H2
+          </button>
+          <button
+            type="button"
+            :disabled="contentTab === 'preview'"
+            @click="prefixLine('- ')"
+          >
+            • List
+          </button>
+          <button
+            type="button"
+            :disabled="contentTab === 'preview'"
+            aria-label="Insert link"
+            @click="wrapSelection('[', '](url)')"
+          >
+            🔗
+          </button>
+          <button
+            type="button"
+            class="preview-toggle"
+            :class="{ 'preview-toggle--active': contentTab === 'preview' }"
+            @click="contentTab = contentTab === 'preview' ? 'write' : 'preview'"
           >
             Preview
           </button>
         </div>
+
         <ion-textarea
           v-if="contentTab === 'write'"
           ref="textareaRef"
           v-model="content"
+          class="editor-textarea"
           placeholder="Write your entry… (markdown supported)"
-          :rows="6"
+          :rows="10"
           auto-grow
           autocapitalize="sentences"
           autocorrect="on"
           :spellcheck="true"
           @ionInput="onTextareaInput"
         />
-        <div v-else class="content-preview">
+        <div v-else class="editor-preview">
           <MarkdownContent v-if="content" :content="content" />
-          <p v-else class="content-preview-empty">(nothing to preview)</p>
+          <p v-else class="editor-preview-empty">(nothing to preview)</p>
         </div>
-      </ion-item>
 
-      <ion-item v-if="keptImages.length > 0 || removedImages.length > 0">
-        <ion-label position="stacked">Images</ion-label>
-        <div class="existing-images">
+        <p v-if="conflictError" class="editor-error editor-error--conflict">
+          {{ conflictError }}
+        </p>
+        <p v-else-if="error" class="editor-error">{{ error }}</p>
+
+        <template v-if="keptImages.length > 0 || removedImages.length > 0">
+          <p class="editor-section-label">Images</p>
+          <div class="existing-images">
+            <div
+              v-for="img in keptImages"
+              :key="img.id"
+              class="existing-image-item"
+            >
+              <span class="existing-image-name">{{ img.filename }}</span>
+              <button
+                class="image-action-btn"
+                type="button"
+                :aria-label="`Insert image ${img.filename} into content`"
+                @click="insertImageMarkdown(img.filename)"
+              >
+                ↳ Insert
+              </button>
+              <button
+                class="image-action-btn image-action-btn--danger"
+                type="button"
+                :aria-label="`Remove image ${img.filename}`"
+                @click="removeImage(img.id)"
+              >
+                ✕
+              </button>
+            </div>
+            <div
+              v-for="img in removedImages"
+              :key="img.id"
+              class="existing-image-item existing-image-item--removed"
+            >
+              <span class="existing-image-name">{{ img.filename }}</span>
+              <button
+                class="image-action-btn"
+                type="button"
+                :aria-label="`Restore image ${img.filename}`"
+                @click="restoreImage(img.id)"
+              >
+                ↩ Restore
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <p class="editor-section-label">Add photos</p>
+        <div class="photo-strip">
           <div
-            v-for="img in keptImages"
-            :key="img.id"
-            class="existing-image-item"
+            v-for="img in pendingImages"
+            :key="img.file.name"
+            class="photo-pending"
           >
-            <span class="existing-image-name">{{ img.filename }}</span>
+            <span class="photo-pending-name">{{ img.file.name }}</span>
+            <input
+              v-model="img.caption"
+              placeholder="Caption"
+              class="photo-caption-input"
+            />
             <button
-              class="insert-image-btn"
+              class="photo-insert-btn"
               type="button"
-              :aria-label="`Insert image ${img.filename} into content`"
-              @click="insertImageMarkdown(img.filename)"
+              :aria-label="`Insert image ${img.file.name} into content`"
+              @click="insertImageMarkdown(img.file.name)"
             >
-              ↳ Insert
-            </button>
-            <button
-              class="remove-image-btn"
-              type="button"
-              :aria-label="`Remove image ${img.filename}`"
-              @click="removeImage(img.id)"
-            >
-              ✕
+              ↳
             </button>
           </div>
-          <div
-            v-for="img in removedImages"
-            :key="img.id"
-            class="existing-image-item existing-image-item--removed"
-          >
-            <span class="existing-image-name">{{ img.filename }}</span>
-            <button
-              class="restore-image-btn"
-              type="button"
-              :aria-label="`Restore image ${img.filename}`"
-              @click="restoreImage(img.id)"
-            >
-              ↩
-            </button>
-          </div>
-        </div>
-      </ion-item>
-
-      <ion-item lines="none">
-        <ion-label position="stacked">Add images (optional)</ion-label>
-        <ion-button size="small" fill="outline" @click="addImages"
-          >+ Add photo</ion-button
-        >
-      </ion-item>
-      <div v-if="pendingImages.length > 0" class="pending-images">
-        <div
-          v-for="img in pendingImages"
-          :key="img.file.name"
-          class="pending-image"
-        >
-          <span class="pending-image-name">{{ img.file.name }}</span>
-          <ion-input
-            v-model="img.caption"
-            placeholder="Caption (optional)"
-            class="pending-image-caption"
-          />
-          <button
-            class="insert-image-btn"
-            type="button"
-            :aria-label="`Insert image ${img.file.name} into content`"
-            @click="insertImageMarkdown(img.file.name)"
-          >
-            ↳ Insert
+          <button class="photo-add-btn" type="button" @click="addImages">
+            +
           </button>
         </div>
       </div>
-
-      <p v-if="conflictError" class="entry-error entry-error--conflict">
-        {{ conflictError }}
-      </p>
-      <p v-else-if="error" class="entry-error">{{ error }}</p>
     </ion-content>
-    <ion-footer>
-      <ion-toolbar>
-        <div class="entry-page-actions">
-          <ion-button
-            expand="block"
-            :disabled="!content.trim() || saving"
-            @click="submit"
-          >
-            {{ saving ? 'Saving…' : 'Save Changes' }}
-          </ion-button>
-        </div>
-      </ion-toolbar>
-    </ion-footer>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonButtons,
-  IonBackButton,
-  IonButton,
-  IonContent,
-  IonFooter,
-  IonItem,
-  IonLabel,
-  IonInput,
-  IonTextarea,
-} from '@ionic/vue';
+import { IonPage, IonContent, IonTextarea } from '@ionic/vue';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -174,10 +191,7 @@ import { pickImages } from '../composables/useImagePicker';
 import { extractErrorMessage } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
-import type {
-  EntryContentResponse,
-  ImageResponse,
-} from '../generated/types';
+import type { EntryContentResponse, ImageResponse } from '../generated/types';
 
 const route = useRoute<'/entry.[pathId].[entryId].edit'>();
 const router = useRouter();
@@ -234,11 +248,8 @@ watch(imagesData, (images) => {
   if (images) keptImages.value = [...images];
 });
 
-const { onTextareaInput, insertImageMarkdown } = useMarkdownEditor(
-  content,
-  textareaRef,
-  contentTab,
-);
+const { onTextareaInput, insertImageMarkdown, wrapSelection, prefixLine } =
+  useMarkdownEditor(content, textareaRef, contentTab);
 
 function removeImage(imageId: string) {
   const idx = keptImages.value.findIndex((img) => img.id === imageId);
@@ -307,76 +318,153 @@ async function submit() {
 </script>
 
 <style scoped>
-.entry-meta {
-  font-size: 0.85rem;
-  color: var(--ion-color-medium, #888);
+.editor-page {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1rem var(--page-margin, 0.75rem) 2rem;
 }
 
-.entry-error {
-  color: var(--ion-color-danger, red);
-  font-size: 0.85rem;
-  margin: 8px 16px;
-}
-
-.entry-error--conflict {
-  background: var(--ion-color-warning-tint, #fff8e1);
-  border-radius: 4px;
-  padding: 8px 12px;
-}
-
-.entry-page-actions {
-  padding: 8px;
-}
-
-.pending-images {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 4px 16px;
-}
-
-.pending-image {
+.editor-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  background: var(--ion-color-light, #f4f4f4);
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-rule);
+  margin-bottom: 1rem;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--color-ink-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0.2rem;
+}
+
+.editor-header-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.editor-header-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+}
+
+.editor-header-date {
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+.pill-btn {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.45rem 1.1rem;
+  cursor: pointer;
+}
+
+.pill-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.editor-toolbar {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--color-rule);
+  border-bottom: 1px solid var(--color-rule);
+  margin-bottom: 0.75rem;
+}
+
+.editor-toolbar button {
+  background: none;
+  border: 1px solid var(--color-rule);
   border-radius: 4px;
-  padding: 4px 6px;
-}
-
-.pending-image-name {
-  flex-shrink: 0;
-  max-width: 8rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.pending-image-caption {
-  flex: 1;
-  --padding-start: 4px;
-  --padding-end: 4px;
+  color: var(--color-ink);
   font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+.editor-toolbar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.preview-toggle {
+  margin-left: auto;
+}
+
+.preview-toggle--active {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  border-color: var(--color-ink);
+}
+
+.editor-textarea {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+.editor-preview {
+  min-height: 8em;
+}
+
+.editor-preview-empty {
+  color: var(--color-ink-muted);
+  font-size: 0.9rem;
+}
+
+.editor-error {
+  color: #d33;
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.editor-error--conflict {
+  background: color-mix(in srgb, #f5a623 15%, var(--color-paper));
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+}
+
+.editor-section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  margin: 1.5rem 0 0.6rem;
 }
 
 .existing-images {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 4px 0;
-  width: 100%;
+  gap: 0.4rem;
 }
 
 .existing-image-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   font-size: 0.875rem;
 }
 
 .existing-image-item--removed .existing-image-name {
   text-decoration: line-through;
-  color: var(--ion-color-medium, #888);
+  color: var(--color-ink-muted);
 }
 
 .existing-image-name {
@@ -386,63 +474,70 @@ async function submit() {
   white-space: nowrap;
 }
 
-.remove-image-btn,
-.restore-image-btn,
-.insert-image-btn {
+.image-action-btn {
   background: none;
-  border: 1px solid currentColor;
+  border: 1px solid var(--color-rule);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.75rem;
-  line-height: 1;
-  padding: 2px 6px;
-  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  color: var(--color-ink);
 }
 
-.remove-image-btn {
-  color: var(--ion-color-danger, red);
+.image-action-btn--danger {
+  color: #d33;
 }
 
-.restore-image-btn {
-  color: var(--ion-color-success, green);
-}
-
-.insert-image-btn {
-  color: var(--ion-color-primary, #3880ff);
-}
-
-.content-tabs {
+.photo-strip {
   display: flex;
-  gap: 4px;
-  margin: 4px 0 8px;
-  width: 100%;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
 
-.content-tab {
-  background: none;
-  border: 1px solid var(--ion-color-medium, #888);
+.photo-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 6rem;
+  font-size: 0.75rem;
+}
+
+.photo-pending-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-ink-muted);
+}
+
+.photo-caption-input {
+  border: 1px solid var(--color-rule);
   border-radius: 4px;
-  color: var(--ion-text-color, inherit);
+  background: none;
+  color: var(--color-ink);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.3rem;
+}
+
+.photo-insert-btn {
+  align-self: flex-start;
+  background: none;
+  border: 1px solid var(--color-rule);
+  border-radius: 4px;
+  color: var(--color-ink);
   cursor: pointer;
-  font-size: 0.85rem;
-  padding: 2px 12px;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.4rem;
 }
 
-.content-tab.active {
-  background: var(--ion-color-primary, #3880ff);
-  border-color: var(--ion-color-primary, #3880ff);
-  color: #fff;
-}
-
-.content-preview {
-  min-height: 6em;
-  padding: 4px 0;
-  width: 100%;
-}
-
-.content-preview-empty {
-  color: var(--ion-color-medium, #888);
-  font-size: 0.9rem;
-  margin: 0;
+.photo-add-btn {
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 1px dashed var(--color-rule);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-ink-muted);
+  font-size: 1.3rem;
+  cursor: pointer;
 }
 </style>
