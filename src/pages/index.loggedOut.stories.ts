@@ -5,7 +5,7 @@ import IndexPage from './index.vue';
 import { withLoggedOut, routeLoader } from '../../.storybook/decorators';
 
 const meta: Meta<typeof IndexPage> = {
-  title: 'Pages/Home — Welcome (f-1a)',
+  title: 'Pages/Home — Welcome',
   component: IndexPage,
   loaders: [routeLoader('/')],
   decorators: [withLoggedOut()],

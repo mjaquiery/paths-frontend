@@ -25,7 +25,7 @@ const path = {
 };
 
 const meta: Meta<typeof EntryNewPage> = {
-  title: 'Pages/Entry Editor — New (f-4a)',
+  title: 'Pages/Entry Editor — New',
   component: EntryNewPage,
   loaders: [routeLoader('/entry/new'), clearLocalDraftsLoader()],
   decorators: [withLoggedInUser({ token: 'tok', user_id: 'user-1', display_name: 'Alex M.' })],

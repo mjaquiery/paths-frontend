@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <!-- ── Logged out: centred welcome (f-1a) ── -->
+    <!-- ── Logged out: centred welcome ── -->
     <ion-content v-if="!currentUser" class="df-ui logged-out-content">
       <div class="logged-out">
         <span class="logo-emoji" aria-hidden="true">📖</span>
@@ -40,7 +40,7 @@
       </div>
     </ion-content>
 
-    <!-- ── Logged in: day browser (f-2a) ── -->
+    <!-- ── Logged in: day browser ── -->
     <template v-else>
       <ion-content ref="contentRef">
         <DayBrowser

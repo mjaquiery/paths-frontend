@@ -17,7 +17,7 @@
 
   /* Path identity bars are set inline via --path-color CSS variable */
 
-  /* Fixed swatches offered when picking a path colour (see f-5a) */
+  /* Fixed swatches offered when picking a path colour */
   --path-swatch-1: #5b52f0;
   --path-swatch-2: #f5a623;
   --path-swatch-3: #12b6d4;

@@ -85,7 +85,7 @@ const pathEntries: PathEntries[] = [
 ];
 
 const meta: Meta<typeof DayBrowser> = {
-  title: 'Pages/Home — Day Browser (f-2a)',
+  title: 'Pages/Home — Day Browser',
   component: DayBrowser,
   args: {
     visiblePaths: [dailyLife, samsTravel],

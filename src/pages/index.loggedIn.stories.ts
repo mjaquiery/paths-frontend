@@ -32,7 +32,7 @@ const mswHandlers = [
 ];
 
 const meta: Meta<typeof IndexPage> = {
-  title: 'Pages/Home — Day Browser (f-2a)',
+  title: 'Pages/Home — Day Browser',
   component: IndexPage,
   loaders: [routeLoader('/')],
   decorators: [withLoggedInUser()],

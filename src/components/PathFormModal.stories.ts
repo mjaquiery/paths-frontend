@@ -9,7 +9,7 @@ import { modalRender } from '../../.storybook/modalRender';
 // a child of canvasElement — so these stories query the global `screen`
 // (bound to document.body) instead of `within(canvasElement)`.
 const meta: Meta<typeof PathFormModal> = {
-  title: 'Pages/Create or Edit Path (f-5a)',
+  title: 'Pages/Create or Edit Path',
   component: PathFormModal,
   render: modalRender(PathFormModal),
   args: {

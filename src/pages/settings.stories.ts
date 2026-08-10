@@ -58,7 +58,7 @@ const baseHandlers = [
 ];
 
 const meta: Meta<typeof SettingsPage> = {
-  title: 'Pages/Settings (f-6a)',
+  title: 'Pages/Settings',
   component: SettingsPage,
   loaders: [routeLoader('/settings')],
   decorators: [withLoggedInUser(CURRENT_USER)],

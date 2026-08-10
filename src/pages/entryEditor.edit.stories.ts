@@ -58,7 +58,7 @@ const saveSucceedsHandler = http.put(
 );
 
 const meta: Meta<typeof EntryEditPage> = {
-  title: 'Pages/Entry Editor — Edit (f-4a)',
+  title: 'Pages/Entry Editor — Edit',
   component: EntryEditPage,
   loaders: [routeLoader(editUrl), clearLocalDraftsLoader()],
   decorators: [

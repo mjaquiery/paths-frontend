@@ -14,7 +14,7 @@ import { router } from '../../.storybook/router';
 const entryUrl = `/entry/${pathResponseFixture.path_id}/${entryResponseFixture.id}`;
 
 const meta: Meta<typeof EntryViewPage> = {
-  title: 'Pages/Entry View (f-3a)',
+  title: 'Pages/Entry View',
   component: EntryViewPage,
   loaders: [routeLoader(entryUrl)],
   parameters: {

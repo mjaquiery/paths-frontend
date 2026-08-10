@@ -13,8 +13,8 @@ export interface OnThisDayEntry {
 
 /**
  * Entries from visible paths sharing `dateStr`'s month-day in earlier years,
- * newest year first. Shared by DayBrowser's year tabs (f-2a) and the entry
- * view's "On this day" list (f-3a) so the two stay in sync.
+ * newest year first. Shared by DayBrowser's year tabs and the entry
+ * view's "On this day" list so the two stay in sync.
  */
 export function useOnThisDay(
   dateStr: Ref<string>,
