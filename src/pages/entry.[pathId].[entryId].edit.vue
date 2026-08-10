@@ -174,10 +174,7 @@ import { pickImages } from '../composables/useImagePicker';
 import { extractErrorMessage } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
-import type {
-  EntryContentResponse,
-  ImageResponse,
-} from '../generated/types';
+import type { EntryContentResponse, ImageResponse } from '../generated/types';
 
 const route = useRoute<'/entry.[pathId].[entryId].edit'>();
 const router = useRouter();
