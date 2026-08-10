@@ -4,6 +4,7 @@ import { initialize, mswLoader } from 'msw-storybook-addon';
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query';
 
 import { handlers } from '../src/mocks/handlers';
+import { router } from './router';
 
 initialize();
 
@@ -16,6 +17,7 @@ setup((app) => {
       },
     }),
   });
+  app.use(router);
 });
 
 const preview: Preview = {
