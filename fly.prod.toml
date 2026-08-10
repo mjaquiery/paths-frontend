@@ -3,12 +3,12 @@
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'paths-app-staging'
+app = 'paths-app'
 primary_region = 'lhr'
 
 [build]
 [build.args]
-VITE_API_BASE_URL="https://paths-staging.fly.dev"
+VITE_API_BASE_URL="https://paths.fly.dev"
 
 [http_service]
   internal_port = 80

@@ -6,6 +6,13 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+  release:
+    types: [created]
 
 jobs:
   deploy:
@@ -15,6 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only
+      - run: flyctl deploy --remote-only ${{ (github.event.inputs.environment == 'production' || github.event_name == 'release') && '--config fly.prod.yml' }}
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
