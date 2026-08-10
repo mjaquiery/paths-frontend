@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     concurrency: deploy-group # optional: ensure only one action runs at a time
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - run: flyctl deploy --remote-only ${{ (github.event.inputs.environment == 'production' || github.event_name == 'release') && '--config fly.prod.yml' || ''}}
         env:
