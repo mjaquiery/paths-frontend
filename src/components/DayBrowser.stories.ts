@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, fn, userEvent, within } from '@storybook/test';
+import { expect, fn, userEvent, waitFor, within } from '@storybook/test';
 
 import DayBrowser from './DayBrowser.vue';
 import type { PathResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
 import { toLocalISODate } from '../utils/date';
+import { router } from '../../.storybook/router';
 
 function lastYearToday(): string {
   const d = new Date();
@@ -105,11 +106,86 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Daily Life')).toBeInTheDocument();
     await expect(canvas.getByText("Sam's Travel")).toBeInTheDocument();
-    // Today's cell is selected by default, and its photo renders inline.
+    // One entry per path lands on today, side by side.
+    await expect(canvasElement.querySelectorAll('.db-entry')).toHaveLength(2);
+    // The week strip always renders all 7 days, today selected by default.
+    await expect(canvasElement.querySelectorAll('.db-week-day')).toHaveLength(7);
     await expect(
       canvasElement.querySelector('.db-week-day--selected'),
     ).toBeInTheDocument();
+    // ...and its photo renders inline.
     await expect(canvasElement.querySelector('.db-entry-photo')).toBeInTheDocument();
+  },
+};
+
+export const MultipleEntriesFromTheSamePathOnTheSameDay: Story = {
+  args: {
+    visiblePaths: [dailyLife],
+    pathEntries: [
+      {
+        pathId: 'p1',
+        entries: [
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: toLocalISODate(new Date()),
+            edit_id: 1,
+            content: 'First entry today',
+          },
+          {
+            id: 'e2',
+            path_id: 'p1',
+            day: toLocalISODate(new Date()),
+            edit_id: 2,
+            content: 'Second entry today',
+          },
+        ],
+      },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('First entry today')).toBeInTheDocument();
+    await expect(canvas.getByText('Second entry today')).toBeInTheDocument();
+    await expect(canvasElement.querySelectorAll('.db-entry')).toHaveLength(2);
+  },
+};
+
+export const ContentPlaceholders: Story = {
+  args: {
+    visiblePaths: [dailyLife],
+    pathEntries: [
+      {
+        pathId: 'p1',
+        entries: [
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: toLocalISODate(new Date()),
+            edit_id: 1,
+            content: undefined,
+          },
+          {
+            id: 'e2',
+            path_id: 'p1',
+            day: toLocalISODate(new Date()),
+            edit_id: 2,
+            content: '',
+          },
+        ],
+      },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Undefined content (not yet loaded) shows "Fetching…"...
+    await expect(await canvas.findByText('Fetching…')).toBeInTheDocument();
+    // ...while an empty string (loaded, but blank) shows "(no text)".
+    await expect(canvas.getByText('(no text)')).toBeInTheDocument();
+    // Neither entry has images, so no photo section renders for either.
+    await expect(
+      canvasElement.querySelector('.db-entry-photos'),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -160,6 +236,31 @@ export const ClickingAnEntryIsAccessible: Story = {
     await expect(entry).toHaveAttribute('role', 'button');
     await expect(entry).toHaveAttribute('tabindex', '0');
     await userEvent.click(entry!);
+    await waitFor(() =>
+      expect(router.currentRoute.value.path).toBe('/entry/p1/e1'),
+    );
+  },
+};
+
+export const NavigatingAnEntryWithTheKeyboard: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const entry = (
+      await canvas.findByText('Arrived in Kyoto! First impressions overwhelming.')
+    ).closest('.db-entry') as HTMLElement;
+
+    entry.focus();
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() =>
+      expect(router.currentRoute.value.path).toBe('/entry/p2/e3'),
+    );
+
+    await router.push('/');
+    entry.focus();
+    await userEvent.keyboard(' ');
+    await waitFor(() =>
+      expect(router.currentRoute.value.path).toBe('/entry/p2/e3'),
+    );
   },
 };
 
@@ -169,6 +270,9 @@ export const CreatingAnEntry: Story = {
     const addButton = canvas.getByLabelText('Add entry');
     await expect(addButton).toBeInTheDocument();
     await userEvent.click(addButton);
+
+    await waitFor(() => expect(router.currentRoute.value.path).toBe('/entry/new'));
+    expect(router.currentRoute.value.query.day).toBe(toLocalISODate(new Date()));
   },
 };
 

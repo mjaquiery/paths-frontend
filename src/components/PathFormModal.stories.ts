@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, fn, screen, userEvent, waitFor } from '@storybook/test';
+import { expect, fireEvent, fn, screen, userEvent, waitFor } from '@storybook/test';
+import { http, HttpResponse } from 'msw';
 
 import PathFormModal from './PathFormModal.vue';
 import { pathResponseFixture } from '../generated/fixtures';
@@ -30,8 +31,69 @@ export const NewPath: Story = {
     const createButton = screen.getByText('Create');
     await expect(createButton).toBeDisabled();
 
-    await userEvent.type(screen.getByPlaceholderText('Path name'), 'Photography');
+    const nameInput = screen.getByPlaceholderText('Path name');
+    await userEvent.type(nameInput, 'Photography');
     await expect(createButton).not.toBeDisabled();
+
+    // Clearing the title re-disables Create.
+    await userEvent.clear(nameInput);
+    await expect(createButton).toBeDisabled();
+  },
+};
+
+// The mocked POST echoes the submitted title/color back onto the fixture it
+// returns, so asserting on the onSaved payload (rather than a shared module-level
+// spy across stories) proves what was actually sent, without moving-shared-state.
+export const CreatingSendsTheEnteredTitleAndDefaultColour: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.post('*/v1/paths', async ({ request }) => {
+          const body = (await request.json()) as { title: string; color: string };
+          return HttpResponse.json(
+            { ...pathResponseFixture, title: body.title, color: body.color },
+            { status: 201 },
+          );
+        }),
+      ],
+    },
+  },
+  play: async ({ args }) => {
+    // A single synthetic input event rather than userEvent.type's
+    // char-by-char simulation — this story asserts on the exact submitted
+    // title, which a dropped keystroke mid-typing would otherwise flake.
+    const nameInput = await screen.findByPlaceholderText('Path name');
+    await fireEvent.input(nameInput, { target: { value: 'Photography' } });
+    await userEvent.click(screen.getByText('Create'));
+    await waitFor(() => expect(args.onSaved).toHaveBeenCalled());
+
+    const saved = (args.onSaved as any).mock.calls[0][0];
+    expect(saved.title).toBe('Photography');
+    expect(saved.color).toBe('#5b52f0'); // first swatch, selected by default
+  },
+};
+
+export const ShowsAnErrorAndStaysOpenIfCreationFails: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.post('*/v1/paths', () =>
+          HttpResponse.json({ detail: 'Server error' }, { status: 500 }),
+        ),
+      ],
+    },
+  },
+  play: async ({ args }) => {
+    await userEvent.type(
+      await screen.findByPlaceholderText('Path name'),
+      'Photography',
+    );
+    await userEvent.click(screen.getByText('Create'));
+
+    await expect(
+      await screen.findByText('Failed to create path', { exact: false }),
+    ).toBeInTheDocument();
+    await expect(args.onDismiss).not.toHaveBeenCalled();
   },
 };
 
@@ -45,6 +107,34 @@ export const PickingAColourSwatch: Story = {
     await userEvent.click(swatches[1]!);
     await expect(swatches[1]).toHaveClass('pf-swatch--selected');
     await expect(swatches[0]).not.toHaveClass('pf-swatch--selected');
+  },
+};
+
+export const PickingAColourSwatchChangesTheSubmittedColour: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.post('*/v1/paths', async ({ request }) => {
+          const body = (await request.json()) as { color: string };
+          return HttpResponse.json(
+            { ...pathResponseFixture, color: body.color },
+            { status: 201 },
+          );
+        }),
+      ],
+    },
+  },
+  play: async ({ args }) => {
+    await userEvent.type(
+      await screen.findByPlaceholderText('Path name'),
+      'Photography',
+    );
+    await userEvent.click(document.querySelectorAll('.pf-swatch')[1]!); // orange
+    await userEvent.click(screen.getByText('Create'));
+    await waitFor(() => expect(args.onSaved).toHaveBeenCalled());
+
+    const saved = (args.onSaved as any).mock.calls[0][0];
+    expect(saved.color).toBe('#f5a623');
   },
 };
 

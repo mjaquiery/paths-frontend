@@ -50,6 +50,27 @@ const pendingInvitation = {
   updated_at: '2024-03-15T09:00:00Z',
 };
 
+const ignoredInvitation = {
+  id: 'inv-2',
+  path_id: 'path-y',
+  path_code: 'CD5Y9Z',
+  path_title: 'Weekend Adventures',
+  inviter_user_id: 'user-4',
+  inviter_email: 'friend@example.com',
+  invited_email: 'me@example.com',
+  invited_user_id: null,
+  status: 'ignored' as const,
+  created_at: '2024-03-10T09:00:00Z',
+  updated_at: '2024-03-11T09:00:00Z',
+};
+
+const invitationWithNoInviterEmail = {
+  ...pendingInvitation,
+  id: 'inv-3',
+  path_title: 'Secret Project',
+  inviter_email: null,
+};
+
 const baseHandlers = [
   http.get('*/v1/paths', () => HttpResponse.json([dailyLife, samsTravel])),
   http.get('*/v1/paths/:pathCode/entries', () => HttpResponse.json([])),
@@ -76,7 +97,55 @@ export const Default: Story = {
     await expect(canvas.getByText("Sam's Travel")).toBeInTheDocument();
     await expect(canvas.getByText('shared')).toBeInTheDocument();
     await expect(canvas.getByText('Alex M.')).toBeInTheDocument();
+    // Pending invitations show path_title and inviter_email, not path_code.
     await expect(canvas.getByText("Maya's Cooking Journey")).toBeInTheDocument();
+    await expect(
+      canvas.getByText('maya@example.com', { exact: false }),
+    ).toBeInTheDocument();
+    await expect(canvas.queryByText('XYZ123')).not.toBeInTheDocument();
+  },
+};
+
+export const IgnoredInvitationsShowTitleAndInviter: Story = {
+  parameters: {
+    msw: {
+      // Override listed before the spread — msw matches array order, and
+      // baseHandlers already has a (different) */v1/invitations handler.
+      handlers: [
+        http.get('*/v1/invitations', () =>
+          HttpResponse.json([pendingInvitation, ignoredInvitation]),
+        ),
+        ...baseHandlers,
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('Weekend Adventures', { exact: false }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByText('friend@example.com', { exact: false }),
+    ).toBeInTheDocument();
+    await expect(canvas.queryByText('CD5Y9Z')).not.toBeInTheDocument();
+  },
+};
+
+export const PendingInvitationWithoutInviterEmail: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('*/v1/invitations', () =>
+          HttpResponse.json([invitationWithNoInviterEmail]),
+        ),
+        ...baseHandlers,
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Secret Project')).toBeInTheDocument();
+    await expect(canvas.queryByText('From', { exact: false })).not.toBeInTheDocument();
   },
 };
 
