@@ -13,7 +13,10 @@
       >
       <ion-item lines="none">
         <ion-label>Show hidden paths</ion-label>
-        <ion-toggle v-model="showHidden"></ion-toggle>
+        <ion-toggle
+          v-model="showHidden"
+          aria-label="Show hidden paths"
+        ></ion-toggle>
       </ion-item>
       <ion-card v-if="showCreateForm">
         <ion-card-content>
@@ -63,6 +66,7 @@
           >
           <ion-toggle
             :checked="!hiddenByPath[path.path_id]"
+            :aria-label="`${path.title} visible`"
             @ionChange="togglePath(path.path_id, $event)"
           >
           </ion-toggle>

@@ -9,6 +9,7 @@
           <ion-checkbox
             slot="start"
             :checked="selectedForExport.has(path.path_id)"
+            :aria-label="path.title"
             @ionChange="setExportPath(path.path_id, $event)"
           ></ion-checkbox>
           <ion-label>{{ path.title }}</ion-label>

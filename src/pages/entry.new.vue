@@ -21,6 +21,7 @@
           <select
             v-model="selectedPathId"
             class="path-select"
+            aria-label="Path"
             :style="{
               borderColor: selectedPathColor,
               color: selectedPathColor,
@@ -34,7 +35,12 @@
               {{ path.title }}
             </option>
           </select>
-          <input v-model="day" type="date" class="day-input" />
+          <input
+            v-model="day"
+            type="date"
+            class="day-input"
+            aria-label="Date"
+          />
         </div>
 
         <div class="editor-toolbar">
@@ -401,7 +407,7 @@ async function submit() {
 }
 
 .editor-error {
-  color: #d33;
+  color: var(--ion-color-danger);
   font-size: 0.85rem;
   margin-top: 0.75rem;
 }

@@ -28,7 +28,7 @@
         </div>
 
         <p class="entry-path-label">{{ path?.title }}</p>
-        <h1 class="entry-date">{{ formattedDate }}</h1>
+        <h1 class="entry-date">{{ formattedDate || 'Loading…' }}</h1>
 
         <p v-if="deleteError" class="entry-error">{{ deleteError }}</p>
         <p v-if="content === undefined" class="entry-body-placeholder">
@@ -275,7 +275,7 @@ async function performDelete() {
 }
 
 .entry-menu-item--danger {
-  color: #d33;
+  color: var(--ion-color-danger);
 }
 
 .entry-path-label {
@@ -296,7 +296,7 @@ async function performDelete() {
 }
 
 .entry-error {
-  color: #d33;
+  color: var(--ion-color-danger);
   font-size: 0.85rem;
 }
 

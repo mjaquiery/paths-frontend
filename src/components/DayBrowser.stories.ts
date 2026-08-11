@@ -65,7 +65,8 @@ const pathEntries: PathEntries[] = [
         path_id: 'p1',
         day: lastYearToday(),
         edit_id: 1,
-        content: 'First day of spring last year — walked home through the park.',
+        content:
+          'First day of spring last year — walked home through the park.',
         images: [],
       },
     ],
@@ -109,12 +110,16 @@ export const Default: Story = {
     // One entry per path lands on today, side by side.
     await expect(canvasElement.querySelectorAll('.db-entry')).toHaveLength(2);
     // The week strip always renders all 7 days, today selected by default.
-    await expect(canvasElement.querySelectorAll('.db-week-day')).toHaveLength(7);
+    await expect(canvasElement.querySelectorAll('.db-week-day')).toHaveLength(
+      7,
+    );
     await expect(
       canvasElement.querySelector('.db-week-day--selected'),
     ).toBeInTheDocument();
     // ...and its photo renders inline.
-    await expect(canvasElement.querySelector('.db-entry-photo')).toBeInTheDocument();
+    await expect(
+      canvasElement.querySelector('.db-entry-photo'),
+    ).toBeInTheDocument();
   },
 };
 
@@ -145,7 +150,9 @@ export const MultipleEntriesFromTheSamePathOnTheSameDay: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText('First entry today')).toBeInTheDocument();
+    await expect(
+      await canvas.findByText('First entry today'),
+    ).toBeInTheDocument();
     await expect(canvas.getByText('Second entry today')).toBeInTheDocument();
     await expect(canvasElement.querySelectorAll('.db-entry')).toHaveLength(2);
   },
@@ -208,7 +215,9 @@ export const SelectingADayFiltersEntries: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      await canvas.findByText('Arrived in Kyoto! First impressions overwhelming.'),
+      await canvas.findByText(
+        'Arrived in Kyoto! First impressions overwhelming.',
+      ),
     ).toBeInTheDocument();
 
     // Click whichever week-day cell isn't the currently-selected one (today) —
@@ -232,7 +241,7 @@ export const ClickingAnEntryIsAccessible: Story = {
       await canvas.findByText(
         'Morning run along the river. The cherry blossoms are just starting to open.',
       )
-    ).closest('.db-entry');
+    ).closest('.db-entry-main');
     await expect(entry).toHaveAttribute('role', 'button');
     await expect(entry).toHaveAttribute('tabindex', '0');
     await userEvent.click(entry!);
@@ -246,8 +255,10 @@ export const NavigatingAnEntryWithTheKeyboard: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const entry = (
-      await canvas.findByText('Arrived in Kyoto! First impressions overwhelming.')
-    ).closest('.db-entry') as HTMLElement;
+      await canvas.findByText(
+        'Arrived in Kyoto! First impressions overwhelming.',
+      )
+    ).closest('.db-entry-main') as HTMLElement;
 
     entry.focus();
     await userEvent.keyboard('{Enter}');
@@ -271,8 +282,12 @@ export const CreatingAnEntry: Story = {
     await expect(addButton).toBeInTheDocument();
     await userEvent.click(addButton);
 
-    await waitFor(() => expect(router.currentRoute.value.path).toBe('/entry/new'));
-    expect(router.currentRoute.value.query.day).toBe(toLocalISODate(new Date()));
+    await waitFor(() =>
+      expect(router.currentRoute.value.path).toBe('/entry/new'),
+    );
+    expect(router.currentRoute.value.query.day).toBe(
+      toLocalISODate(new Date()),
+    );
   },
 };
 
@@ -290,6 +305,8 @@ export const NoEntriesForSelectedDay: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText('No entries yet.')).toBeInTheDocument();
+    await expect(
+      await canvas.findByText('No entries yet.'),
+    ).toBeInTheDocument();
   },
 };

@@ -1,5 +1,9 @@
 <template>
-  <ion-modal :is-open="isOpen" @didDismiss="onDismiss">
+  <ion-modal
+    :is-open="isOpen"
+    :aria-label="path ? 'Edit Path' : 'New Path'"
+    @didDismiss="onDismiss"
+  >
     <div class="pf-header df-ui">
       <button class="pf-text-btn" @click="onDismiss">Cancel</button>
       <span class="pf-title">{{ path ? 'Edit Path' : 'New Path' }}</span>
@@ -51,7 +55,11 @@
           </p>
         </div>
         <label class="pf-toggle">
-          <input type="checkbox" v-model="form.shareable" />
+          <input
+            type="checkbox"
+            v-model="form.shareable"
+            aria-label="Shareable"
+          />
           <span class="pf-toggle-track"><span class="pf-toggle-thumb" /></span>
         </label>
       </div>

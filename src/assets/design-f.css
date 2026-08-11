@@ -50,6 +50,22 @@
   --ion-color-primary-shade: #000000;
   --ion-color-primary-tint: #333331;
 
+  /* Ionic's stock danger/success reds and greens fall below WCAG AA against
+   * the warm paper background and its tinted banner variants — retuned here
+   * so every ion-color="danger"/"success" consumer (and anything reading the
+   * custom properties directly) gets an accessible colour for free. */
+  --ion-color-danger: #c22525;
+  --ion-color-danger-rgb: 194, 37, 37;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #7a1414;
+  --ion-color-danger-tint: #f6e2de;
+
+  --ion-color-success: #237a3c;
+  --ion-color-success-rgb: 35, 122, 60;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+
   /* ── AppFooter tokens ── */
   --footer-height-idle: 2rem;
   --footer-height-active: 3rem;
@@ -79,6 +95,18 @@
     --ion-color-primary-shade: #d8d5cc;
     --ion-color-primary-tint: #f2f0e9;
 
+    --ion-color-danger: #f5a3a3;
+    --ion-color-danger-rgb: 245, 163, 163;
+    --ion-color-danger-contrast: #000000;
+    --ion-color-danger-contrast-rgb: 0, 0, 0;
+    --ion-color-danger-shade: #ffd0d0;
+    --ion-color-danger-tint: #3e302b;
+
+    --ion-color-success: #5fd37f;
+    --ion-color-success-rgb: 95, 211, 127;
+    --ion-color-success-contrast: #000000;
+    --ion-color-success-contrast-rgb: 0, 0, 0;
+
     --footer-bg-offline: #2a1e00;
     --footer-bg-error: #2a1400;
   }
@@ -97,6 +125,18 @@
   --ion-color-primary-contrast-rgb: 30, 28, 22;
   --ion-color-primary-shade: #d8d5cc;
   --ion-color-primary-tint: #f2f0e9;
+
+  --ion-color-danger: #f5a3a3;
+  --ion-color-danger-rgb: 245, 163, 163;
+  --ion-color-danger-contrast: #000000;
+  --ion-color-danger-contrast-rgb: 0, 0, 0;
+  --ion-color-danger-shade: #ffd0d0;
+  --ion-color-danger-tint: #3e302b;
+
+  --ion-color-success: #5fd37f;
+  --ion-color-success-rgb: 95, 211, 127;
+  --ion-color-success-contrast: #000000;
+  --ion-color-success-contrast-rgb: 0, 0, 0;
 
   --footer-bg-offline: #2a1e00;
   --footer-bg-error: #2a1400;

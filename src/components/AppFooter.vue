@@ -1,12 +1,11 @@
 <template>
-  <footer
-    class="app-footer"
-    :class="footerClass"
-    role="status"
-    aria-live="polite"
-    aria-label="Connectivity status"
-  >
-    <div class="app-footer__content">
+  <footer class="app-footer" :class="footerClass">
+    <div
+      class="app-footer__content"
+      role="status"
+      aria-live="polite"
+      aria-label="Connectivity status"
+    >
       <span class="app-footer__dot" aria-hidden="true" />
       <span class="app-footer__message">{{ statusMessage }}</span>
       <!-- TEMP debug marker for the Android nav investigation — remove once confirmed fixed -->

@@ -1,5 +1,9 @@
 <template>
-  <ion-modal :is-open="isOpen" @didDismiss="onDismiss">
+  <ion-modal
+    :is-open="isOpen"
+    :aria-label="`Share &quot;${path.title}&quot;`"
+    @didDismiss="onDismiss"
+  >
     <div class="share-header df-ui">
       <span class="share-title">Share "{{ path.title }}"</span>
       <button class="text-btn" @click="onDismiss">Close</button>

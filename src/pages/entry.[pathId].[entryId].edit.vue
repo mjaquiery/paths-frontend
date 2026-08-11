@@ -429,7 +429,7 @@ async function submit() {
 }
 
 .editor-error {
-  color: #d33;
+  color: var(--ion-color-danger);
   font-size: 0.85rem;
   margin-top: 0.75rem;
 }
@@ -485,7 +485,7 @@ async function submit() {
 }
 
 .image-action-btn--danger {
-  color: #d33;
+  color: var(--ion-color-danger);
 }
 
 .photo-strip {

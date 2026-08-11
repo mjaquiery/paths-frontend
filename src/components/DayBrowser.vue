@@ -87,19 +87,25 @@
           :key="pe.pathId + '-' + pe.entryId"
           class="db-entry df-path-bar"
           :style="{ '--path-color': pe.color }"
-          role="button"
-          tabindex="0"
-          :aria-label="`View entry from ${pe.pathTitle}`"
-          @click="openDetail(pe)"
-          @keydown.enter="openDetail(pe)"
-          @keydown.space.prevent="openDetail(pe)"
         >
-          <p class="db-entry-path">{{ pe.pathTitle }}</p>
-          <p class="db-entry-preview df-body">
-            {{
-              pe.preview === undefined ? 'Fetching…' : pe.preview || '(no text)'
-            }}
-          </p>
+          <div
+            class="db-entry-main"
+            role="button"
+            tabindex="0"
+            :aria-label="`View entry from ${pe.pathTitle}`"
+            @click="openDetail(pe)"
+            @keydown.enter="openDetail(pe)"
+            @keydown.space.prevent="openDetail(pe)"
+          >
+            <p class="db-entry-path">{{ pe.pathTitle }}</p>
+            <p class="db-entry-preview df-body">
+              {{
+                pe.preview === undefined
+                  ? 'Fetching…'
+                  : pe.preview || '(no text)'
+              }}
+            </p>
+          </div>
           <div v-if="pe.images.length > 0" class="db-entry-photos">
             <EntryImage
               v-for="img in pe.images.slice(0, 3)"
@@ -480,11 +486,14 @@ function openDetail(pe: DayPathEntry) {
 .db-entry {
   padding: 0.6rem 0 0.6rem calc(var(--page-margin, 0.75rem) - 2px);
   border-bottom: 1px solid var(--color-rule);
-  cursor: pointer;
 }
 
 .db-entry:last-child {
   border-bottom: none;
+}
+
+.db-entry-main {
+  cursor: pointer;
 }
 
 .db-entry-path {

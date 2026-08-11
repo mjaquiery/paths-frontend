@@ -16,7 +16,7 @@
           <ion-card-content>
             <ion-item>
               <ion-label position="stacked">Day *</ion-label>
-              <ion-input v-model="newEntry.day" type="date" />
+              <ion-input v-model="newEntry.day" type="date" aria-label="Day" />
             </ion-item>
             <ion-item>
               <ion-label position="stacked">Content *</ion-label>

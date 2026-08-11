@@ -474,7 +474,7 @@ const deleteOpen = ref(false);
 }
 
 .text-link--danger {
-  color: #d33;
+  color: var(--ion-color-danger);
 }
 
 .text-link:disabled {
@@ -544,7 +544,7 @@ const deleteOpen = ref(false);
   font-family: var(--font-sans);
   font-size: 0.65rem;
   text-transform: uppercase;
-  color: var(--color-ink-muted);
+  color: var(--color-ink);
   background: var(--color-rule);
   border-radius: 999px;
   padding: 0.1rem 0.5rem;
@@ -574,7 +574,7 @@ const deleteOpen = ref(false);
 }
 
 .icon-btn--danger {
-  color: #d33;
+  color: var(--ion-color-danger);
 }
 
 .icon-btn:disabled {
@@ -648,8 +648,8 @@ const deleteOpen = ref(false);
 }
 
 .pill-btn--accept {
-  background: #2e9e4c;
-  color: #fff;
+  background: var(--ion-color-success);
+  color: var(--ion-color-success-contrast);
 }
 
 .pill-btn:disabled {
@@ -687,7 +687,7 @@ const deleteOpen = ref(false);
 }
 
 .data-row--danger {
-  color: #d33;
+  color: var(--ion-color-danger);
 }
 
 .chevron {
