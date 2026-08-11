@@ -7,11 +7,12 @@
     :aria-label="alt || 'View image'"
   >
     <img
-      v-if="imageUrl"
+      v-if="imageUrl && !loadFailed"
       :src="thumbnailUrl || imageUrl"
       :alt="alt || 'Entry image'"
       class="entry-image-thumb"
       loading="lazy"
+      @error="loadFailed = true"
     />
     <span
       v-else-if="isLoading"
@@ -30,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useGetImageDownloadUrl } from '../generated/apiClient';
 import type { ImageDownloadResponse } from '../generated/types';
 import { extractErrorMessage } from '../lib/errors';
@@ -43,6 +44,9 @@ const props = defineProps<{
 const { data, isLoading, error } = useGetImageDownloadUrl(
   computed(() => props.imageId),
 );
+
+const loadFailed = ref(false);
+watch(() => props.imageId, () => (loadFailed.value = false));
 
 const imageUrl = computed(
   () =>

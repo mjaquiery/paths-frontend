@@ -13,6 +13,24 @@ import {
   subscriberResponseFixture,
 } from '../generated/fixtures';
 
+// The generated fixture's image_url points at storage.example.com, a domain that
+// doesn't resolve — fine for schema examples, but it makes every story showing an
+// image render a broken-image icon. Swap in an inline placeholder so stories (and
+// the a11y/interaction test runs) show something real without a network dependency.
+const PLACEHOLDER_IMAGE_DATA_URI =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">' +
+      '<rect width="100%" height="100%" fill="#d8d2c4"/>' +
+      '<text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#555" text-anchor="middle" dominant-baseline="middle">Photo</text>' +
+      '</svg>',
+  );
+const imageDownloadPlaceholderFixture = {
+  ...imageDownloadResponseFixture,
+  image_url: PLACEHOLDER_IMAGE_DATA_URI,
+  thumbnail_url: PLACEHOLDER_IMAGE_DATA_URI,
+};
+
 // Hand-written, backed by fixtures.ts (itself generated from backend-declared openapi.json
 // examples) rather than orval's faker-based mock: true output. Covers only the endpoints the
 // current stories/tests exercise — extend as new stories are added, not ahead of them.
@@ -49,7 +67,7 @@ export const handlers = [
     () => new HttpResponse(null, { status: 204 }),
   ),
   http.get('*/v1/images/:imageId/download-url', () =>
-    HttpResponse.json(imageDownloadResponseFixture),
+    HttpResponse.json(imageDownloadPlaceholderFixture),
   ),
   http.get('*/v1/invitations', () => HttpResponse.json([invitationResponseFixture])),
   http.post('*/v1/invitations/:invitationId/accept', () =>

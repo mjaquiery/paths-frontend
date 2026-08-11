@@ -304,7 +304,7 @@ async function submit() {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('409')) {
       conflictError.value =
-        'This entry was edited by someone else. Please go back and reopen it to get the latest version before editing.';
+        'A newer version of this entry exists. Go back and reopen it to edit the latest version.';
     } else {
       const detail = extractErrorMessage(err);
       error.value = detail

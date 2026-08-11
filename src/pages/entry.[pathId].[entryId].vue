@@ -4,7 +4,7 @@
       <div class="entry-page df-ui">
         <div class="entry-header">
           <button class="text-btn" @click="router.back()">← Back</button>
-          <div class="entry-header-actions">
+          <div ref="menuWrapperRef" class="entry-header-actions">
             <button v-if="canEdit" class="text-btn" @click="goEdit">
               ✎ Edit
             </button>
@@ -92,7 +92,7 @@
 
 <script setup lang="ts">
 import { IonPage, IonContent, IonAlert } from '@ionic/vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 
@@ -184,6 +184,18 @@ function goEdit() {
 }
 
 const showMenu = ref(false);
+const menuWrapperRef = ref<HTMLElement | null>(null);
+
+function closeMenuIfOutside(e: MouseEvent) {
+  if (showMenu.value && !menuWrapperRef.value?.contains(e.target as Node)) {
+    showMenu.value = false;
+  }
+}
+onMounted(() => document.addEventListener('click', closeMenuIfOutside));
+onBeforeUnmount(() =>
+  document.removeEventListener('click', closeMenuIfOutside),
+);
+
 const showDeleteAlert = ref(false);
 const deleteError = ref('');
 const { mutateAsync: doDeleteEntry } = useDeleteEntry();

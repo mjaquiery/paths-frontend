@@ -2,6 +2,7 @@ import type { Preview } from '@storybook/vue3-vite';
 import { setup } from '@storybook/vue3';
 import { initialize, mswLoader } from 'msw-storybook-addon';
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query';
+import { IonicVue } from '@ionic/vue';
 
 import '@ionic/vue/css/core.css';
 import '@ionic/vue/css/normalize.css';
@@ -23,6 +24,7 @@ function applyTheme(theme: 'light' | 'dark') {
 }
 
 setup((app) => {
+  app.use(IonicVue);
   app.use(VueQueryPlugin, {
     queryClient: new QueryClient({
       defaultOptions: {
