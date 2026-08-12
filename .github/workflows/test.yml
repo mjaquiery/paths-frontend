@@ -21,3 +21,23 @@ jobs:
         run: npm ci
       - name: Run tests
         run: npm test
+
+  storybook-a11y:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        theme: [light, dark]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Storybook a11y tests (${{ matrix.theme }})
+        run: npm run test:storybook:ci
+        env:
+          VITE_TEST_STORYBOOK_THEME: ${{ matrix.theme }}

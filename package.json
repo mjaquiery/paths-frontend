@@ -16,6 +16,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test:storybook": "test-storybook",
+    "test:storybook:ci": "concurrently -k -s first \"storybook dev -p 6006 --ci --quiet\" \"wait-on tcp:6006 && test-storybook\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "deploy": "flyctl deploy --build-arg VITE_APP_VERSION=$(git rev-parse --short HEAD)"
@@ -51,6 +52,7 @@
     "@vitest/browser-playwright": "^4.1.10",
     "@vue/test-utils": "^2.4.6",
     "axe-playwright": "^2.2.2",
+    "concurrently": "^10.0.4",
     "jsdom": "^26.0.0",
     "msw": "^2.7.0",
     "msw-storybook-addon": "^2.0.4",
@@ -63,7 +65,8 @@
     "vite": "^6.2.0",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.1.0",
-    "vue-tsc": "^2.2.8"
+    "vue-tsc": "^2.2.8",
+    "wait-on": "^9.1.0"
   },
   "msw": {
     "workerDirectory": [

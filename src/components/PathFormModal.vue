@@ -49,16 +49,16 @@
 
       <div class="pf-shareable-row">
         <div>
-          <p class="pf-shareable-title">Shareable</p>
+          <p class="pf-shareable-title">Publicly visible</p>
           <p class="pf-shareable-desc">
-            Allow others to subscribe to this path
+            Anyone with the link can view this path, even if they aren't a subscriber
           </p>
         </div>
         <label class="pf-toggle">
           <input
             type="checkbox"
-            v-model="form.shareable"
-            aria-label="Shareable"
+            v-model="form.publiclyVisible"
+            aria-label="Publicly visible"
           />
           <span class="pf-toggle-track"><span class="pf-toggle-thumb" /></span>
         </label>
@@ -114,7 +114,7 @@ const form = ref({
   title: '',
   description: '',
   color: PATH_SWATCHES[0]!,
-  shareable: false,
+  publiclyVisible: false,
 });
 const saving = ref(false);
 const errorMessage = ref('');
@@ -128,13 +128,13 @@ watch(
           title: props.path.title,
           description: props.path.description ?? '',
           color: props.path.color,
-          shareable: props.path.is_public,
+          publiclyVisible: props.path.is_public,
         }
       : {
           title: '',
           description: '',
           color: PATH_SWATCHES[0]!,
-          shareable: false,
+          publiclyVisible: false,
         };
     errorMessage.value = '';
   },
@@ -157,10 +157,10 @@ async function save() {
         },
       });
       saved = result.data as PathResponse;
-      if (form.value.shareable !== props.path.is_public) {
+      if (form.value.publiclyVisible !== props.path.is_public) {
         await doUpdateVisibility({
           pathCode: props.path.path_id,
-          data: { is_public: form.value.shareable },
+          data: { is_public: form.value.publiclyVisible },
         });
       }
     } else {
@@ -172,7 +172,7 @@ async function save() {
         },
       });
       saved = result.data as PathResponse;
-      if (form.value.shareable) {
+      if (form.value.publiclyVisible) {
         await doUpdateVisibility({
           pathCode: saved.path_id,
           data: { is_public: true },

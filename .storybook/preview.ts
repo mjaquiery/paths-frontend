@@ -67,7 +67,10 @@ const preview: Preview = {
     },
   },
   initialGlobals: {
-    theme: 'light',
+    // VITE_TEST_STORYBOOK_THEME lets the test-runner CI matrix boot Storybook
+    // straight into dark mode, so axe scans dark-mode contrast/color rules too —
+    // the toolbar toggle only flips theme after a story's already mounted in light.
+    theme: import.meta.env.VITE_TEST_STORYBOOK_THEME === 'dark' ? 'dark' : 'light',
     viewport: { value: 'mobile1' },
   },
   // Nav-alert mute is switched on by resetRouteLoader() above (before mount);
