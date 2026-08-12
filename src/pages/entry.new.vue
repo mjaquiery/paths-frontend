@@ -13,7 +13,7 @@
             :disabled="!selectedPathId || !day || !content || saving"
             @click="submit"
           >
-            {{ saving ? 'Saving…' : 'Save' }}
+            {{ saveLabel }}
           </button>
         </div>
 
@@ -192,8 +192,15 @@ const initialDay =
   (route.query.day as string | undefined) ?? toLocalISODate(new Date());
 const initialPathId = (route.query.pathId as string | undefined) ?? '';
 
+const uploadProgress = ref(0);
 const { mutateAsync: createEntryMutation, isPending: saving } =
-  useCreateEntry();
+  useCreateEntry({
+    request: {
+      onUploadProgress: (loaded, total) => {
+        uploadProgress.value = total > 0 ? Math.round((loaded / total) * 100) : 0;
+      },
+    },
+  });
 
 const selectedPathId = ref(initialPathId);
 const day = ref(initialDay);
@@ -201,6 +208,12 @@ const contentTab = ref<'write' | 'preview'>('write');
 const error = ref('');
 const pendingImages = ref<{ file: File; caption: string }[]>([]);
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
+
+const saveLabel = computed(() => {
+  if (!saving.value) return 'Save';
+  if (pendingImages.value.length === 0) return 'Saving…';
+  return `Saving… ${uploadProgress.value}%`;
+});
 
 const selectedPathColor = computed(
   () =>
@@ -247,6 +260,7 @@ async function addImages() {
 
 async function submit() {
   if (!selectedPathId.value || !day.value || !content.value) return;
+  uploadProgress.value = 0;
   error.value = '';
   try {
     await createEntryMutation({

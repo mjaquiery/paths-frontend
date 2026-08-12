@@ -13,6 +13,14 @@ export default defineConfig({
     projects: [
       {
         extends: true,
+        test: {
+          name: 'unit',
+          environment: 'jsdom',
+          exclude: ['**/node_modules/**', '**/*.stories.*'],
+        },
+      },
+      {
+        extends: true,
         plugins: [storybookTest({ configDir: '.storybook' })],
         test: {
           name: 'storybook',

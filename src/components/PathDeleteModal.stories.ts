@@ -7,6 +7,16 @@ import { modalRender } from '../../.storybook/modalRender';
 
 // ion-modal teleports its content to document.body, so these stories query
 // the global `screen` (bound to document.body) rather than canvasElement.
+
+// modalRender flips `isOpen` on next tick but doesn't wait for Ionic's async
+// present() animation (ionModalDidPresent / the 'show-modal' class) to
+// finish. userEvent.type's char-by-char timing is slow enough to sometimes
+// land inside that window and get dropped, so wait for it before typing.
+async function waitForModalPresented() {
+  await waitFor(() =>
+    expect(document.querySelector('ion-modal')).toHaveClass('show-modal'),
+  );
+}
 const meta: Meta<typeof PathDeleteModal> = {
   title: 'Components/PathDeleteModal',
   component: PathDeleteModal,
@@ -56,6 +66,7 @@ export const RequiresExactNameMatch: Story = {
     // ion-input's native <input> accepts typing immediately, but Stencil only
     // forwards value changes to Vue's v-model once the host hydrates.
     await waitFor(() => expect(input.closest('ion-input')).toHaveClass('hydrated'));
+    await waitForModalPresented();
 
     await userEvent.type(input, 'wrong name');
     await expect(button).toHaveAttribute('disabled');
@@ -72,6 +83,7 @@ export const ConfirmingDeletes: Story = {
     const button = deleteButton();
     await waitFor(() => expect(button).toHaveClass('hydrated'));
     await waitFor(() => expect(input.closest('ion-input')).toHaveClass('hydrated'));
+    await waitForModalPresented();
 
     await userEvent.type(input, pathResponseFixture.title);
     await waitFor(() => expect(button).not.toHaveAttribute('disabled'));

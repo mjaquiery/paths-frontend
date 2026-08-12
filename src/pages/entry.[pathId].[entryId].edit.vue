@@ -15,7 +15,7 @@
             :disabled="!content.trim() || saving"
             @click="submit"
           >
-            {{ saving ? 'Saving…' : 'Save' }}
+            {{ saveLabel }}
           </button>
         </div>
 
@@ -207,7 +207,14 @@ const { data: imagesData } = useListEntryImages(pathId, entryId, {
   query: { select: (r) => r.data as ImageResponse[] },
 });
 
-const { mutateAsync: doUpdateEntry } = useUpdateEntry();
+const uploadProgress = ref(0);
+const { mutateAsync: doUpdateEntry } = useUpdateEntry({
+  request: {
+    onUploadProgress: (loaded, total) => {
+      uploadProgress.value = total > 0 ? Math.round((loaded / total) * 100) : 0;
+    },
+  },
+});
 
 const contentTab = ref<'write' | 'preview'>('write');
 const keptImages = ref<ImageResponse[]>([]);
@@ -216,6 +223,11 @@ const pendingImages = ref<{ file: File; caption: string }[]>([]);
 const saving = ref(false);
 const error = ref('');
 const conflictError = ref('');
+const saveLabel = computed(() => {
+  if (!saving.value) return 'Save';
+  if (pendingImages.value.length === 0) return 'Saving…';
+  return `Saving… ${uploadProgress.value}%`;
+});
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
 
 const {
@@ -272,6 +284,7 @@ async function addImages() {
 async function submit() {
   if (!content.value.trim() || entryData.value?.edit_id === undefined) return;
   saving.value = true;
+  uploadProgress.value = 0;
   error.value = '';
   conflictError.value = '';
 
