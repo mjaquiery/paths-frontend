@@ -7,6 +7,7 @@ const config: StorybookConfig = {
     '@storybook/addon-a11y',
     '@storybook/addon-vitest',
     'msw-storybook-addon',
+    'storybook/viewport',
   ],
 };
 

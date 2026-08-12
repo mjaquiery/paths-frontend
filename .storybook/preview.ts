@@ -3,6 +3,7 @@ import { setup } from '@storybook/vue3';
 import { initialize, mswLoader } from 'msw-storybook-addon';
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query';
 import { IonicVue } from '@ionic/vue';
+import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 
 import '@ionic/vue/css/core.css';
 import '@ionic/vue/css/normalize.css';
@@ -49,7 +50,7 @@ const preview: Preview = {
       handlers,
     },
     viewport: {
-      defaultViewport: 'mobile1',
+      options: MINIMAL_VIEWPORTS,
     },
   },
   globalTypes: {
@@ -67,6 +68,7 @@ const preview: Preview = {
   },
   initialGlobals: {
     theme: 'light',
+    viewport: { value: 'mobile1' },
   },
   // Nav-alert mute is switched on by resetRouteLoader() above (before mount);
   // switch it off after play finishes, so a human clicking around after play
