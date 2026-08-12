@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { http, HttpResponse, delay } from 'msw';
 
 import EntryEditPage from './entry.[pathId].[entryId].edit.vue';
@@ -30,22 +30,47 @@ const path = {
 const entryId = 'story-entry-edit-entry';
 const editUrl = `/entry/${path.path_id}/${entryId}/edit`;
 
-const readHandlers = [
-  http.get('*/v1/paths', () => HttpResponse.json([path])),
-  http.get('*/v1/paths/:pathCode/entries/:entrySlug', () =>
-    HttpResponse.json({
-      id: entryId,
-      path_id: path.path_id,
-      day: '2024-03-15',
-      edit_id: 1,
-      content: 'Morning run along the river.',
-      images: [],
-    }),
-  ),
-  http.get('*/v1/paths/:pathCode/entries/:entrySlug/images', () =>
-    HttpResponse.json([]),
-  ),
-];
+const existingImage = {
+  id: 'story-image-1',
+  entry_id: entryId,
+  filename: 'beach.jpg',
+  caption: null,
+  status: 'ready',
+  content_type: 'image/jpeg',
+  byte_size: 1024,
+};
+
+function entryReadHandlers(images: unknown[] = []) {
+  return [
+    http.get('*/v1/paths', () => HttpResponse.json([path])),
+    http.get('*/v1/paths/:pathCode/entries/:entrySlug', () =>
+      HttpResponse.json({
+        id: entryId,
+        path_id: path.path_id,
+        day: '2024-03-15',
+        edit_id: 1,
+        content: 'Morning run along the river.',
+        images: [],
+      }),
+    ),
+    http.get('*/v1/paths/:pathCode/entries/:entrySlug/images', () =>
+      HttpResponse.json(images),
+    ),
+  ];
+}
+
+const readHandlers = entryReadHandlers();
+
+// pickImages() falls back to a plain <input type="file"> appended to
+// document.body and clicked (see useImagePicker.ts) — there's no real OS
+// file dialog to drive in a headless test, so simulate the pick by grabbing
+// that transient input directly and dispatching a change via userEvent.upload.
+async function selectFile(file: File) {
+  const fileInput = document.body.querySelector(
+    'input[type="file"]',
+  ) as HTMLInputElement;
+  await userEvent.upload(fileInput, file);
+}
 
 const saveSucceedsHandler = http.put(
   '*/v1/paths/:pathCode/entries/:entrySlug',
@@ -144,13 +169,22 @@ export const SlowServerShowsSavingState: Story = {
     const saveButton = canvas.getByText('Save');
     await userEvent.click(saveButton);
 
-    await expect(await canvas.findByText('Saving…')).toBeInTheDocument();
+    await expect(
+      await canvas.findByText('Saving…', { selector: '.pill-btn' }),
+    ).toBeInTheDocument();
     await expect(saveButton).toBeDisabled();
+    // The SavingOverlay shows the same label inside its own ion-modal, so
+    // it's checked separately (via the testid) rather than by text alone.
+    await expect(await screen.findByTestId('saving-overlay')).toBeInTheDocument();
 
     await waitFor(
-      () => expect(canvas.queryByText('Saving…')).not.toBeInTheDocument(),
+      () =>
+        expect(
+          canvas.queryByText('Saving…', { selector: '.pill-btn' }),
+        ).not.toBeInTheDocument(),
       { timeout: 8000 },
     );
+    await expect(screen.queryByTestId('saving-overlay')).not.toBeInTheDocument();
   },
 };
 
@@ -197,5 +231,99 @@ export const ConflictShowsInlineWarning: Story = {
         exact: false,
       }),
     ).toBeInTheDocument();
+  },
+};
+
+export const ExistingImageCanBeRemovedAndRestored: Story = {
+  parameters: {
+    msw: { handlers: entryReadHandlers([existingImage]) },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('beach.jpg')).toBeInTheDocument();
+
+    await userEvent.click(canvas.getByLabelText('Remove image beach.jpg'));
+    const removedItem = canvas.getByText('beach.jpg').closest('.existing-image-item');
+    await expect(removedItem).toHaveClass('existing-image-item--removed');
+    await expect(
+      canvas.queryByLabelText('Remove image beach.jpg'),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(canvas.getByLabelText('Restore image beach.jpg'));
+    const restoredItem = canvas.getByText('beach.jpg').closest('.existing-image-item');
+    await expect(restoredItem).not.toHaveClass('existing-image-item--removed');
+    await expect(
+      canvas.getByLabelText('Remove image beach.jpg'),
+    ).toBeInTheDocument();
+  },
+};
+
+export const AddingNewImageShowsInPhotoStrip: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByDisplayValue('Morning run along the river.');
+
+    await userEvent.click(canvas.getByText('+'));
+    await selectFile(
+      new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
+    );
+
+    await expect(await canvas.findByText('sunset.jpg')).toBeInTheDocument();
+    await expect(
+      canvas.getByPlaceholderText('Caption'),
+    ).toBeInTheDocument();
+  },
+};
+
+export const SavingWithImageChangesShowsPercentProgress: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        ...entryReadHandlers([existingImage]),
+        http.put('*/v1/paths/:pathCode/entries/:entrySlug', async () => {
+          await delay(5000);
+          return HttpResponse.json({
+            id: entryId,
+            path_id: path.path_id,
+            day: '2024-03-15',
+            edit_id: 2,
+            content: 'Morning run along the river.',
+          });
+        }),
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByDisplayValue('Morning run along the river.');
+
+    // Remove the existing image and add a new one, so the save request
+    // carries a real multipart upload (drives the % progress label).
+    await userEvent.click(canvas.getByLabelText('Remove image beach.jpg'));
+    await userEvent.click(canvas.getByText('+'));
+    await selectFile(
+      new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
+    );
+
+    const saveButton = canvas.getByText('Save');
+    await userEvent.click(saveButton);
+
+    // Real xhr.upload progress events aren't reliably delivered through MSW's
+    // service-worker interception in this test environment, so this only
+    // asserts the label switches to the percent format for image-bearing
+    // saves (vs plain "Saving…" for saves with no images) rather than
+    // asserting any particular progress value.
+    await expect(
+      await canvas.findByText('Saving… 0%', { selector: '.pill-btn' }),
+    ).toBeInTheDocument();
+    await expect(await screen.findByTestId('saving-overlay')).toBeInTheDocument();
+
+    await waitFor(
+      () =>
+        expect(
+          canvas.queryByText('Saving…', { exact: false, selector: '.pill-btn' }),
+        ).not.toBeInTheDocument(),
+      { timeout: 8000 },
+    );
   },
 };

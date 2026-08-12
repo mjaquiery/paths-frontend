@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { http, HttpResponse, delay } from 'msw';
 
 import EntryNewPage from './entry.new.vue';
@@ -51,6 +51,17 @@ const meta: Meta<typeof EntryNewPage> = {
 export default meta;
 
 type Story = StoryObj<typeof EntryNewPage>;
+
+// pickImages() falls back to a plain <input type="file"> appended to
+// document.body and clicked (see useImagePicker.ts) — there's no real OS
+// file dialog to drive in a headless test, so simulate the pick by grabbing
+// that transient input directly and dispatching a change via userEvent.upload.
+async function selectFile(file: File) {
+  const fileInput = document.body.querySelector(
+    'input[type="file"]',
+  ) as HTMLInputElement;
+  await userEvent.upload(fileInput, file);
+}
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {
@@ -131,13 +142,22 @@ export const SlowServerShowsSavingState: Story = {
     const saveButton = canvas.getByText('Save');
     await userEvent.click(saveButton);
 
-    await expect(await canvas.findByText('Saving…')).toBeInTheDocument();
+    await expect(
+      await canvas.findByText('Saving…', { selector: '.pill-btn' }),
+    ).toBeInTheDocument();
     await expect(saveButton).toBeDisabled();
+    // The SavingOverlay shows the same label inside its own ion-modal, so
+    // it's checked separately (via the testid) rather than by text alone.
+    await expect(await screen.findByTestId('saving-overlay')).toBeInTheDocument();
 
     await waitFor(
-      () => expect(canvas.queryByText('Saving…')).not.toBeInTheDocument(),
+      () =>
+        expect(
+          canvas.queryByText('Saving…', { selector: '.pill-btn' }),
+        ).not.toBeInTheDocument(),
       { timeout: 8000 },
     );
+    await expect(screen.queryByTestId('saving-overlay')).not.toBeInTheDocument();
   },
 };
 
@@ -181,5 +201,70 @@ export const SavingCreatesTheEntry: Story = {
     // post-success side effect: the local draft is cleared.
     await waitFor(() => expect(textarea.value).toBe(''));
     await expect(canvas.getByText('Save')).toBeDisabled();
+  },
+};
+
+export const AddingImageShowsInPendingStrip: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Daily Life');
+
+    await userEvent.click(canvas.getByText('+'));
+    await selectFile(
+      new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
+    );
+
+    await expect(await canvas.findByText('sunset.jpg')).toBeInTheDocument();
+    await expect(canvas.getByPlaceholderText('Caption')).toBeInTheDocument();
+  },
+};
+
+export const SavingWithImageShowsPercentProgress: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('*/v1/paths', () => HttpResponse.json([path])),
+        http.post('*/v1/paths/:pathCode/entries', async () => {
+          await delay(5000);
+          return HttpResponse.json(
+            { id: 'new-entry', path_id: path.path_id, day: '2024-03-15', edit_id: 1 },
+            { status: 201 },
+          );
+        }),
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const textarea = (await canvas.findByPlaceholderText(
+      'Write your entry… (markdown supported)',
+    )) as HTMLTextAreaElement;
+    await userEvent.type(textarea, 'Morning run along the river.');
+
+    await userEvent.click(canvas.getByText('+'));
+    await selectFile(
+      new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
+    );
+
+    const saveButton = canvas.getByText('Save');
+    await userEvent.click(saveButton);
+
+    // Real xhr.upload progress events aren't reliably delivered through MSW's
+    // service-worker interception in this test environment, so this only
+    // asserts the label switches to the percent format for image-bearing
+    // saves (vs plain "Saving…" for saves with no images) rather than
+    // asserting any particular progress value.
+    await expect(
+      await canvas.findByText('Saving… 0%', { selector: '.pill-btn' }),
+    ).toBeInTheDocument();
+    await expect(await screen.findByTestId('saving-overlay')).toBeInTheDocument();
+
+    await waitFor(
+      () =>
+        expect(
+          canvas.queryByText('Saving…', { exact: false, selector: '.pill-btn' }),
+        ).not.toBeInTheDocument(),
+      { timeout: 8000 },
+    );
   },
 };

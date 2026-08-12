@@ -145,6 +145,7 @@
         </div>
       </div>
     </ion-content>
+    <SavingOverlay :active="saving" :label="saveLabel" />
   </ion-page>
 </template>
 
@@ -160,6 +161,7 @@ import { useLocalDraft } from '../composables/useLocalDraft';
 import { pickImages } from '../composables/useImagePicker';
 import { extractErrorMessage } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
+import SavingOverlay from '../components/SavingOverlay.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { toLocalISODate } from '../utils/date';
 import type { OAuthCallbackResponse } from '../generated/types';
