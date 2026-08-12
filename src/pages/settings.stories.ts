@@ -1,9 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, fireEvent, screen, userEvent, waitFor, within } from '@storybook/test';
+import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 import { http, HttpResponse } from 'msw';
 
 import SettingsPage from './settings.vue';
-import { withLoggedInUser, routeLoader } from '../../.storybook/decorators';
+import {
+  withAppShell,
+  withLoggedInUser,
+  routeLoader,
+} from '../../.storybook/decorators';
 import { router } from '../../.storybook/router';
 
 const CURRENT_USER = {
@@ -82,7 +86,7 @@ const meta: Meta<typeof SettingsPage> = {
   title: 'Pages/Settings',
   component: SettingsPage,
   loaders: [routeLoader('/settings')],
-  decorators: [withLoggedInUser(CURRENT_USER)],
+  decorators: [withAppShell(), withLoggedInUser(CURRENT_USER)],
   parameters: { msw: { handlers: baseHandlers } },
 };
 

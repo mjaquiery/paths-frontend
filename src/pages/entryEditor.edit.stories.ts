@@ -1,13 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, userEvent, waitFor, within } from '@storybook/test';
-import { http, HttpResponse } from 'msw';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { http, HttpResponse, delay } from 'msw';
 
 import EntryEditPage from './entry.[pathId].[entryId].edit.vue';
 import {
+  withAppShell,
   withLoggedInUser,
   routeLoader,
   clearLocalDraftsLoader,
 } from '../../.storybook/decorators';
+import { db } from '../lib/db';
 
 // Unique ids so this story's local-draft autosave (persisted to real
 // IndexedDB in a browser) never collides with OTHER FILES' story drafts.
@@ -62,6 +64,7 @@ const meta: Meta<typeof EntryEditPage> = {
   component: EntryEditPage,
   loaders: [routeLoader(editUrl), clearLocalDraftsLoader()],
   decorators: [
+    withAppShell(),
     withLoggedInUser({ token: 'tok', user_id: 'user-1', display_name: 'Alex M.' }),
   ],
   parameters: {
@@ -92,6 +95,14 @@ export const EditingUpdatesContent: Story = {
     )) as HTMLTextAreaElement;
     await userEvent.type(textarea, ' Updated.');
     await expect(textarea.value).toBe('Morning run along the river. Updated.');
+    // useLocalDraft's autosave write is debounced (500ms) and, by design,
+    // isn't cancelled on unmount (so a quick navigate-away still saves) —
+    // wait for it to land here so it can't race SavingSucceeds' (the next
+    // story's) clearLocalDraftsLoader()/restore() cycle on the same draft key.
+    await waitFor(async () => {
+      const draft = await db.localDrafts.get(`${path.path_id}:entry:${entryId}`);
+      expect(draft?.content).toBe('Morning run along the river. Updated.');
+    });
   },
 };
 
@@ -106,6 +117,63 @@ export const SavingSucceeds: Story = {
     await expect(
       canvas.queryByText('Failed to save entry', { exact: false }),
     ).not.toBeInTheDocument();
+  },
+};
+
+export const SlowServerShowsSavingState: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        ...readHandlers,
+        http.put('*/v1/paths/:pathCode/entries/:entrySlug', async () => {
+          await delay(5000);
+          return HttpResponse.json({
+            id: entryId,
+            path_id: path.path_id,
+            day: '2024-03-15',
+            edit_id: 2,
+            content: 'Morning run along the river. Updated.',
+          });
+        }),
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByDisplayValue('Morning run along the river.');
+    const saveButton = canvas.getByText('Save');
+    await userEvent.click(saveButton);
+
+    await expect(await canvas.findByText('Saving…')).toBeInTheDocument();
+    await expect(saveButton).toBeDisabled();
+
+    await waitFor(
+      () => expect(canvas.queryByText('Saving…')).not.toBeInTheDocument(),
+      { timeout: 8000 },
+    );
+  },
+};
+
+export const ServerErrorShowsInlineMessage: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        ...readHandlers,
+        http.put('*/v1/paths/:pathCode/entries/:entrySlug', () =>
+          HttpResponse.json({ detail: 'Internal Server Error' }, { status: 500 }),
+        ),
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByDisplayValue('Morning run along the river.');
+    await userEvent.click(canvas.getByText('Save'));
+
+    await expect(
+      await canvas.findByText('Failed to save entry', { exact: false }),
+    ).toBeInTheDocument();
+    await expect(canvas.getByText('Save')).not.toBeDisabled();
   },
 };
 
@@ -125,7 +193,7 @@ export const ConflictShowsInlineWarning: Story = {
     await canvas.findByDisplayValue('Morning run along the river.');
     await userEvent.click(canvas.getByText('Save'));
     await expect(
-      await canvas.findByText('This entry was edited by someone else', {
+      await canvas.findByText('A newer version of this entry exists', {
         exact: false,
       }),
     ).toBeInTheDocument();

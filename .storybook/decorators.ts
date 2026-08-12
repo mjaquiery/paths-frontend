@@ -1,5 +1,8 @@
+import { IonApp } from '@ionic/vue';
+
 import { router } from './router';
 import { db } from '../src/lib/db';
+import AppFooter from '../src/components/AppFooter.vue';
 
 interface StoryUser {
   token: string;
@@ -21,6 +24,19 @@ export function withLoggedInUser(user: StoryUser = DEFAULT_USER) {
       localStorage.setItem('user', JSON.stringify(user));
     },
     template: '<story />',
+  });
+}
+
+/**
+ * Decorator: wraps a page story in the same <ion-app> + <AppFooter> shell
+ * that App.vue renders around every route, so a Pages/* story looks like the
+ * real app (persistent footer, safe-area/Ionic sizing) instead of a bare
+ * page floating in the canvas.
+ */
+export function withAppShell() {
+  return (story: () => unknown) => ({
+    components: { story, IonApp, AppFooter },
+    template: '<ion-app><story /><AppFooter /></ion-app>',
   });
 }
 

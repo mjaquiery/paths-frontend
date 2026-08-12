@@ -14,7 +14,10 @@
 }
 
 /* Global (not scoped) so every page's ion-content reserves this space, since AppFooter
- * overlays every route. */
+ * overlays every route. !important because Ionic's own `.ion-padding` utility class
+ * (and any other class-based override) otherwise wins on specificity over this bare type
+ * selector and silently drops the clearance back to 16px. Page-specific overrides that
+ * need MORE than the floor (e.g. index.vue's bottom-bar) must also use !important to win. */
 ion-content {
-  --padding-bottom: var(--app-footer-clearance);
+  --padding-bottom: var(--app-footer-clearance) !important;
 }

@@ -3,12 +3,9 @@
     <ion-content>
       <div class="editor-page df-ui">
         <div class="editor-header">
-          <button
-            class="text-btn"
-            @click="router.push(`/entry/${pathId}/${entryId}`)"
-          >
+          <router-link class="text-btn" :to="`/entry/${pathId}/${entryId}`">
             Cancel
-          </button>
+          </router-link>
           <div class="editor-header-title">
             <span class="editor-header-label">{{ path?.title }}</span>
             <span class="editor-header-date">{{ entryData?.day }}</span>
@@ -334,11 +331,10 @@ async function submit() {
 }
 
 .text-btn {
-  background: none;
-  border: none;
+  display: inline-block;
+  text-decoration: none;
   color: var(--color-ink-muted);
   font-size: 0.95rem;
-  cursor: pointer;
   padding: 0.2rem;
 }
 

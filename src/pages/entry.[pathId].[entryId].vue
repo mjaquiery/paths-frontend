@@ -5,9 +5,13 @@
         <div class="entry-header">
           <button class="text-btn" @click="router.back()">← Back</button>
           <div ref="menuWrapperRef" class="entry-header-actions">
-            <button v-if="canEdit" class="text-btn" @click="goEdit">
+            <router-link
+              v-if="canEdit"
+              class="text-btn"
+              :to="`/entry/${pathId}/${entryId}/edit`"
+            >
               ✎ Edit
-            </button>
+            </router-link>
             <button
               v-if="canEdit"
               class="text-btn"
@@ -60,22 +64,17 @@
         <template v-if="onThisDay.length > 0">
           <hr class="entry-rule" />
           <p class="entry-section-label">On this day</p>
-          <div
+          <router-link
             v-for="item in onThisDay"
             :key="item.pathId + '-' + item.entryId"
             class="on-this-day-row"
-            role="button"
-            tabindex="0"
-            @click="router.push(`/entry/${item.pathId}/${item.entryId}`)"
-            @keydown.enter="
-              router.push(`/entry/${item.pathId}/${item.entryId}`)
-            "
+            :to="`/entry/${item.pathId}/${item.entryId}`"
           >
             <span class="on-this-day-year">{{ item.year }}</span>
             <span class="on-this-day-preview">{{
               item.content || '(no text)'
             }}</span>
-          </div>
+          </router-link>
         </template>
       </div>
     </ion-content>
@@ -179,10 +178,6 @@ const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
 const multiPathEntries = useMultiPathEntries(visiblePathIds);
 const onThisDay = useOnThisDay(entryDay, visiblePaths, multiPathEntries);
 
-function goEdit() {
-  router.push(`/entry/${pathId.value}/${entryId.value}/edit`);
-}
-
 const showMenu = ref(false);
 const menuWrapperRef = ref<HTMLElement | null>(null);
 
@@ -253,8 +248,8 @@ async function performDelete() {
 }
 
 .text-btn {
-  background: none;
-  border: none;
+  display: inline-block;
+  text-decoration: none;
   color: var(--color-ink-muted);
   font-size: 0.95rem;
   cursor: pointer;
@@ -344,7 +339,7 @@ async function performDelete() {
   gap: 1rem;
   padding: 0.6rem 0;
   border-bottom: 1px solid var(--color-rule);
-  cursor: pointer;
+  text-decoration: none;
 }
 
 .on-this-day-row:last-child {

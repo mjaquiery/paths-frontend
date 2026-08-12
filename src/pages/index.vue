@@ -44,37 +44,20 @@
     <template v-else>
       <ion-content ref="contentRef">
         <DayBrowser
+          ref="dayBrowserRef"
           :visible-paths="visiblePaths"
           :path-entries="multiPathEntries"
-          :can-create="canCreateAny"
           :current-user-id="currentUser.user_id"
-          @toggle-paths="router.push('/settings')"
         />
       </ion-content>
 
-      <div class="bottom-bar df-ui">
-        <button
-          class="bottom-bar-icon"
-          aria-label="Browse paths"
-          @click="router.push('/settings')"
-        >
-          🗂️
-        </button>
-        <button
-          v-if="canCreateAny"
-          class="bottom-bar-cta"
-          @click="router.push('/entry/new')"
-        >
-          + Write Entry
-        </button>
-        <button
-          class="bottom-bar-icon"
-          aria-label="Settings"
-          @click="router.push('/settings')"
-        >
-          ⚙️
-        </button>
-      </div>
+      <BottomBar
+        alt-icon="🗂️"
+        alt-label="Browse paths"
+        alt-to="/paths"
+        :can-create="canCreateAny"
+        :write-entry-query="{ day: currentDay }"
+      />
     </template>
   </ion-page>
 </template>
@@ -82,9 +65,9 @@
 <script setup lang="ts">
 import { IonPage, IonContent } from '@ionic/vue';
 import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
 
 import DayBrowser from '../components/DayBrowser.vue';
+import BottomBar from '../components/BottomBar.vue';
 import type {
   OAuthCallbackResponse,
   OAuthLoginResponse,
@@ -93,8 +76,7 @@ import { authLogin } from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
 import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
-
-const router = useRouter();
+import { toLocalISODate } from '../utils/date';
 
 const loggingIn = ref(false);
 const loginError = ref('');
@@ -107,6 +89,10 @@ const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
 const multiPathEntries = useMultiPathEntries(visiblePathIds);
 
 const contentRef = ref(null);
+const dayBrowserRef = ref<InstanceType<typeof DayBrowser> | null>(null);
+const currentDay = computed(
+  () => dayBrowserRef.value?.selectedDate ?? toLocalISODate(new Date()),
+);
 
 const canCreateAny = computed(
   () =>
@@ -154,7 +140,7 @@ async function loginWithGoogle() {
 }
 
 ion-content {
-  --padding-bottom: calc(var(--app-footer-clearance, 3rem) + 3.5rem);
+  --padding-bottom: calc(var(--app-footer-clearance, 3rem) + 3.5rem) !important;
 }
 
 .logged-out {
@@ -242,36 +228,4 @@ ion-content {
   margin-top: 1.25rem;
 }
 
-.bottom-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: var(--app-footer-clearance, 3rem);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.6rem var(--page-margin, 0.75rem);
-  background: var(--color-paper);
-  border-top: 1px solid var(--color-rule);
-  z-index: var(--ion-z-index-overlay, 999);
-}
-
-.bottom-bar-icon {
-  background: none;
-  border: none;
-  font-size: 1.3rem;
-  padding: 0.3rem;
-  cursor: pointer;
-}
-
-.bottom-bar-cta {
-  background: var(--color-ink);
-  color: var(--color-paper);
-  border: none;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 0.65rem 1.5rem;
-  cursor: pointer;
-}
 </style>

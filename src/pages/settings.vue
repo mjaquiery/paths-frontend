@@ -145,11 +145,13 @@
         </section>
 
         <!-- Ignored invitations + blocked users: secondary, compact -->
-        <section
+        <details
           v-if="ignoredInvitations.length > 0"
           class="settings-section settings-section--muted"
         >
-          <p class="settings-section-title">Ignored invitations</p>
+          <summary class="settings-section-title">
+            Ignored invitations ({{ ignoredInvitations.length }})
+          </summary>
           <div
             v-for="inv in ignoredInvitations"
             :key="inv.id"
@@ -169,7 +171,7 @@
               {{ invBusy[inv.id] ? 'Accepting…' : 'Accept' }}
             </button>
           </div>
-        </section>
+        </details>
 
         <section
           v-if="blocklist.length > 0"

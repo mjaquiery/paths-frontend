@@ -1,10 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, fireEvent, fn, screen, userEvent, waitFor } from '@storybook/test';
+import { expect, fireEvent, fn, screen, userEvent, waitFor } from 'storybook/test';
 import { http, HttpResponse } from 'msw';
 
 import PathFormModal from './PathFormModal.vue';
 import { pathResponseFixture } from '../generated/fixtures';
 import { modalRender } from '../../.storybook/modalRender';
+import { withDefaultHandlers } from '../../.storybook/msw';
+
+// modalRender flips `isOpen` on next tick but doesn't wait for Ionic's async
+// present() animation (ionModalDidPresent / the 'show-modal' class) to
+// finish. userEvent.type's char-by-char timing is slow enough to sometimes
+// land inside that window and get dropped, so wait for it before typing.
+async function waitForModalPresented() {
+  await waitFor(() =>
+    expect(document.querySelector('ion-modal')).toHaveClass('show-modal'),
+  );
+}
 
 // ion-modal renders its content via a Vue <Teleport> to document.body, not as
 // a child of canvasElement — so these stories query the global `screen`
@@ -31,6 +42,7 @@ export const NewPath: Story = {
     const createButton = screen.getByText('Create');
     await expect(createButton).toBeDisabled();
 
+    await waitForModalPresented();
     const nameInput = screen.getByPlaceholderText('Path name');
     await userEvent.type(nameInput, 'Photography');
     await expect(createButton).not.toBeDisabled();
@@ -47,7 +59,7 @@ export const NewPath: Story = {
 export const CreatingSendsTheEnteredTitleAndDefaultColour: Story = {
   parameters: {
     msw: {
-      handlers: [
+      handlers: withDefaultHandlers(
         http.post('*/v1/paths', async ({ request }) => {
           const body = (await request.json()) as { title: string; color: string };
           return HttpResponse.json(
@@ -55,7 +67,7 @@ export const CreatingSendsTheEnteredTitleAndDefaultColour: Story = {
             { status: 201 },
           );
         }),
-      ],
+      ),
     },
   },
   play: async ({ args }) => {
@@ -76,18 +88,17 @@ export const CreatingSendsTheEnteredTitleAndDefaultColour: Story = {
 export const ShowsAnErrorAndStaysOpenIfCreationFails: Story = {
   parameters: {
     msw: {
-      handlers: [
+      handlers: withDefaultHandlers(
         http.post('*/v1/paths', () =>
           HttpResponse.json({ detail: 'Server error' }, { status: 500 }),
         ),
-      ],
+      ),
     },
   },
   play: async ({ args }) => {
-    await userEvent.type(
-      await screen.findByPlaceholderText('Path name'),
-      'Photography',
-    );
+    const nameInput = await screen.findByPlaceholderText('Path name');
+    await waitForModalPresented();
+    await userEvent.type(nameInput, 'Photography');
     await userEvent.click(screen.getByText('Create'));
 
     await expect(
@@ -113,7 +124,7 @@ export const PickingAColourSwatch: Story = {
 export const PickingAColourSwatchChangesTheSubmittedColour: Story = {
   parameters: {
     msw: {
-      handlers: [
+      handlers: withDefaultHandlers(
         http.post('*/v1/paths', async ({ request }) => {
           const body = (await request.json()) as { color: string };
           return HttpResponse.json(
@@ -121,14 +132,13 @@ export const PickingAColourSwatchChangesTheSubmittedColour: Story = {
             { status: 201 },
           );
         }),
-      ],
+      ),
     },
   },
   play: async ({ args }) => {
-    await userEvent.type(
-      await screen.findByPlaceholderText('Path name'),
-      'Photography',
-    );
+    const nameInput = await screen.findByPlaceholderText('Path name');
+    await waitForModalPresented();
+    await userEvent.type(nameInput, 'Photography');
     await userEvent.click(document.querySelectorAll('.pf-swatch')[1]!); // orange
     await userEvent.click(screen.getByText('Create'));
     await waitFor(() => expect(args.onSaved).toHaveBeenCalled());
@@ -140,10 +150,9 @@ export const PickingAColourSwatchChangesTheSubmittedColour: Story = {
 
 export const CreatingSubmitsAndDismisses: Story = {
   play: async ({ args }) => {
-    await userEvent.type(
-      await screen.findByPlaceholderText('Path name'),
-      'Photography',
-    );
+    const nameInput = await screen.findByPlaceholderText('Path name');
+    await waitForModalPresented();
+    await userEvent.type(nameInput, 'Photography');
     await userEvent.click(screen.getByText('Create'));
     // save() awaits the mocked POST before emitting — give it a tick.
     await waitFor(() => expect(args.onSaved).toHaveBeenCalled());

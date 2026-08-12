@@ -1,0 +1,163 @@
+import type { Meta, StoryObj } from '@storybook/vue3';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+
+import PathBrowser from './PathBrowser.vue';
+import type { PathResponse } from '../generated/types';
+import type { EntryWithContent } from '../composables/useMultiPathEntries';
+import { toLocalISODate } from '../utils/date';
+import { router } from '../../.storybook/router';
+
+const dailyLife: PathResponse = {
+  path_id: 'p1',
+  uuid: 'u1',
+  owner_user_id: 'user-1',
+  title: 'Daily Life',
+  description: null,
+  color: '#5b52f0',
+  is_public: false,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+};
+
+const samsTravel: PathResponse = {
+  path_id: 'p2',
+  uuid: 'u2',
+  owner_user_id: 'user-2',
+  title: "Sam's Travel",
+  description: null,
+  color: '#f5a623',
+  is_public: true,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+};
+
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return toLocalISODate(d);
+}
+
+const entries: EntryWithContent[] = [
+  { id: 'e1', path_id: 'p1', day: daysAgo(0), edit_id: 1, content: 'Today entry', images: [] },
+  {
+    id: 'e2',
+    path_id: 'p1',
+    day: daysAgo(3),
+    edit_id: 1,
+    content: 'A few days ago',
+    images: [
+      {
+        id: 'img1',
+        entry_id: 'e2',
+        filename: 'photo.jpg',
+        caption: null,
+        status: 'ready',
+        content_type: 'image/jpeg',
+        byte_size: 100,
+      },
+    ],
+  },
+  { id: 'e3', path_id: 'p1', day: daysAgo(10), edit_id: 1, content: 'Ten days ago', images: [] },
+];
+
+const meta: Meta<typeof PathBrowser> = {
+  title: 'Components/PathBrowser',
+  component: PathBrowser,
+  args: {
+    paths: [dailyLife, samsTravel],
+    selectedPathId: 'p1',
+    entries,
+  },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof PathBrowser>;
+
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Today entry')).toBeInTheDocument();
+    // Most recent entry first.
+    const previews = canvasElement.querySelectorAll('.pb-entry-preview');
+    await expect(previews[0]).toHaveTextContent('Today entry');
+    await expect(previews[2]).toHaveTextContent('Ten days ago');
+    await expect(
+      canvasElement.querySelector('.pb-entry-photo'),
+    ).toBeInTheDocument();
+  },
+};
+
+export const SwitchingPathEmitsUpdate: Story = {
+  args: { 'onUpdate:selectedPathId': fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const select = canvas.getByLabelText('Path') as HTMLSelectElement;
+    await userEvent.selectOptions(select, "Sam's Travel");
+    await waitFor(() =>
+      expect(args['onUpdate:selectedPathId']).toHaveBeenCalledWith('p2'),
+    );
+  },
+};
+
+export const ClickingAnEntryIsAccessible: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const entry = (await canvas.findByText('Today entry')).closest(
+      '.pb-entry-main',
+    );
+    await expect(entry).toHaveAttribute('href', '/entry/p1/e1');
+    await userEvent.click(entry!);
+    await waitFor(() =>
+      expect(router.currentRoute.value.path).toBe('/entry/p1/e1'),
+    );
+  },
+};
+
+export const NavigatingAnEntryWithTheKeyboard: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const entry = (await canvas.findByText('A few days ago')).closest(
+      '.pb-entry-main',
+    ) as HTMLElement;
+    entry.focus();
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() =>
+      expect(router.currentRoute.value.path).toBe('/entry/p1/e2'),
+    );
+  },
+};
+
+export const NoEntriesForSelectedPath: Story = {
+  args: { entries: [] },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText('No entries yet.'),
+    ).toBeInTheDocument();
+  },
+};
+
+// The expected case for this component — a followed path can easily
+// accumulate dozens of posts, unlike Day Browser's one-per-day-per-path.
+export const ManyEntries: Story = {
+  args: {
+    entries: Array.from({ length: 30 }, (_, i) => ({
+      id: `me${i}`,
+      path_id: 'p1',
+      day: daysAgo(i),
+      edit_id: 1,
+      content: `Entry ${i}`,
+      images: [],
+    })),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText('Entry 0')).toBeInTheDocument();
+    await expect(canvasElement.querySelectorAll('.pb-entry')).toHaveLength(30);
+    // Most recent (smallest daysAgo) first.
+    await expect(
+      canvasElement.querySelector('.pb-entry-preview'),
+    ).toHaveTextContent('Entry 0');
+  },
+};

@@ -69,7 +69,7 @@
   /* ── AppFooter tokens ── */
   --footer-height-idle: 2rem;
   --footer-height-active: 3rem;
-  --footer-bg-idle: transparent;
+  --footer-bg-idle: var(--color-paper);
   --footer-bg-active: var(--color-paper);
   --footer-bg-offline: #3d2b00;
   --footer-bg-error: #3d1f00;

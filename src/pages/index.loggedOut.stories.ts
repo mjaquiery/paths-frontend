@@ -1,14 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, within } from '@storybook/test';
+import { expect, within } from 'storybook/test';
 
 import IndexPage from './index.vue';
-import { withLoggedOut, routeLoader } from '../../.storybook/decorators';
+import {
+  withAppShell,
+  withLoggedOut,
+  routeLoader,
+} from '../../.storybook/decorators';
 
 const meta: Meta<typeof IndexPage> = {
   title: 'Pages/Home — Welcome',
   component: IndexPage,
   loaders: [routeLoader('/')],
-  decorators: [withLoggedOut()],
+  decorators: [withAppShell(), withLoggedOut()],
 };
 
 export default meta;

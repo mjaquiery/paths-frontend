@@ -12,6 +12,24 @@
   </ion-app>
 </template>
 
+<style scoped>
+ion-toast {
+  --background: var(--color-paper);
+  --color: var(--color-ink);
+  --button-color: var(--color-ink);
+  --border-color: var(--color-rule);
+  --border-width: 1px;
+  --border-style: solid;
+}
+
+/* md mode hardcodes .toast-button-cancel to a light grey meant for a dark
+   toast background, ignoring --button-color entirely — override via the
+   exposed shadow part instead, since it fails contrast against --color-paper. */
+ion-toast::part(cancel) {
+  color: var(--color-ink);
+}
+</style>
+
 <script setup lang="ts">
 import { IonApp, IonRouterOutlet, IonToast } from '@ionic/vue';
 import { Capacitor } from '@capacitor/core';

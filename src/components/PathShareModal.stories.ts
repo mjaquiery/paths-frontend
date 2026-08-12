@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, fn, screen, userEvent, waitFor } from '@storybook/test';
+import { expect, fireEvent, fn, screen, userEvent, waitFor } from 'storybook/test';
 import { http, HttpResponse } from 'msw';
 
 import PathShareModal from './PathShareModal.vue';
 import { pathResponseFixture, subscriberResponseFixture } from '../generated/fixtures';
 import { modalRender } from '../../.storybook/modalRender';
+import { withDefaultHandlers } from '../../.storybook/msw';
 
 // ion-modal teleports its content to document.body, so these stories query
 // the global `screen` (bound to document.body) rather than canvasElement.
@@ -54,7 +55,17 @@ export const InvitingASubscriber: Story = {
     const emailInput = (await screen.findByPlaceholderText(
       'Email address to invite',
     )) as HTMLIonInputElement;
-    await userEvent.type(emailInput, 'friend@example.com');
+    // ion-input round-trips through Vue on every keystroke (:model-value +
+    // @update:model-value), which can race userEvent.type's char-by-char
+    // events under load and drop/truncate the typed value — same class of
+    // issue documented at PathFormModal.stories.ts's fireEvent.input usage.
+    // A single synthetic input event sidesteps the race entirely.
+    await waitFor(() =>
+      expect(emailInput.closest('ion-input')).toHaveClass('hydrated'),
+    );
+    await fireEvent.input(emailInput, {
+      target: { value: 'friend@example.com' },
+    });
 
     // ion-button renders its real <button> inside shadow DOM, so getByRole
     // can't resolve it — its slotted label text is in light DOM, so getByText
@@ -76,7 +87,7 @@ export const InvitingASubscriber: Story = {
 export const InviteRequestSendsTheEnteredEmail: Story = {
   parameters: {
     msw: {
-      handlers: [
+      handlers: withDefaultHandlers(
         http.post('*/v1/paths/:pathCode/subscriptions', async ({ request }) => {
           const body = (await request.json()) as { email: string };
           return HttpResponse.json(
@@ -84,14 +95,19 @@ export const InviteRequestSendsTheEnteredEmail: Story = {
             { status: 201 },
           );
         }),
-      ],
+      ),
     },
   },
   play: async () => {
     const emailInput = await screen.findByPlaceholderText(
       'Email address to invite',
     );
-    await userEvent.type(emailInput, 'invited@example.com');
+    await waitFor(() =>
+      expect(emailInput.closest('ion-input')).toHaveClass('hydrated'),
+    );
+    await fireEvent.input(emailInput, {
+      target: { value: 'invited@example.com' },
+    });
     const inviteButton = screen.getByText('Invite').closest('ion-button')!;
     await waitFor(() => expect(inviteButton).not.toHaveAttribute('disabled'));
     await userEvent.click(inviteButton);
@@ -109,7 +125,12 @@ export const ClearsSuccessMessageWhenTypingANewEmail: Story = {
     const emailInput = await screen.findByPlaceholderText(
       'Email address to invite',
     );
-    await userEvent.type(emailInput, 'first@example.com');
+    await waitFor(() =>
+      expect(emailInput.closest('ion-input')).toHaveClass('hydrated'),
+    );
+    await fireEvent.input(emailInput, {
+      target: { value: 'first@example.com' },
+    });
     const inviteButton = screen.getByText('Invite').closest('ion-button')!;
     await waitFor(() => expect(inviteButton).not.toHaveAttribute('disabled'));
     await userEvent.click(inviteButton);
@@ -117,7 +138,9 @@ export const ClearsSuccessMessageWhenTypingANewEmail: Story = {
       await screen.findByText('Invitation sent successfully.'),
     ).toBeInTheDocument();
 
-    await userEvent.type(emailInput, 'x');
+    await fireEvent.input(emailInput, {
+      target: { value: 'first@example.comx' },
+    });
     await waitFor(() =>
       expect(
         screen.queryByText('Invitation sent successfully.'),
@@ -129,18 +152,21 @@ export const ClearsSuccessMessageWhenTypingANewEmail: Story = {
 export const ShowsErrorWhenInvitationFails: Story = {
   parameters: {
     msw: {
-      handlers: [
+      handlers: withDefaultHandlers(
         http.post('*/v1/paths/:pathCode/subscriptions', () =>
           HttpResponse.json({ detail: 'User not found' }, { status: 404 }),
         ),
-      ],
+      ),
     },
   },
   play: async () => {
     const emailInput = await screen.findByPlaceholderText(
       'Email address to invite',
     );
-    await userEvent.type(emailInput, 'bad@example.com');
+    await waitFor(() =>
+      expect(emailInput.closest('ion-input')).toHaveClass('hydrated'),
+    );
+    await fireEvent.input(emailInput, { target: { value: 'bad@example.com' } });
     const inviteButton = screen.getByText('Invite').closest('ion-button')!;
     await waitFor(() => expect(inviteButton).not.toHaveAttribute('disabled'));
     await userEvent.click(inviteButton);
@@ -154,11 +180,11 @@ export const ShowsErrorWhenInvitationFails: Story = {
 export const NoActiveSubscribers: Story = {
   parameters: {
     msw: {
-      handlers: [
+      handlers: withDefaultHandlers(
         http.get('*/v1/paths/:pathCode/subscriptions', () =>
           HttpResponse.json([]),
         ),
-      ],
+      ),
     },
   },
   play: async () => {

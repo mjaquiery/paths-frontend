@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, userEvent, waitFor, within } from '@storybook/test';
-import { http, HttpResponse } from 'msw';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { http, HttpResponse, delay } from 'msw';
 
 import EntryNewPage from './entry.new.vue';
 import {
+  withAppShell,
   withLoggedInUser,
   routeLoader,
   clearLocalDraftsLoader,
@@ -28,7 +29,10 @@ const meta: Meta<typeof EntryNewPage> = {
   title: 'Pages/Entry Editor — New',
   component: EntryNewPage,
   loaders: [routeLoader('/entry/new'), clearLocalDraftsLoader()],
-  decorators: [withLoggedInUser({ token: 'tok', user_id: 'user-1', display_name: 'Alex M.' })],
+  decorators: [
+    withAppShell(),
+    withLoggedInUser({ token: 'tok', user_id: 'user-1', display_name: 'Alex M.' }),
+  ],
   parameters: {
     msw: {
       handlers: [
@@ -100,6 +104,66 @@ export const PreviewTogglesRenderedMarkdown: Story = {
     await expect(
       await canvas.findByPlaceholderText('Write your entry… (markdown supported)'),
     ).toBeInTheDocument();
+  },
+};
+
+export const SlowServerShowsSavingState: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('*/v1/paths', () => HttpResponse.json([path])),
+        http.post('*/v1/paths/:pathCode/entries', async () => {
+          await delay(5000);
+          return HttpResponse.json(
+            { id: 'new-entry', path_id: path.path_id, day: '2024-03-15', edit_id: 1 },
+            { status: 201 },
+          );
+        }),
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const textarea = (await canvas.findByPlaceholderText(
+      'Write your entry… (markdown supported)',
+    )) as HTMLTextAreaElement;
+    await userEvent.type(textarea, 'Morning run along the river.');
+    const saveButton = canvas.getByText('Save');
+    await userEvent.click(saveButton);
+
+    await expect(await canvas.findByText('Saving…')).toBeInTheDocument();
+    await expect(saveButton).toBeDisabled();
+
+    await waitFor(
+      () => expect(canvas.queryByText('Saving…')).not.toBeInTheDocument(),
+      { timeout: 8000 },
+    );
+  },
+};
+
+export const ServerErrorShowsInlineMessage: Story = {
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('*/v1/paths', () => HttpResponse.json([path])),
+        http.post('*/v1/paths/:pathCode/entries', () =>
+          HttpResponse.json({ detail: 'Internal Server Error' }, { status: 500 }),
+        ),
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const textarea = await canvas.findByPlaceholderText(
+      'Write your entry… (markdown supported)',
+    );
+    await userEvent.type(textarea, 'Morning run along the river.');
+    await userEvent.click(canvas.getByText('Save'));
+
+    await expect(
+      await canvas.findByText('Failed to create entry', { exact: false }),
+    ).toBeInTheDocument();
+    await expect(canvas.getByText('Save')).not.toBeDisabled();
   },
 };
 

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, waitFor, within } from '@storybook/test';
+import { expect, waitFor, within } from 'storybook/test';
 import { http, HttpResponse, delay } from 'msw';
 
 import EntryImage from './EntryImage.vue';
@@ -19,6 +19,19 @@ export default meta;
 type Story = StoryObj<typeof EntryImage>;
 
 export const Loaded: Story = {
+  // The global default handler swaps in a placeholder image (see
+  // src/mocks/handlers.ts) since the fixture's real URL doesn't resolve in
+  // tests — override it here so this story can assert against the real,
+  // un-swapped fixture URLs.
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('*/v1/images/:imageId/download-url', () =>
+          HttpResponse.json(imageDownloadResponseFixture),
+        ),
+      ],
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const img = await canvas.findByAltText('A photo from the entry');

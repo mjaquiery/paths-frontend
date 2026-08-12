@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, userEvent, waitFor, within } from '@storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import { pathResponseFixture } from '../generated/fixtures';
 import ExportCard from './ExportCard.vue';

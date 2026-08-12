@@ -9,20 +9,13 @@
       <div class="db-header-actions">
         <button
           class="db-icon-btn"
-          aria-label="Previous day"
-          @click="shiftDay(-1)"
+          aria-label="Previous week"
+          @click="shiftDay(-7)"
         >
           ◀
         </button>
-        <button class="db-icon-btn" aria-label="Next day" @click="shiftDay(1)">
+        <button class="db-icon-btn" aria-label="Next week" @click="shiftDay(7)">
           ▶
-        </button>
-        <button
-          class="db-icon-btn"
-          aria-label="Browse paths"
-          @click="$emit('togglePaths')"
-        >
-          🗂️
         </button>
       </div>
     </div>
@@ -71,14 +64,6 @@
     <div class="db-day-section">
       <div class="db-day-label-row">
         <p class="db-day-label">{{ selectedDayLabel }}</p>
-        <button
-          v-if="canCreate"
-          class="db-day-create-btn"
-          aria-label="Add entry"
-          @click="openCreate(selectedDate)"
-        >
-          +
-        </button>
       </div>
 
       <template v-if="selectedEntries.length > 0">
@@ -88,14 +73,10 @@
           class="db-entry df-path-bar"
           :style="{ '--path-color': pe.color }"
         >
-          <div
+          <router-link
             class="db-entry-main"
-            role="button"
-            tabindex="0"
+            :to="`/entry/${pe.pathId}/${pe.entryId}`"
             :aria-label="`View entry from ${pe.pathTitle}`"
-            @click="openDetail(pe)"
-            @keydown.enter="openDetail(pe)"
-            @keydown.space.prevent="openDetail(pe)"
           >
             <p class="db-entry-path">{{ pe.pathTitle }}</p>
             <p class="db-entry-preview df-body">
@@ -105,7 +86,7 @@
                   : pe.preview || '(no text)'
               }}
             </p>
-          </div>
+          </router-link>
           <div v-if="pe.images.length > 0" class="db-entry-photos">
             <EntryImage
               v-for="img in pe.images.slice(0, 3)"
@@ -124,7 +105,6 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
 
 import type { PathResponse, ImageResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
@@ -135,13 +115,8 @@ import EntryImage from './EntryImage.vue';
 const props = defineProps<{
   visiblePaths: PathResponse[];
   pathEntries: PathEntries[];
-  canCreate: boolean;
   currentUserId: string;
 }>();
-
-defineEmits<{ togglePaths: [] }>();
-
-const router = useRouter();
 
 const selectedDate = ref(toLocalISODate(new Date()));
 
@@ -291,13 +266,7 @@ const selectedEntries = computed<DayPathEntry[]>(() => {
   return result;
 });
 
-function openCreate(dateStr: string) {
-  router.push({ path: '/entry/new', query: { day: dateStr } });
-}
-
-function openDetail(pe: DayPathEntry) {
-  router.push(`/entry/${pe.pathId}/${pe.entryId}`);
-}
+defineExpose({ selectedDate });
 </script>
 
 <style scoped>
@@ -468,16 +437,6 @@ function openDetail(pe: DayPathEntry) {
   color: var(--color-ink-muted);
 }
 
-.db-day-create-btn {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  line-height: 1;
-  color: var(--color-ink);
-  cursor: pointer;
-  padding: 0 0.4rem;
-}
-
 .db-day-empty {
   color: var(--color-ink-muted);
   font-size: 0.85rem;
@@ -493,7 +452,9 @@ function openDetail(pe: DayPathEntry) {
 }
 
 .db-entry-main {
-  cursor: pointer;
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
 
 .db-entry-path {

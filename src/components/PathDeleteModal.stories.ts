@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, fn, screen, userEvent, waitFor } from '@storybook/test';
+import { expect, fn, screen, userEvent, waitFor } from 'storybook/test';
 
 import PathDeleteModal from './PathDeleteModal.vue';
 import { pathResponseFixture } from '../generated/fixtures';

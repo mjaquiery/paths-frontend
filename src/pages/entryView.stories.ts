@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, userEvent, within } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import { http, HttpResponse } from 'msw';
 
 import EntryViewPage from './entry.[pathId].[entryId].vue';
@@ -8,7 +8,11 @@ import {
   entryResponseFixture,
   pathResponseFixture,
 } from '../generated/fixtures';
-import { withLoggedInUser, routeLoader } from '../../.storybook/decorators';
+import {
+  withAppShell,
+  withLoggedInUser,
+  routeLoader,
+} from '../../.storybook/decorators';
 import { router } from '../../.storybook/router';
 
 const entryUrl = `/entry/${pathResponseFixture.path_id}/${entryResponseFixture.id}`;
@@ -17,6 +21,7 @@ const meta: Meta<typeof EntryViewPage> = {
   title: 'Pages/Entry View',
   component: EntryViewPage,
   loaders: [routeLoader(entryUrl)],
+  decorators: [withAppShell()],
   parameters: {
     msw: {
       handlers: [
