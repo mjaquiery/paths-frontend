@@ -11,12 +11,10 @@ import { injectAxe } from 'axe-playwright';
 // dropping just the Ionic-host nodes from the violation before asserting.
 const IONIC_FORM_CONTROLS = ['ION-CHECKBOX', 'ION-TOGGLE', 'ION-RADIO'];
 
-// Generous timeout: CI runners are typically far less resource-contended than a local dev
-// machine, but this keeps a slow story render from flaking the suite either way.
+// Timeout is set via --testTimeout on the CLI (see package.json) — this version of
+// @storybook/test-runner runs on Playwright Test, which has no `jest` global to call
+// jest.setTimeout() on.
 const config: TestRunnerConfig = {
-  setup() {
-    jest.setTimeout(60000);
-  },
   async preVisit(page) {
     await injectAxe(page);
   },
