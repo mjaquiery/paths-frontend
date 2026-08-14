@@ -161,3 +161,50 @@ export const ManyEntries: Story = {
     ).toHaveTextContent('Entry 0');
   },
 };
+
+// ion-content clips its slotted children to a fixed-height scroll box, so this
+// decorator stands in for it — the real regression only shows up once the
+// header shares a scroll container with the entries below it.
+export const HeaderStaysVisibleWhileScrolling: Story = {
+  args: {
+    entries: Array.from({ length: 30 }, (_, i) => ({
+      id: `me${i}`,
+      path_id: 'p1',
+      day: daysAgo(i),
+      edit_id: 1,
+      content: `Entry ${i}`,
+      images: [],
+    })),
+  },
+  decorators: [
+    () => ({
+      template:
+        '<div style="height: 300px; overflow-y: auto;" data-testid="scroll-box"><story /></div>',
+    }),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const scrollBox = canvasElement.querySelector<HTMLElement>(
+      '[data-testid="scroll-box"]',
+    )!;
+    const header = canvasElement.querySelector<HTMLElement>('.pb-header')!;
+
+    const topBefore = header.getBoundingClientRect().top;
+    const firstEntry = await canvas.findByText('Entry 0');
+    const scrollBoxTop = scrollBox.getBoundingClientRect().top;
+    await expect(firstEntry.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+      scrollBoxTop,
+    );
+
+    scrollBox.scrollTop = 400;
+    await waitFor(() => expect(scrollBox.scrollTop).toBeGreaterThan(0));
+
+    // The header stays pinned to the top of the scroll box...
+    await expect(header.getBoundingClientRect().top).toBe(topBefore);
+    // ...while the entry that was visible before scrolling is now scrolled
+    // above the scroll box's visible area.
+    await expect(firstEntry.getBoundingClientRect().bottom).toBeLessThan(
+      scrollBoxTop,
+    );
+  },
+};

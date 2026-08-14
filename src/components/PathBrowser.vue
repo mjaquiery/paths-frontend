@@ -94,7 +94,11 @@ function dateLabel(day: string): string {
 }
 
 .pb-header {
-  padding: 0.75rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0.5rem 0;
+  background: var(--color-paper);
   border-bottom: 1px solid var(--color-rule);
 }
 
