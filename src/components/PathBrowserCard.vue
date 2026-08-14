@@ -98,7 +98,7 @@ import { isPathHidden, setPathHidden } from '../lib/db';
 import { usePaths } from '../composables/usePaths';
 import { useCreatePath } from '../generated/apiClient';
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     canCreatePaths?: boolean;
   }>(),

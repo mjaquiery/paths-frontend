@@ -26,7 +26,7 @@
                 :rows="4"
                 autocapitalize="sentences"
                 autocorrect="on"
-                spellcheck="true"
+                :spellcheck="true"
               />
             </ion-item>
             <ion-button

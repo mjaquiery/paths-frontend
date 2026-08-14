@@ -123,7 +123,7 @@ describe('EntriesCard', () => {
   it('calls createEntry API when form is submitted', async () => {
     const queryClient = createQueryClient();
     vi.mocked(customFetch).mockImplementation(
-      (url: string, options?: RequestInit) => {
+      (_url: string, options?: RequestInit) => {
         if ((options as RequestInit)?.method === 'POST') {
           return Promise.resolve({
             data: {
@@ -163,7 +163,7 @@ describe('EntriesCard', () => {
 
     // Fill in day and content
     const inputs = wrapper.findAll('input');
-    await inputs[0].setValue('2024-01-01');
+    await inputs[0]!.setValue('2024-01-01');
     const textarea = wrapper.find('textarea');
     await textarea.setValue('My entry content');
     await nextTick();
@@ -191,7 +191,7 @@ describe('EntriesCard', () => {
   it('shows an error and keeps the form open when entry creation fails', async () => {
     const queryClient = createQueryClient();
     vi.mocked(customFetch).mockImplementation(
-      (url: string, options?: RequestInit) => {
+      (_url: string, options?: RequestInit) => {
         if ((options as RequestInit)?.method === 'POST') {
           return Promise.reject(new Error('server error'));
         }
@@ -220,7 +220,7 @@ describe('EntriesCard', () => {
     await nextTick();
 
     const inputs = wrapper.findAll('input');
-    await inputs[0].setValue('2024-01-01');
+    await inputs[0]!.setValue('2024-01-01');
     const textarea = wrapper.find('textarea');
     await textarea.setValue('My entry content');
     await nextTick();
@@ -254,7 +254,7 @@ describe('EntriesCard', () => {
     await newEntryButton!.trigger('click');
     await nextTick();
 
-    await wrapper.findAll('input')[0].setValue('2024-01-01');
+    await wrapper.findAll('input')[0]!.setValue('2024-01-01');
     await wrapper.find('textarea').setValue('Some content');
     await nextTick();
 
@@ -273,7 +273,7 @@ describe('EntriesCard', () => {
     await nextTick();
 
     expect(
-      (wrapper.findAll('input')[0].element as HTMLInputElement).value,
+      (wrapper.findAll('input')[0]!.element as HTMLInputElement).value,
     ).toBe('');
     expect(
       (wrapper.find('textarea').element as HTMLTextAreaElement).value,

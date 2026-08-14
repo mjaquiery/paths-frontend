@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computed, ref } from 'vue';
+import { computed, ref, type Ref } from 'vue';
 import type { OAuthCallbackResponse, PathResponse } from '../generated/types';
 
 /**
@@ -8,9 +8,9 @@ import type { OAuthCallbackResponse, PathResponse } from '../generated/types';
  * must match the current user's user_id.
  */
 function makeCanCreateEntries(
-  currentUser: ReturnType<typeof ref<OAuthCallbackResponse | null>>,
-  paths: ReturnType<typeof ref<PathResponse[]>>,
-  selectedPathId: ReturnType<typeof ref<string>>,
+  currentUser: Ref<OAuthCallbackResponse | null>,
+  paths: Ref<PathResponse[]>,
+  selectedPathId: Ref<string>,
 ) {
   const selectedPath = computed(() =>
     paths.value.find((p) => p.path_id === selectedPathId.value),

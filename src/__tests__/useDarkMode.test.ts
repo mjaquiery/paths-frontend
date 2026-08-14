@@ -168,7 +168,7 @@ describe('useDarkMode', () => {
 
     // Simulate OS switching to dark mode
     mockMatches.value = true;
-    mockListeners[0]({ matches: true } as MediaQueryListEvent);
+    mockListeners[0]!({ matches: true } as MediaQueryListEvent);
 
     expect(isDark.value).toBe(true);
     expect(classListToggleSpy).toHaveBeenCalledWith('ion-palette-dark', true);

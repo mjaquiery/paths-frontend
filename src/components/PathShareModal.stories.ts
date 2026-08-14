@@ -54,7 +54,7 @@ export const InvitingASubscriber: Story = {
   play: async () => {
     const emailInput = (await screen.findByPlaceholderText(
       'Email address to invite',
-    )) as HTMLIonInputElement;
+    )) as unknown as HTMLIonInputElement;
     // ion-input round-trips through Vue on every keystroke (:model-value +
     // @update:model-value), which can race userEvent.type's char-by-char
     // events under load and drop/truncate the typed value — same class of
