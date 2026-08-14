@@ -26,7 +26,13 @@ function applyTheme(theme: 'light' | 'dark') {
 }
 
 setup((app) => {
-  app.use(IonicVue);
+  // Ionic overlays (modal/toast/alert/...) animate their enter/exit transition via
+  // rAF, and Chromium throttles rAF heavily on backgrounded/non-focused tabs — which
+  // is exactly what test-storybook's headless pages are. That let a real transition
+  // take several real-world seconds to finish, so a11y scans kept catching text at a
+  // partway (blended, low-contrast) opacity no matter how long postVisit waited.
+  // Disabling animation is Ionic's own supported switch for this, not a workaround.
+  app.use(IonicVue, { animated: false });
   app.use(VueQueryPlugin, {
     queryClient: new QueryClient({
       defaultOptions: {

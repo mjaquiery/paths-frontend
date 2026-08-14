@@ -19,11 +19,10 @@ const config: TestRunnerConfig = {
     await injectAxe(page);
   },
   async postVisit(page) {
-    // ion-modal (and other overlays) run a ~300-500ms enter transition. Scanning mid-transition
-    // catches text at a partway opacity, blended toward the background — axe reports that
-    // blended colour as a color-contrast violation even though the settled colour is fine.
-    // Give any in-flight transition time to finish before scanning.
-    await page.waitForTimeout(600);
+    // Ionic overlay enter/exit transitions are disabled for Storybook (see preview.ts —
+    // `animated: false`), so there's no in-flight transition to wait out here anymore.
+    // This is just a small buffer for the resulting DOM/style updates to flush.
+    await page.waitForTimeout(100);
     // Scan the whole document, not just #storybook-root — ion-modal content
     // (PathFormModal, PathShareModal, PathDeleteModal, ...) teleports outside
     // the story root via Vue's <Teleport>, so scoping to the root would skip it.

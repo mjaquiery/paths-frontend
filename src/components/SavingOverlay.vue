@@ -1,6 +1,7 @@
 <template>
   <ion-modal
     :is-open="active"
+    :aria-label="label"
     :backdrop-dismiss="false"
     class="saving-overlay-modal"
   >

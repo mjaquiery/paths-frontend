@@ -41,6 +41,14 @@ ion-toast {
 ion-toast::part(cancel) {
   color: var(--color-ink);
 }
+
+/* Same story for the message text: --color resolves through Ionic's internal
+   --ion-color-step-50/--ion-text-color-step-950 fallback chain rather than
+   picking up this component's override, landing near-white on our near-white
+   paper background. Set it directly via the exposed shadow part instead. */
+ion-toast::part(message) {
+  color: var(--color-ink);
+}
 </style>
 
 <script setup lang="ts">
