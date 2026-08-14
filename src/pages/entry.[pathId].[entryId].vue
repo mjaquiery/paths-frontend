@@ -249,6 +249,8 @@ async function performDelete() {
 
 .text-btn {
   display: inline-block;
+  background: none;
+  border: none;
   text-decoration: none;
   color: var(--color-ink-muted);
   font-size: 0.95rem;

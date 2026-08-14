@@ -31,12 +31,15 @@ export function withLoggedInUser(user: StoryUser = DEFAULT_USER) {
  * Decorator: wraps a page story in the same <ion-app> + <AppFooter> shell
  * that App.vue renders around every route, so a Pages/* story looks like the
  * real app (persistent footer, safe-area/Ionic sizing) instead of a bare
- * page floating in the canvas.
+ * page floating in the canvas. Mirrors App.vue's #ion-view-container-root
+ * wrapper too, so overlay-driven aria-hiding of AppFooter behaves the same
+ * in Storybook as it does in production (see App.vue for why that's needed).
  */
 export function withAppShell() {
   return (story: () => unknown) => ({
     components: { story, IonApp, AppFooter },
-    template: '<ion-app><story /><AppFooter /></ion-app>',
+    template:
+      '<ion-app><div id="ion-view-container-root" style="display: contents"><story /><AppFooter /></div></ion-app>',
   });
 }
 

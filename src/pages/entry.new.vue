@@ -22,10 +22,7 @@
             v-model="selectedPathId"
             class="path-select"
             aria-label="Path"
-            :style="{
-              borderColor: selectedPathColor,
-              color: selectedPathColor,
-            }"
+            :style="{ borderColor: selectedPathColor }"
           >
             <option
               v-for="path in ownedPaths"

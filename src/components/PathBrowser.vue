@@ -5,7 +5,7 @@
         v-model="localSelectedPathId"
         class="pb-path-select"
         aria-label="Path"
-        :style="{ borderColor: selectedPath?.color, color: selectedPath?.color }"
+        :style="{ borderColor: selectedPath?.color }"
       >
         <option v-for="path in paths" :key="path.path_id" :value="path.path_id">
           {{ path.title }}

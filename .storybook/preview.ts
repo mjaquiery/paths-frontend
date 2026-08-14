@@ -52,6 +52,13 @@ const preview: Preview = {
     viewport: {
       options: MINIMAL_VIEWPORTS,
     },
+    // Default is 'todo' (report-only) — the custom axe scan in test-runner.ts
+    // already fails CI on violations, but that scan runs post-play against the
+    // whole document; this addon's own per-story check runs its own pass too,
+    // and was silently non-blocking. Promote it to a real gate.
+    a11y: {
+      test: 'error',
+    },
   },
   globalTypes: {
     theme: {

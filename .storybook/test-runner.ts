@@ -50,8 +50,14 @@ const config: TestRunnerConfig = {
     if (results.length > 0) {
       const summary = results
         .map(
-          (v: { id: string; impact: string; nodes: { target: unknown }[] }) =>
-            `${v.id} (${v.impact}): ${v.nodes.map((n) => JSON.stringify(n.target)).join(', ')}`,
+          (v: {
+            id: string;
+            impact: string;
+            nodes: { target: unknown; failureSummary?: string }[];
+          }) =>
+            `${v.id} (${v.impact}): ${v.nodes
+              .map((n) => `${JSON.stringify(n.target)} :: ${n.failureSummary}`)
+              .join(', ')}`,
         )
         .join('\n');
       throw new Error(`Accessibility violations detected:\n${summary}`);

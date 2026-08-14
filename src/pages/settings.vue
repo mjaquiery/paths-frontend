@@ -621,7 +621,7 @@ const deleteOpen = ref(false);
 .invite-from {
   margin: 0;
   font-size: 0.8rem;
-  color: var(--color-ink-muted);
+  color: var(--color-ink);
 }
 
 .invite-title {

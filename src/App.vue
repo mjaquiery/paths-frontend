@@ -1,6 +1,9 @@
 <template>
   <ion-app>
-    <ion-router-outlet />
+    <div id="ion-view-container-root">
+      <ion-router-outlet />
+      <AppFooter />
+    </div>
     <ion-toast
       :is-open="!!deferredPrompt"
       message="Install Paths for offline access"
@@ -8,11 +11,21 @@
       :buttons="installToastButtons"
       @didDismiss="dismissInstall"
     />
-    <AppFooter />
   </ion-app>
 </template>
 
 <style scoped>
+/* Ionic hides #ion-view-container-root (or the nearest ion-router-outlet) from the
+   accessibility tree while any overlay (modal/alert/action-sheet/...) is presented —
+   see setRootAriaHidden() in @ionic/core's overlay utils. AppFooter is persistent
+   chrome that sits alongside the routed page, not inside it, so it needs to be
+   wrapped into that same hideable root to be excluded (and stop colliding with a
+   modal's own <ion-footer> landmark) whenever an overlay is open. display: contents
+   keeps this wrapper out of ion-app's flex layout entirely. */
+#ion-view-container-root {
+  display: contents;
+}
+
 ion-toast {
   --background: var(--color-paper);
   --color: var(--color-ink);
