@@ -296,6 +296,7 @@ export const SavingWithImageChangesShowsPercentProgress: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByDisplayValue('Morning run along the river.');
+    await canvas.findByText('beach.jpg');
 
     // Remove the existing image and add a new one, so the save request
     // carries a real multipart upload (drives the % progress label).
