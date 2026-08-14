@@ -7,8 +7,18 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  vars:
     runs-on: ubuntu-latest
+    outputs:
+      # Keep this tag in sync with the `playwright` version in package.json.
+      playwright_image: mcr.microsoft.com/playwright:v1.62.1-noble
+    steps:
+      - run: echo "Exposing shared workflow variables"
+
+  test:
+    needs: vars
+    runs-on: ubuntu-latest
+    container: ${{ needs.vars.outputs.playwright_image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -38,9 +48,9 @@ jobs:
         run: npm run build
 
   storybook-a11y:
+    needs: vars
     runs-on: ubuntu-latest
-    # Keep this tag in sync with the `playwright` version in package.json.
-    container: mcr.microsoft.com/playwright:v1.62.1-noble
+    container: ${{ needs.vars.outputs.playwright_image }}
     strategy:
       matrix:
         theme: [light, dark]
