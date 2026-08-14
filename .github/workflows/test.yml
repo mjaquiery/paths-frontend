@@ -10,10 +10,15 @@ jobs:
   vars:
     runs-on: ubuntu-latest
     outputs:
-      # Keep this tag in sync with the `playwright` version in package.json.
-      playwright_image: mcr.microsoft.com/playwright:v1.62.1-noble
+      playwright_image: ${{ steps.playwright_image.outputs.image }}
     steps:
-      - run: echo "Exposing shared workflow variables"
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Resolve Playwright container image from package-lock.json
+        id: playwright_image
+        run: |
+          version=$(node -p "require('./package-lock.json').packages['node_modules/playwright'].version")
+          echo "image=mcr.microsoft.com/playwright:v${version}-noble" >> "$GITHUB_OUTPUT"
 
   test:
     needs: vars
