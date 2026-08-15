@@ -72,6 +72,19 @@ async function selectFile(file: File) {
   await userEvent.upload(fileInput, file);
 }
 
+// A real (if tiny) transparent GIF — tests that assert on the rendered
+// thumbnail <img> need actual decodable image bytes, since the object URL
+// is loaded by a genuine browser <img> here (not jsdom): plain placeholder
+// text would fire a real decode error and hide the thumbnail behind the
+// component's error state.
+const PIXEL_GIF_BASE64 =
+  'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7';
+function pixelGifFile(name: string): File {
+  const binary = atob(PIXEL_GIF_BASE64);
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  return new File([bytes], name, { type: 'image/gif' });
+}
+
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -237,18 +250,115 @@ export const SavingCreatesTheEntry: Story = {
   },
 };
 
-export const AddingImageShowsInPendingStrip: Story = {
+export const AddingImageShowsThumbnailAndCaptionPrompt: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('Daily Life');
 
-    await userEvent.click(canvas.getByText('+'));
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
+    await selectFile(pixelGifFile('sunset.jpg'));
+
+    await expect(
+      await canvas.findByLabelText('Change photo sunset.jpg'),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByLabelText('Remove image sunset.jpg'),
+    ).toBeInTheDocument();
+
+    // A real thumbnail — rendered from the picked File via an object URL —
+    // not just the button that wraps it.
+    const thumb = await canvas.findByRole('img', { name: 'sunset.jpg' });
+    await expect(thumb).toHaveAttribute('src', expect.stringMatching(/^blob:/));
+
+    // The caption field is a real, always-present, properly labelled input —
+    // reachable by its accessible name, not just its placeholder — and
+    // typing updates it immediately (nothing is sent anywhere for this).
+    const captionInput = canvas.getByLabelText('Caption for sunset.jpg');
+    await expect(captionInput).toBe(
+      canvas.getByPlaceholderText('Add a caption'),
+    );
+    await userEvent.type(captionInput, 'Golden hour');
+    await expect(captionInput).toHaveValue('Golden hour');
+  },
+};
+
+export const TappingThumbnailReplacesQueuedImage: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Daily Life');
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
+    await selectFile(pixelGifFile('sunset.jpg'));
+    await userEvent.type(
+      await canvas.findByPlaceholderText('Add a caption'),
+      'Golden hour',
+    );
+
+    await userEvent.click(canvas.getByLabelText('Change photo sunset.jpg'));
+    await selectFile(pixelGifFile('moonrise.jpg'));
+
+    // The row now reflects the replacement file...
+    await expect(
+      await canvas.findByLabelText('Change photo moonrise.jpg'),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.queryByLabelText('Change photo sunset.jpg'),
+    ).not.toBeInTheDocument();
+    // ...as a single row (not a second one alongside the old file)...
+    await expect(canvas.getAllByRole('img')).toHaveLength(1);
+    // ...keeping the caption that had already been typed in.
+    await expect(canvas.getByPlaceholderText('Add a caption')).toHaveValue(
+      'Golden hour',
+    );
+  },
+};
+
+export const PendingImageWithoutCaptionIsRemovedImmediately: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Daily Life');
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
     await selectFile(
       new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
     );
+    await canvas.findByLabelText('Change photo sunset.jpg');
 
-    await expect(await canvas.findByText('sunset.jpg')).toBeInTheDocument();
-    await expect(canvas.getByPlaceholderText('Caption')).toBeInTheDocument();
+    await userEvent.click(canvas.getByLabelText('Remove image sunset.jpg'));
+    await expect(
+      canvas.queryByLabelText('Remove image sunset.jpg'),
+    ).not.toBeInTheDocument();
+    await expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+  },
+};
+
+export const PendingImageWithCaptionRequiresConfirmationToRemove: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Daily Life');
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
+    await selectFile(
+      new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
+    );
+    await userEvent.type(
+      await canvas.findByPlaceholderText('Add a caption'),
+      'Golden hour',
+    );
+
+    await userEvent.click(canvas.getByLabelText('Remove image sunset.jpg'));
+    await expect(
+      await screen.findByRole('alertdialog', { name: 'Remove photo' }),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Remove' }),
+    );
+
+    await waitFor(() =>
+      expect(
+        canvas.queryByLabelText('Remove image sunset.jpg'),
+      ).not.toBeInTheDocument(),
+    );
   },
 };
 
@@ -279,7 +389,7 @@ export const SavingWithImageShowsPercentProgress: Story = {
     )) as HTMLTextAreaElement;
     await userEvent.type(textarea, 'Morning run along the river.');
 
-    await userEvent.click(canvas.getByText('+'));
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
     await selectFile(
       new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
     );
