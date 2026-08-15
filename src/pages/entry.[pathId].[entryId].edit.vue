@@ -299,11 +299,7 @@ async function submit() {
         content: content.value,
         captions: pendingImages.value.map((img) => img.caption),
         remove_image_ids: removedImages.value.map((img) => img.id),
-        // orval types multipart file-array fields as string[] (an OpenAPI binary-format
-        // quirk) — the real runtime value is the File objects themselves.
-        images: pendingImages.value.map(
-          (img) => img.file,
-        ) as unknown as string[],
+        images: pendingImages.value.map((img) => img.file),
       },
     });
 

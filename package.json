@@ -58,7 +58,7 @@
     "jsdom": "^26.0.0",
     "msw": "^2.7.0",
     "msw-storybook-addon": "^2.0.4",
-    "orval": "^8.4.1",
+    "orval": "^8.24.0",
     "playwright": "^1.62.1",
     "prettier": "^3.8.1",
     "storybook": "^10.5.7",
