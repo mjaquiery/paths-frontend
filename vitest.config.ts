@@ -37,6 +37,19 @@ export default defineConfig({
       {
         extends: true,
         plugins: [storybookTest({ configDir: '.storybook' })],
+        // Pre-bundle these so Vite doesn't discover them mid-run and trigger
+        // the dep-optimizer race described above — that reload doesn't just
+        // risk the "Failed to fetch dynamically imported module" rejection,
+        // it can also corrupt in-flight router state (e.g. App.stories.ts
+        // failing with "Cannot read properties of undefined (reading
+        // 'matched')") since the reload lands mid-test rather than between
+        // tests.
+        optimizeDeps: {
+          include: [
+            '@tanstack/query-persist-client-core',
+            'vue-router/auto-routes',
+          ],
+        },
         test: {
           name: 'storybook',
           // GitHub's standard runners (4 vCPU/16GB, further shared with the

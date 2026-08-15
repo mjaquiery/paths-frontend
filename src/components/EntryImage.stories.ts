@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, waitFor, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { http, HttpResponse, delay } from 'msw';
 
 import EntryImage from './EntryImage.vue';
@@ -11,6 +11,7 @@ const meta: Meta<typeof EntryImage> = {
   args: {
     imageId: 'img-1',
     alt: 'A photo from the entry',
+    onOpen: fn(),
   },
 };
 
@@ -32,17 +33,16 @@ export const Loaded: Story = {
       ],
     },
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     const img = await canvas.findByAltText('A photo from the entry');
     await expect(img).toHaveAttribute(
       'src',
       imageDownloadResponseFixture.thumbnail_url,
     );
-    await expect(img.closest('a')).toHaveAttribute(
-      'href',
-      imageDownloadResponseFixture.image_url,
-    );
+
+    await userEvent.click(img.closest('button')!);
+    await expect(args.onOpen).toHaveBeenCalled();
   },
 };
 
@@ -59,9 +59,9 @@ export const Loading: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByLabelText('Loading image'),
-    ).toBeInTheDocument();
+    const placeholder = await canvas.findByLabelText('Loading image');
+    await expect(placeholder).toBeInTheDocument();
+    await expect(placeholder.closest('button')).toBeDisabled();
   },
 };
 
@@ -83,5 +83,6 @@ export const Errored: Story = {
       expect(el).toBeInTheDocument();
     });
     expect(canvasElement.querySelector('img')).not.toBeInTheDocument();
+    expect(canvasElement.querySelector('button')).toBeDisabled();
   },
 };

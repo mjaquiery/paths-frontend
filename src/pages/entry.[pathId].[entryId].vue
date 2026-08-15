@@ -53,10 +53,11 @@
           </p>
           <div class="entry-images">
             <EntryImage
-              v-for="img in unreferencedImages"
+              v-for="(img, idx) in unreferencedImages"
               :key="img.id"
               :image-id="img.id"
               :alt="img.filename"
+              @open="openLightbox(idx)"
             />
           </div>
         </template>
@@ -86,6 +87,14 @@
       :buttons="deleteAlertButtons"
       @didDismiss="showDeleteAlert = false"
     />
+
+    <ImageLightbox
+      :is-open="lightboxIndex !== null"
+      :images="unreferencedImages"
+      :start-index="lightboxIndex ?? 0"
+      :day="entryDay"
+      @dismiss="lightboxIndex = null"
+    />
   </ion-page>
 </template>
 
@@ -107,6 +116,7 @@ import { useOnThisDay } from '../composables/useOnThisDay';
 import { describeError } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import EntryImage from '../components/EntryImage.vue';
+import ImageLightbox from '../components/ImageLightbox.vue';
 import { referencedImageFilenames } from '../utils/markdown';
 import type {
   EntryContentResponse,
@@ -172,6 +182,11 @@ const referencedFilenames = computed<Set<string>>(() =>
 const unreferencedImages = computed(() =>
   images.value.filter((img) => !referencedFilenames.value.has(img.filename)),
 );
+
+const lightboxIndex = ref<number | null>(null);
+function openLightbox(index: number) {
+  lightboxIndex.value = index;
+}
 
 // "On this day" across every visible path, for *this entry's* date.
 const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
