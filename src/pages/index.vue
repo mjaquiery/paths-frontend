@@ -48,6 +48,7 @@
           :visible-paths="visiblePaths"
           :path-entries="multiPathEntries"
           :current-user-id="currentUser.user_id"
+          :ensure-day-loaded="ensureDayLoaded"
         />
       </ion-content>
 
@@ -86,7 +87,8 @@ const { data: allPaths } = usePaths();
 const { visiblePaths } = usePathVisibility(allPaths);
 
 const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
-const multiPathEntries = useMultiPathEntries(visiblePathIds);
+const { pathEntries: multiPathEntries, ensureDayLoaded } =
+  useMultiPathEntries(visiblePathIds);
 
 const contentRef = ref(null);
 const dayBrowserRef = ref<InstanceType<typeof DayBrowser> | null>(null);
@@ -227,5 +229,4 @@ ion-content {
   font-size: 0.8rem;
   margin-top: 1.25rem;
 }
-
 </style>

@@ -38,13 +38,22 @@ function daysAgo(n: number): string {
 }
 
 const entries: EntryWithContent[] = [
-  { id: 'e1', path_id: 'p1', day: daysAgo(0), edit_id: 1, content: 'Today entry', images: [] },
+  {
+    id: 'e1',
+    path_id: 'p1',
+    day: daysAgo(0),
+    edit_id: 1,
+    content: 'Today entry',
+    images: [],
+    inWindow: true,
+  },
   {
     id: 'e2',
     path_id: 'p1',
     day: daysAgo(3),
     edit_id: 1,
     content: 'A few days ago',
+    inWindow: true,
     images: [
       {
         id: 'img1',
@@ -57,7 +66,15 @@ const entries: EntryWithContent[] = [
       },
     ],
   },
-  { id: 'e3', path_id: 'p1', day: daysAgo(10), edit_id: 1, content: 'Ten days ago', images: [] },
+  {
+    id: 'e3',
+    path_id: 'p1',
+    day: daysAgo(10),
+    edit_id: 1,
+    content: 'Ten days ago',
+    images: [],
+    inWindow: true,
+  },
 ];
 
 const meta: Meta<typeof PathBrowser> = {
@@ -149,6 +166,7 @@ export const ManyEntries: Story = {
       edit_id: 1,
       content: `Entry ${i}`,
       images: [],
+      inWindow: true,
     })),
   },
   play: async ({ canvasElement }) => {
@@ -174,6 +192,7 @@ export const HeaderStaysVisibleWhileScrolling: Story = {
       edit_id: 1,
       content: `Entry ${i}`,
       images: [],
+      inWindow: true,
     })),
   },
   decorators: [
