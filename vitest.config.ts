@@ -17,10 +17,25 @@ export default defineConfig({
     // stories involved still pass their assertions — only the async
     // rejection is spurious — so don't fail the whole run over it.
     onUnhandledError: (error) => {
+      const message = (error as Error)?.message ?? '';
+      if (/Failed to fetch dynamically imported module/.test(message)) {
+        return false;
+      }
+      // Ionic overlays (ion-alert/ion-modal) remove their own host element
+      // from the DOM as the last step of their (async, promise-based)
+      // dismiss lifecycle. When a story's play function triggers that
+      // dismiss and the *next* story mounts (tearing down the previous
+      // one) before that promise settles, @ionic/vue's Vue-side teleport
+      // bookkeeping for that overlay tries to patch a node the overlay
+      // already detached itself, throwing here. The story that triggered
+      // the dismiss has already finished and passed its assertions by the
+      // time this fires — it's cross-story teardown noise, not a real
+      // failure — so don't fail the run over it.
       if (
-        /Failed to fetch dynamically imported module/.test(
-          (error as Error)?.message ?? '',
-        )
+        /Cannot read properties of null \(reading 'insertBefore'\)/.test(
+          message,
+        ) &&
+        /removeViewFromDom/.test((error as Error)?.stack ?? '')
       ) {
         return false;
       }

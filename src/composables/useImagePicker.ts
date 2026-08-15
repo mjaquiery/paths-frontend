@@ -6,17 +6,23 @@ import { Camera } from '@capacitor/camera';
  * Capacitor) and falling back to a plain file input on web/PWA. Always resolves to real
  * `File` objects so callers don't need to branch on platform themselves — the multipart
  * create/edit endpoints just want File[] regardless of where they came from.
+ *
+ * Pass `{ multiple: false }` to restrict the picker to a single image (e.g. replacing one
+ * photo already queued for upload).
  */
-export async function pickImages(): Promise<File[]> {
+export async function pickImages(options?: {
+  multiple?: boolean;
+}): Promise<File[]> {
+  const multiple = options?.multiple ?? true;
   if (Capacitor.isNativePlatform()) {
-    return pickImagesNative();
+    return pickImagesNative(multiple);
   }
-  return pickImagesWeb();
+  return pickImagesWeb(multiple);
 }
 
-async function pickImagesNative(): Promise<File[]> {
+async function pickImagesNative(multiple: boolean): Promise<File[]> {
   const { results } = await Camera.chooseFromGallery({
-    allowMultipleSelection: true,
+    allowMultipleSelection: multiple,
   });
   const files = await Promise.all(
     results.map(async (result, index) => {
@@ -34,12 +40,12 @@ async function pickImagesNative(): Promise<File[]> {
   return files.filter((f): f is File => f !== null);
 }
 
-function pickImagesWeb(): Promise<File[]> {
+function pickImagesWeb(multiple: boolean): Promise<File[]> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.multiple = true;
+    input.multiple = multiple;
     input.style.display = 'none';
     input.addEventListener(
       'change',

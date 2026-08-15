@@ -237,18 +237,72 @@ export const SavingCreatesTheEntry: Story = {
   },
 };
 
-export const AddingImageShowsInPendingStrip: Story = {
+export const AddingImageShowsThumbnailAndCaptionPrompt: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByText('Daily Life');
 
-    await userEvent.click(canvas.getByText('+'));
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
     await selectFile(
       new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
     );
 
-    await expect(await canvas.findByText('sunset.jpg')).toBeInTheDocument();
-    await expect(canvas.getByPlaceholderText('Caption')).toBeInTheDocument();
+    await expect(
+      await canvas.findByLabelText('Change photo sunset.jpg'),
+    ).toBeInTheDocument();
+    await expect(canvas.getByText('Add a caption')).toBeInTheDocument();
+    await expect(
+      canvas.getByLabelText('Remove image sunset.jpg'),
+    ).toBeInTheDocument();
+  },
+};
+
+export const PendingImageWithoutCaptionIsRemovedImmediately: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Daily Life');
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
+    await selectFile(
+      new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
+    );
+    await canvas.findByLabelText('Change photo sunset.jpg');
+
+    await userEvent.click(canvas.getByLabelText('Remove image sunset.jpg'));
+    await expect(
+      canvas.queryByLabelText('Remove image sunset.jpg'),
+    ).not.toBeInTheDocument();
+    await expect(screen.queryByText('Remove photo')).not.toBeInTheDocument();
+  },
+};
+
+export const PendingImageWithCaptionRequiresConfirmationToRemove: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Daily Life');
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
+    await selectFile(
+      new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
+    );
+    await userEvent.click(await canvas.findByText('Add a caption'));
+    await userEvent.type(
+      canvas.getByPlaceholderText('Add a caption'),
+      'Golden hour',
+    );
+    await userEvent.tab();
+
+    await userEvent.click(canvas.getByLabelText('Remove image sunset.jpg'));
+    await expect(await screen.findByText('Remove photo')).toBeInTheDocument();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Remove' }),
+    );
+
+    await waitFor(() =>
+      expect(
+        canvas.queryByLabelText('Remove image sunset.jpg'),
+      ).not.toBeInTheDocument(),
+    );
   },
 };
 
@@ -279,7 +333,7 @@ export const SavingWithImageShowsPercentProgress: Story = {
     )) as HTMLTextAreaElement;
     await userEvent.type(textarea, 'Morning run along the river.');
 
-    await userEvent.click(canvas.getByText('+'));
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
     await selectFile(
       new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
     );

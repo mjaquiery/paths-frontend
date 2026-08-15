@@ -71,74 +71,44 @@
         </p>
         <p v-else-if="error" class="editor-error">{{ error }}</p>
 
-        <template v-if="keptImages.length > 0 || removedImages.length > 0">
-          <p class="editor-section-label">Images</p>
-          <div class="existing-images">
-            <div
-              v-for="img in keptImages"
-              :key="img.id"
-              class="existing-image-item"
-            >
-              <span class="existing-image-name">{{ img.filename }}</span>
-              <button
-                class="image-action-btn"
-                type="button"
-                :aria-label="`Insert image ${img.filename} into content`"
-                @click="insertImageMarkdown(img.filename)"
-              >
-                ↳ Insert
-              </button>
-              <button
-                class="image-action-btn image-action-btn--danger"
-                type="button"
-                :aria-label="`Remove image ${img.filename}`"
-                @click="removeImage(img.id)"
-              >
-                ✕
-              </button>
-            </div>
-            <div
-              v-for="img in removedImages"
-              :key="img.id"
-              class="existing-image-item existing-image-item--removed"
-            >
-              <span class="existing-image-name">{{ img.filename }}</span>
-              <button
-                class="image-action-btn"
-                type="button"
-                :aria-label="`Restore image ${img.filename}`"
-                @click="restoreImage(img.id)"
-              >
-                ↩ Restore
-              </button>
-            </div>
-          </div>
-        </template>
-
-        <p class="editor-section-label">Add photos</p>
-        <div class="photo-strip">
-          <div
+        <p class="editor-section-label">Photos</p>
+        <div class="photo-list">
+          <PhotoStripItem
+            v-for="img in keptImages"
+            :key="img.id"
+            variant="existing"
+            :image-id="img.id"
+            :filename="img.filename"
+            :caption="img.caption ?? ''"
+            @commit-caption="(caption) => updateExistingCaption(img, caption)"
+            @change="(file) => replaceExistingImage(img, file)"
+            @remove="removeExistingImage(img.id)"
+          />
+          <PhotoStripItem
             v-for="img in pendingImages"
-            :key="img.file.name"
-            class="photo-pending"
+            :key="img.id"
+            variant="pending"
+            :file="img.file"
+            :filename="img.file.name"
+            :caption="img.caption"
+            @commit-caption="(caption) => (img.caption = caption)"
+            @change="(file) => (img.file = file)"
+            @remove="removePendingImage(img.id)"
+          />
+          <button
+            type="button"
+            class="photo-row photo-row--add"
+            @click="addImages"
           >
-            <span class="photo-pending-name">{{ img.file.name }}</span>
-            <input
-              v-model="img.caption"
-              placeholder="Caption"
-              class="photo-caption-input"
-            />
-            <button
-              class="photo-insert-btn"
-              type="button"
-              :aria-label="`Insert image ${img.file.name} into content`"
-              @click="insertImageMarkdown(img.file.name)"
+            <span
+              class="photo-row-thumb photo-row-thumb--add"
+              aria-hidden="true"
+              >+</span
             >
-              ↳
-            </button>
-          </div>
-          <button class="photo-add-btn" type="button" @click="addImages">
-            +
+            <span
+              class="photo-row-caption-display photo-row-caption-display--empty"
+              >Add an image</span
+            >
           </button>
         </div>
       </div>
@@ -157,12 +127,14 @@ import {
   useGetEntry,
   useListEntryImages,
   useUpdateEntry,
+  useUpdateImageCaption,
 } from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
 import { useLocalDraft } from '../composables/useLocalDraft';
 import { pickImages } from '../composables/useImagePicker';
 import { describeError, isApiErrorWithStatus } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
+import PhotoStripItem from '../components/PhotoStripItem.vue';
 import SavingOverlay from '../components/SavingOverlay.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import type { EntryContentResponse, ImageResponse } from '../generated/types';
@@ -195,8 +167,8 @@ const { mutateAsync: doUpdateEntry } = useUpdateEntry({
 
 const contentTab = ref<'write' | 'preview'>('write');
 const keptImages = ref<ImageResponse[]>([]);
-const removedImages = ref<ImageResponse[]>([]);
-const pendingImages = ref<{ file: File; caption: string }[]>([]);
+const removedImageIds = ref<string[]>([]);
+const pendingImages = ref<{ id: string; file: File; caption: string }[]>([]);
 const saving = ref(false);
 const error = ref('');
 const conflictError = ref('');
@@ -231,31 +203,62 @@ watch(
   { immediate: true },
 );
 watch(imagesData, (images) => {
-  if (images) keptImages.value = [...images];
+  if (images) {
+    // Query results are deeply readonly (shared TanStack Query cache
+    // entries) — clone so caption edits below can mutate freely.
+    keptImages.value = images.map((img) => ({ ...img }));
+    removedImageIds.value = [];
+  }
 });
 
-const { onTextareaInput, insertImageMarkdown, wrapSelection, prefixLine } =
-  useMarkdownEditor(content, textareaRef, contentTab);
+const { onTextareaInput, wrapSelection, prefixLine } = useMarkdownEditor(
+  content,
+  textareaRef,
+);
 
-function removeImage(imageId: string) {
+const { mutateAsync: doUpdateImageCaption } = useUpdateImageCaption();
+
+function removeExistingImage(imageId: string) {
   const idx = keptImages.value.findIndex((img) => img.id === imageId);
   if (idx !== -1) {
-    const [removed] = keptImages.value.splice(idx, 1);
-    if (removed) removedImages.value.push(removed);
+    keptImages.value.splice(idx, 1);
+    removedImageIds.value.push(imageId);
   }
 }
 
-function restoreImage(imageId: string) {
-  const idx = removedImages.value.findIndex((img) => img.id === imageId);
-  if (idx !== -1) {
-    const [restored] = removedImages.value.splice(idx, 1);
-    if (restored) keptImages.value.push(restored);
+async function updateExistingCaption(image: ImageResponse, caption: string) {
+  if (entryData.value?.edit_id === undefined) return;
+  const previousCaption = image.caption;
+  image.caption = caption;
+  try {
+    await doUpdateImageCaption({
+      imageId: image.id,
+      data: { caption, expected_edit_id: entryData.value.edit_id },
+    });
+  } catch (err: unknown) {
+    image.caption = previousCaption;
+    error.value = describeError('update caption', err);
   }
+}
+
+function replaceExistingImage(image: ImageResponse, file: File) {
+  removeExistingImage(image.id);
+  pendingImages.value.push({
+    id: crypto.randomUUID(),
+    file,
+    caption: image.caption ?? '',
+  });
 }
 
 async function addImages() {
   const files = await pickImages();
-  pendingImages.value.push(...files.map((file) => ({ file, caption: '' })));
+  pendingImages.value.push(
+    ...files.map((file) => ({ id: crypto.randomUUID(), file, caption: '' })),
+  );
+}
+
+function removePendingImage(id: string) {
+  pendingImages.value = pendingImages.value.filter((img) => img.id !== id);
 }
 
 async function submit() {
@@ -273,7 +276,7 @@ async function submit() {
         expected_edit_id: entryData.value.edit_id,
         content: content.value,
         captions: pendingImages.value.map((img) => img.caption),
-        remove_image_ids: removedImages.value.map((img) => img.id),
+        remove_image_ids: removedImageIds.value,
         images: pendingImages.value.map((img) => img.file),
       },
     });
@@ -427,95 +430,40 @@ async function submit() {
   margin: 1.5rem 0 0.6rem;
 }
 
-.existing-images {
+.photo-list {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.6rem;
 }
 
-.existing-image-item {
+.photo-row--add {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.existing-image-item--removed .existing-image-name {
-  text-decoration: line-through;
-  color: var(--color-ink-muted);
-}
-
-.existing-image-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.image-action-btn {
+  gap: 0.75rem;
+  width: 100%;
   background: none;
-  border: 1px solid var(--color-rule);
-  border-radius: 4px;
+  border: none;
+  padding: 0;
+  text-align: left;
   cursor: pointer;
-  font-size: 0.75rem;
-  padding: 0.15rem 0.5rem;
-  color: var(--color-ink);
 }
 
-.image-action-btn--danger {
-  color: var(--ion-color-danger);
-}
-
-.photo-strip {
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
-
-.photo-pending {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  width: 6rem;
-  font-size: 0.75rem;
-}
-
-.photo-pending-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--color-ink-muted);
-}
-
-.photo-caption-input {
-  border: 1px solid var(--color-rule);
-  border-radius: 4px;
-  background: none;
-  color: var(--color-ink);
-  font-size: 0.75rem;
-  padding: 0.2rem 0.3rem;
-}
-
-.photo-insert-btn {
-  align-self: flex-start;
-  background: none;
-  border: 1px solid var(--color-rule);
-  border-radius: 4px;
-  color: var(--color-ink);
-  cursor: pointer;
-  font-size: 0.75rem;
-  padding: 0.1rem 0.4rem;
-}
-
-.photo-add-btn {
+.photo-row-thumb--add {
+  flex-shrink: 0;
   width: 3.5rem;
   height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1px dashed var(--color-rule);
-  border-radius: 6px;
-  background: none;
+  border-radius: 8px;
   color: var(--color-ink-muted);
   font-size: 1.3rem;
-  cursor: pointer;
+}
+
+.photo-row-caption-display--empty {
+  color: var(--color-ink-muted);
+  font-style: italic;
+  font-size: 0.9rem;
 }
 </style>

@@ -9,6 +9,7 @@ import {
   routeLoader,
   clearLocalDraftsLoader,
 } from '../../.storybook/decorators';
+import { withDefaultHandlers } from '../../.storybook/msw';
 import { db } from '../lib/db';
 
 // Unique ids so this story's local-draft autosave (persisted to real
@@ -59,7 +60,7 @@ function entryReadHandlers(images: unknown[] = []) {
   ];
 }
 
-const readHandlers = entryReadHandlers();
+const readHandlers = withDefaultHandlers(...entryReadHandlers());
 
 // pickImages() falls back to a plain <input type="file"> appended to
 // document.body and clicked (see useImagePicker.ts) — there's no real OS
@@ -249,53 +250,143 @@ export const ConflictShowsInlineWarning: Story = {
   },
 };
 
-export const ExistingImageCanBeRemovedAndRestored: Story = {
+export const ExistingImageRequiresConfirmationToRemove: Story = {
   parameters: {
-    msw: { handlers: entryReadHandlers([existingImage]) },
+    msw: {
+      handlers: withDefaultHandlers(...entryReadHandlers([existingImage])),
+    },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText('beach.jpg')).toBeInTheDocument();
+    await expect(
+      await canvas.findByLabelText('Change photo beach.jpg'),
+    ).toBeInTheDocument();
 
     await userEvent.click(canvas.getByLabelText('Remove image beach.jpg'));
-    const removedItem = canvas
-      .getByText('beach.jpg')
-      .closest('.existing-image-item');
-    await expect(removedItem).toHaveClass('existing-image-item--removed');
-    await expect(
-      canvas.queryByLabelText('Remove image beach.jpg'),
-    ).not.toBeInTheDocument();
+    await expect(await screen.findByText('Remove photo')).toBeInTheDocument();
 
-    await userEvent.click(canvas.getByLabelText('Restore image beach.jpg'));
-    const restoredItem = canvas
-      .getByText('beach.jpg')
-      .closest('.existing-image-item');
-    await expect(restoredItem).not.toHaveClass('existing-image-item--removed');
+    // Cancelling leaves the photo in place.
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await expect(
       canvas.getByLabelText('Remove image beach.jpg'),
+    ).toBeInTheDocument();
+
+    await userEvent.click(canvas.getByLabelText('Remove image beach.jpg'));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Remove' }),
+    );
+    await waitFor(() =>
+      expect(
+        canvas.queryByLabelText('Remove image beach.jpg'),
+      ).not.toBeInTheDocument(),
+    );
+  },
+};
+
+export const ExistingImageCaptionCanBeEditedByTapping: Story = {
+  parameters: {
+    msw: {
+      handlers: withDefaultHandlers(
+        ...entryReadHandlers([existingImage]),
+        http.patch('*/v1/images/:imageId', () =>
+          HttpResponse.json({
+            edit_id: 2,
+            image: { ...existingImage, caption: 'Sunset over the bay' },
+          }),
+        ),
+      ),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByLabelText('Change photo beach.jpg');
+
+    await userEvent.click(canvas.getByText('Add a caption'));
+    await userEvent.type(
+      canvas.getByPlaceholderText('Add a caption'),
+      'Sunset over the bay',
+    );
+    await userEvent.tab();
+
+    await expect(
+      await canvas.findByText('Sunset over the bay'),
     ).toBeInTheDocument();
   },
 };
 
-export const AddingNewImageShowsInPhotoStrip: Story = {
+export const AddingNewImageShowsThumbnailAndCaptionPrompt: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByDisplayValue('Morning run along the river.');
 
-    await userEvent.click(canvas.getByText('+'));
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
     await selectFile(
       new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
     );
 
-    await expect(await canvas.findByText('sunset.jpg')).toBeInTheDocument();
-    await expect(canvas.getByPlaceholderText('Caption')).toBeInTheDocument();
+    await expect(
+      await canvas.findByLabelText('Change photo sunset.jpg'),
+    ).toBeInTheDocument();
+    await expect(canvas.getByText('Add a caption')).toBeInTheDocument();
+    await expect(
+      canvas.getByLabelText('Remove image sunset.jpg'),
+    ).toBeInTheDocument();
+  },
+};
+
+export const PendingImageWithoutCaptionIsRemovedImmediately: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByDisplayValue('Morning run along the river.');
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
+    await selectFile(
+      new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
+    );
+    await canvas.findByLabelText('Change photo sunset.jpg');
+
+    await userEvent.click(canvas.getByLabelText('Remove image sunset.jpg'));
+    await expect(
+      canvas.queryByLabelText('Remove image sunset.jpg'),
+    ).not.toBeInTheDocument();
+    await expect(screen.queryByText('Remove photo')).not.toBeInTheDocument();
+  },
+};
+
+export const PendingImageWithCaptionRequiresConfirmationToRemove: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByDisplayValue('Morning run along the river.');
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
+    await selectFile(
+      new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
+    );
+    await userEvent.click(await canvas.findByText('Add a caption'));
+    await userEvent.type(
+      canvas.getByPlaceholderText('Add a caption'),
+      'Golden hour',
+    );
+    await userEvent.tab();
+
+    await userEvent.click(canvas.getByLabelText('Remove image sunset.jpg'));
+    await expect(await screen.findByText('Remove photo')).toBeInTheDocument();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Remove' }),
+    );
+
+    await waitFor(() =>
+      expect(
+        canvas.queryByLabelText('Remove image sunset.jpg'),
+      ).not.toBeInTheDocument(),
+    );
   },
 };
 
 export const SavingWithImageChangesShowsPercentProgress: Story = {
   parameters: {
     msw: {
-      handlers: [
+      handlers: withDefaultHandlers(
         ...entryReadHandlers([existingImage]),
         http.put('*/v1/paths/:pathCode/entries/:entrySlug', async () => {
           await delay(5000);
@@ -307,18 +398,28 @@ export const SavingWithImageChangesShowsPercentProgress: Story = {
             content: 'Morning run along the river.',
           });
         }),
-      ],
+      ),
     },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByDisplayValue('Morning run along the river.');
-    await canvas.findByText('beach.jpg');
+    await canvas.findByLabelText('Change photo beach.jpg');
 
-    // Remove the existing image and add a new one, so the save request
-    // carries a real multipart upload (drives the % progress label).
+    // Remove the existing image (confirming, since it's already uploaded)
+    // and add a new one, so the save request carries a real multipart
+    // upload (drives the % progress label).
     await userEvent.click(canvas.getByLabelText('Remove image beach.jpg'));
-    await userEvent.click(canvas.getByText('+'));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Remove' }),
+    );
+    await waitFor(() =>
+      expect(
+        canvas.queryByLabelText('Remove image beach.jpg'),
+      ).not.toBeInTheDocument(),
+    );
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
     await selectFile(
       new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
     );

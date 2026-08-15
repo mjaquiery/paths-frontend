@@ -90,29 +90,32 @@
         <p v-if="error" class="editor-error">{{ error }}</p>
 
         <p class="editor-section-label">Photos</p>
-        <div class="photo-strip">
-          <div
+        <div class="photo-list">
+          <PhotoStripItem
             v-for="img in pendingImages"
-            :key="img.file.name"
-            class="photo-pending"
+            :key="img.id"
+            variant="pending"
+            :file="img.file"
+            :filename="img.file.name"
+            :caption="img.caption"
+            @commit-caption="(caption) => (img.caption = caption)"
+            @change="(file) => (img.file = file)"
+            @remove="removePendingImage(img.id)"
+          />
+          <button
+            type="button"
+            class="photo-row photo-row--add"
+            @click="addImages"
           >
-            <span class="photo-pending-name">{{ img.file.name }}</span>
-            <input
-              v-model="img.caption"
-              placeholder="Caption"
-              class="photo-caption-input"
-            />
-            <button
-              class="photo-insert-btn"
-              type="button"
-              :aria-label="`Insert image ${img.file.name} into content`"
-              @click="insertImageMarkdown(img.file.name)"
+            <span
+              class="photo-row-thumb photo-row-thumb--add"
+              aria-hidden="true"
+              >+</span
             >
-              ↳
-            </button>
-          </div>
-          <button class="photo-add-btn" type="button" @click="addImages">
-            +
+            <span
+              class="photo-row-caption-display photo-row-caption-display--empty"
+              >Add an image</span
+            >
           </button>
         </div>
       </div>
@@ -133,6 +136,7 @@ import { useLocalDraft } from '../composables/useLocalDraft';
 import { pickImages } from '../composables/useImagePicker';
 import { describeError } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
+import PhotoStripItem from '../components/PhotoStripItem.vue';
 import SavingOverlay from '../components/SavingOverlay.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { toLocalISODate } from '../utils/date';
@@ -179,7 +183,7 @@ const selectedPathId = ref(initialPathId);
 const day = ref(initialDay);
 const contentTab = ref<'write' | 'preview'>('write');
 const error = ref('');
-const pendingImages = ref<{ file: File; caption: string }[]>([]);
+const pendingImages = ref<{ id: string; file: File; caption: string }[]>([]);
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
 
 const saveLabel = computed(() => {
@@ -223,12 +227,20 @@ const {
 } = useLocalDraft(pathId, day, ref(null));
 onMounted(restore);
 
-const { onTextareaInput, insertImageMarkdown, wrapSelection, prefixLine } =
-  useMarkdownEditor(content, textareaRef, contentTab);
+const { onTextareaInput, wrapSelection, prefixLine } = useMarkdownEditor(
+  content,
+  textareaRef,
+);
 
 async function addImages() {
   const files = await pickImages();
-  pendingImages.value.push(...files.map((file) => ({ file, caption: '' })));
+  pendingImages.value.push(
+    ...files.map((file) => ({ id: crypto.randomUUID(), file, caption: '' })),
+  );
+}
+
+function removePendingImage(id: string) {
+  pendingImages.value = pendingImages.value.filter((img) => img.id !== id);
 }
 
 async function submit() {
@@ -401,56 +413,40 @@ async function submit() {
   margin: 1.5rem 0 0.6rem;
 }
 
-.photo-strip {
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
-
-.photo-pending {
+.photo-list {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  width: 6rem;
-  font-size: 0.75rem;
+  gap: 0.6rem;
 }
 
-.photo-pending-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--color-ink-muted);
-}
-
-.photo-caption-input {
-  border: 1px solid var(--color-rule);
-  border-radius: 4px;
+.photo-row--add {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
   background: none;
-  color: var(--color-ink);
-  font-size: 0.75rem;
-  padding: 0.2rem 0.3rem;
-}
-
-.photo-insert-btn {
-  align-self: flex-start;
-  background: none;
-  border: 1px solid var(--color-rule);
-  border-radius: 4px;
-  color: var(--color-ink);
+  border: none;
+  padding: 0;
+  text-align: left;
   cursor: pointer;
-  font-size: 0.75rem;
-  padding: 0.1rem 0.4rem;
 }
 
-.photo-add-btn {
+.photo-row-thumb--add {
+  flex-shrink: 0;
   width: 3.5rem;
   height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1px dashed var(--color-rule);
-  border-radius: 6px;
-  background: none;
+  border-radius: 8px;
   color: var(--color-ink-muted);
   font-size: 1.3rem;
-  cursor: pointer;
+}
+
+.photo-row-caption-display--empty {
+  color: var(--color-ink-muted);
+  font-style: italic;
+  font-size: 0.9rem;
 }
 </style>
