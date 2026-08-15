@@ -65,7 +65,9 @@ export const RequiresExactNameMatch: Story = {
     await waitFor(() => expect(button).toHaveClass('hydrated'));
     // ion-input's native <input> accepts typing immediately, but Stencil only
     // forwards value changes to Vue's v-model once the host hydrates.
-    await waitFor(() => expect(input.closest('ion-input')).toHaveClass('hydrated'));
+    await waitFor(() =>
+      expect(input.closest('ion-input')).toHaveClass('hydrated'),
+    );
     await waitForModalPresented();
 
     await userEvent.type(input, 'wrong name');
@@ -82,7 +84,9 @@ export const ConfirmingDeletes: Story = {
     const input = await screen.findByPlaceholderText(pathResponseFixture.title);
     const button = deleteButton();
     await waitFor(() => expect(button).toHaveClass('hydrated'));
-    await waitFor(() => expect(input.closest('ion-input')).toHaveClass('hydrated'));
+    await waitFor(() =>
+      expect(input.closest('ion-input')).toHaveClass('hydrated'),
+    );
     await waitForModalPresented();
 
     await userEvent.type(input, pathResponseFixture.title);

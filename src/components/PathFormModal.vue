@@ -51,7 +51,8 @@
         <div>
           <p class="pf-shareable-title">Publicly visible</p>
           <p class="pf-shareable-desc">
-            Anyone with the link can view this path, even if they aren't a subscriber
+            Anyone with the link can view this path, even if they aren't a
+            subscriber
           </p>
         </div>
         <label class="pf-toggle">

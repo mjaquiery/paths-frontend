@@ -42,8 +42,13 @@ export const handlers = [
   http.patch('*/v1/paths/:pathCode/visibility', () =>
     HttpResponse.json(pathResponseFixture),
   ),
-  http.patch('*/v1/paths/:pathCode', () => HttpResponse.json(pathResponseFixture)),
-  http.delete('*/v1/paths/:pathCode', () => new HttpResponse(null, { status: 204 })),
+  http.patch('*/v1/paths/:pathCode', () =>
+    HttpResponse.json(pathResponseFixture),
+  ),
+  http.delete(
+    '*/v1/paths/:pathCode',
+    () => new HttpResponse(null, { status: 204 }),
+  ),
   http.get('*/v1/paths/:pathCode/entries', () =>
     HttpResponse.json([entryResponseFixture]),
   ),
@@ -69,7 +74,9 @@ export const handlers = [
   http.get('*/v1/images/:imageId/download-url', () =>
     HttpResponse.json(imageDownloadPlaceholderFixture),
   ),
-  http.get('*/v1/invitations', () => HttpResponse.json([invitationResponseFixture])),
+  http.get('*/v1/invitations', () =>
+    HttpResponse.json([invitationResponseFixture]),
+  ),
   http.post('*/v1/invitations/:invitationId/accept', () =>
     HttpResponse.json({}),
   ),

@@ -255,7 +255,7 @@ describe('useMultiPathEntries', () => {
     });
     await flushPromises();
 
-    expect(result?.value).toEqual([]);
+    expect(result?.pathEntries.value).toEqual([]);
   });
 
   it('fetches entries for each provided pathId', async () => {
@@ -325,11 +325,11 @@ describe('useMultiPathEntries', () => {
     // Second flush: async watch resolves content fetches
     await flushPromises();
 
-    expect(result?.value).toHaveLength(2);
-    expect(result?.value[0]?.pathId).toBe('p1');
-    expect(result?.value[0]?.entries).toHaveLength(1);
-    expect(result?.value[1]?.pathId).toBe('p2');
-    expect(result?.value[1]?.entries).toHaveLength(1);
+    expect(result?.pathEntries.value).toHaveLength(2);
+    expect(result?.pathEntries.value[0]?.pathId).toBe('p1');
+    expect(result?.pathEntries.value[0]?.entries).toHaveLength(1);
+    expect(result?.pathEntries.value[1]?.pathId).toBe('p2');
+    expect(result?.pathEntries.value[1]?.entries).toHaveLength(1);
   });
 
   it('returns empty entries array when a query fails', async () => {
@@ -354,7 +354,7 @@ describe('useMultiPathEntries', () => {
     });
     await flushPromises();
 
-    expect(result?.value[0]?.entries).toEqual([]);
+    expect(result?.pathEntries.value[0]?.entries).toEqual([]);
   });
 
   it('keeps each pathId associated with its own entries when pathIds are reordered', async () => {
@@ -423,18 +423,18 @@ describe('useMultiPathEntries', () => {
     await flushPromises();
 
     // Verify baseline before reorder
-    expect(result?.value[0]?.pathId).toBe('p1');
-    expect(result?.value[0]?.entries[0]?.path_id).toBe('p1');
-    expect(result?.value[1]?.pathId).toBe('p2');
-    expect(result?.value[1]?.entries[0]?.path_id).toBe('p2');
+    expect(result?.pathEntries.value[0]?.pathId).toBe('p1');
+    expect(result?.pathEntries.value[0]?.entries[0]?.path_id).toBe('p1');
+    expect(result?.pathEntries.value[1]?.pathId).toBe('p2');
+    expect(result?.pathEntries.value[1]?.entries[0]?.path_id).toBe('p2');
 
     // Reorder: promote p2 to first position
     pathIds.value = ['p2', 'p1'];
     await nextTick();
 
     // Immediately after reorder (before async queries settle), each pathId must still map to its own entries
-    let p2Slot = result?.value.find((pe) => pe.pathId === 'p2');
-    let p1Slot = result?.value.find((pe) => pe.pathId === 'p1');
+    let p2Slot = result?.pathEntries.value.find((pe) => pe.pathId === 'p2');
+    let p1Slot = result?.pathEntries.value.find((pe) => pe.pathId === 'p1');
 
     expect(p2Slot?.entries[0]?.path_id).toBe('p2');
     expect(p1Slot?.entries[0]?.path_id).toBe('p1');
@@ -442,8 +442,8 @@ describe('useMultiPathEntries', () => {
     // After async queries settle, the association must still be correct
     await flushPromises();
 
-    p2Slot = result?.value.find((pe) => pe.pathId === 'p2');
-    p1Slot = result?.value.find((pe) => pe.pathId === 'p1');
+    p2Slot = result?.pathEntries.value.find((pe) => pe.pathId === 'p2');
+    p1Slot = result?.pathEntries.value.find((pe) => pe.pathId === 'p1');
 
     expect(p2Slot?.entries[0]?.path_id).toBe('p2');
     expect(p1Slot?.entries[0]?.path_id).toBe('p1');
@@ -534,8 +534,10 @@ describe('useMultiPathEntries', () => {
     await flushPromises();
     await flushPromises();
 
-    const p1Entry = result?.value.find((pe) => pe.pathId === 'p1')?.entries[0];
-    const p2Entry = result?.value.find((pe) => pe.pathId === 'p2')?.entries[0];
+    const p1Entry = result?.pathEntries.value.find((pe) => pe.pathId === 'p1')
+      ?.entries[0];
+    const p2Entry = result?.pathEntries.value.find((pe) => pe.pathId === 'p2')
+      ?.entries[0];
 
     expect(p1Entry?.content).toBe('Content from p1');
     expect(p2Entry?.content).toBe('Content from p2');

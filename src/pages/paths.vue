@@ -6,6 +6,9 @@
         :paths="visiblePaths"
         v-model:selected-path-id="selectedPathId"
         :entries="selectedPathEntries"
+        :is-loading="selectedPathIsLoading"
+        :has-more="selectedPathHasMore"
+        @load-more="loadMore(selectedPathId)"
       />
     </ion-content>
 
@@ -51,9 +54,16 @@ watch(
 const selectedPathIds = computed(() =>
   selectedPathId.value ? [selectedPathId.value] : [],
 );
-const multiPathEntries = useMultiPathEntries(selectedPathIds);
+const { pathEntries: multiPathEntries, loadMore } =
+  useMultiPathEntries(selectedPathIds);
 const selectedPathEntries = computed(
   () => multiPathEntries.value[0]?.entries ?? [],
+);
+const selectedPathIsLoading = computed(
+  () => multiPathEntries.value[0]?.isListLoading ?? false,
+);
+const selectedPathHasMore = computed(
+  () => multiPathEntries.value[0]?.hasMore ?? false,
 );
 
 const todayStr = toLocalISODate(new Date());

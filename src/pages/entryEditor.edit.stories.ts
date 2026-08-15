@@ -90,7 +90,11 @@ const meta: Meta<typeof EntryEditPage> = {
   loaders: [routeLoader(editUrl), clearLocalDraftsLoader()],
   decorators: [
     withAppShell(),
-    withLoggedInUser({ token: 'tok', user_id: 'user-1', display_name: 'Alex M.' }),
+    withLoggedInUser({
+      token: 'tok',
+      user_id: 'user-1',
+      display_name: 'Alex M.',
+    }),
   ],
   parameters: {
     msw: { handlers: [...readHandlers, saveSucceedsHandler] },
@@ -125,7 +129,9 @@ export const EditingUpdatesContent: Story = {
     // wait for it to land here so it can't race SavingSucceeds' (the next
     // story's) clearLocalDraftsLoader()/restore() cycle on the same draft key.
     await waitFor(async () => {
-      const draft = await db.localDrafts.get(`${path.path_id}:entry:${entryId}`);
+      const draft = await db.localDrafts.get(
+        `${path.path_id}:entry:${entryId}`,
+      );
       expect(draft?.content).toBe('Morning run along the river. Updated.');
     });
   },
@@ -175,7 +181,9 @@ export const SlowServerShowsSavingState: Story = {
     await expect(saveButton).toBeDisabled();
     // The SavingOverlay shows the same label inside its own ion-modal, so
     // it's checked separately (via the testid) rather than by text alone.
-    await expect(await screen.findByTestId('saving-overlay')).toBeInTheDocument();
+    await expect(
+      await screen.findByTestId('saving-overlay'),
+    ).toBeInTheDocument();
 
     await waitFor(
       () =>
@@ -184,7 +192,9 @@ export const SlowServerShowsSavingState: Story = {
         ).not.toBeInTheDocument(),
       { timeout: 8000 },
     );
-    await expect(screen.queryByTestId('saving-overlay')).not.toBeInTheDocument();
+    await expect(
+      screen.queryByTestId('saving-overlay'),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -194,7 +204,10 @@ export const ServerErrorShowsInlineMessage: Story = {
       handlers: [
         ...readHandlers,
         http.put('*/v1/paths/:pathCode/entries/:entrySlug', () =>
-          HttpResponse.json({ detail: 'Internal Server Error' }, { status: 500 }),
+          HttpResponse.json(
+            { detail: 'Internal Server Error' },
+            { status: 500 },
+          ),
         ),
       ],
     },
@@ -243,14 +256,18 @@ export const ExistingImageCanBeRemovedAndRestored: Story = {
     await expect(await canvas.findByText('beach.jpg')).toBeInTheDocument();
 
     await userEvent.click(canvas.getByLabelText('Remove image beach.jpg'));
-    const removedItem = canvas.getByText('beach.jpg').closest('.existing-image-item');
+    const removedItem = canvas
+      .getByText('beach.jpg')
+      .closest('.existing-image-item');
     await expect(removedItem).toHaveClass('existing-image-item--removed');
     await expect(
       canvas.queryByLabelText('Remove image beach.jpg'),
     ).not.toBeInTheDocument();
 
     await userEvent.click(canvas.getByLabelText('Restore image beach.jpg'));
-    const restoredItem = canvas.getByText('beach.jpg').closest('.existing-image-item');
+    const restoredItem = canvas
+      .getByText('beach.jpg')
+      .closest('.existing-image-item');
     await expect(restoredItem).not.toHaveClass('existing-image-item--removed');
     await expect(
       canvas.getByLabelText('Remove image beach.jpg'),
@@ -269,9 +286,7 @@ export const AddingNewImageShowsInPhotoStrip: Story = {
     );
 
     await expect(await canvas.findByText('sunset.jpg')).toBeInTheDocument();
-    await expect(
-      canvas.getByPlaceholderText('Caption'),
-    ).toBeInTheDocument();
+    await expect(canvas.getByPlaceholderText('Caption')).toBeInTheDocument();
   },
 };
 
@@ -317,12 +332,17 @@ export const SavingWithImageChangesShowsPercentProgress: Story = {
     await expect(
       await canvas.findByText('Saving… 0%', { selector: '.pill-btn' }),
     ).toBeInTheDocument();
-    await expect(await screen.findByTestId('saving-overlay')).toBeInTheDocument();
+    await expect(
+      await screen.findByTestId('saving-overlay'),
+    ).toBeInTheDocument();
 
     await waitFor(
       () =>
         expect(
-          canvas.queryByText('Saving…', { exact: false, selector: '.pill-btn' }),
+          canvas.queryByText('Saving…', {
+            exact: false,
+            selector: '.pill-btn',
+          }),
         ).not.toBeInTheDocument(),
       { timeout: 8000 },
     );

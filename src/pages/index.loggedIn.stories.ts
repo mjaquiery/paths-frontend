@@ -8,7 +8,11 @@ import {
   entryResponseFixture,
   pathResponseFixture,
 } from '../generated/fixtures';
-import type { EntryResponse, PathResponse, ImageResponse } from '../generated/types';
+import type {
+  EntryResponse,
+  PathResponse,
+  ImageResponse,
+} from '../generated/types';
 import { toLocalISODate } from '../utils/date';
 import {
   withAppShell,
@@ -41,7 +45,10 @@ interface DayBrowserSeedEntry {
 // layer — DayBrowser only ever renders inside this page's <ion-content> in
 // the real app, so its stories exercise that real scroll host too, rather
 // than mounting the bare component.
-function dayBrowserHandlers(paths: PathResponse[], entries: DayBrowserSeedEntry[]) {
+function dayBrowserHandlers(
+  paths: PathResponse[],
+  entries: DayBrowserSeedEntry[],
+) {
   const entriesByPath = new Map<string, EntryResponse[]>(
     paths.map((p) => [p.path_id, []]),
   );
@@ -69,6 +76,7 @@ function dayBrowserHandlers(paths: PathResponse[], entries: DayBrowserSeedEntry[
         day: seed.day,
         edit_id: seed.edit_id,
         content: seed.content,
+        images: seed.images ?? [],
       });
     }),
     http.get('*/v1/paths/:pathCode/entries/:entrySlug/images', ({ params }) =>
@@ -233,9 +241,7 @@ export const WriteEntryUsesTheSelectedDay: Story = {
     const canvas = within(canvasElement);
 
     // Pick whichever week-day cell isn't today (the default selection).
-    const weekDays = Array.from(
-      canvasElement.querySelectorAll('.db-week-day'),
-    );
+    const weekDays = Array.from(canvasElement.querySelectorAll('.db-week-day'));
     const otherIndex = weekDays.findIndex(
       (el) => !el.classList.contains('db-week-day--selected'),
     );
@@ -253,7 +259,9 @@ export const WriteEntryUsesTheSelectedDay: Story = {
     await userEvent.click(
       await canvas.findByRole('link', { name: '+ Write Entry' }),
     );
-    await waitFor(() => expect(router.currentRoute.value.path).toBe('/entry/new'));
+    await waitFor(() =>
+      expect(router.currentRoute.value.path).toBe('/entry/new'),
+    );
     expect(router.currentRoute.value.query.day).toBe(expectedDay);
   },
 };
@@ -291,8 +299,20 @@ export const MultipleEntriesFromTheSamePathOnTheSameDay: Story = {
       handlers: dayBrowserHandlers(
         [dailyLifePath],
         [
-          { id: 'e1', path_id: 'p1', day: today, edit_id: 1, content: 'First entry today' },
-          { id: 'e2', path_id: 'p1', day: today, edit_id: 2, content: 'Second entry today' },
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: today,
+            edit_id: 1,
+            content: 'First entry today',
+          },
+          {
+            id: 'e2',
+            path_id: 'p1',
+            day: today,
+            edit_id: 2,
+            content: 'Second entry today',
+          },
         ],
       ),
     },
@@ -317,7 +337,13 @@ export const ContentPlaceholders: Story = {
       handlers: dayBrowserHandlers(
         [dailyLifePath],
         [
-          { id: 'e1', path_id: 'p1', day: today, edit_id: 1, content: undefined },
+          {
+            id: 'e1',
+            path_id: 'p1',
+            day: today,
+            edit_id: 1,
+            content: undefined,
+          },
           { id: 'e2', path_id: 'p1', day: today, edit_id: 2, content: '' },
         ],
       ),
@@ -325,10 +351,14 @@ export const ContentPlaceholders: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // Undefined content (not yet loaded) shows "Fetching…"...
-    await expect(await canvas.findByText('Fetching…')).toBeInTheDocument();
+    // Undefined content (not yet loaded) shows a spinner...
+    await waitFor(() =>
+      expect(
+        canvasElement.querySelector('[data-testid="db-entry-spinner"]'),
+      ).toBeInTheDocument(),
+    );
     // ...while an empty string (loaded, but blank) shows "(no text)".
-    await expect(canvas.getByText('(no text)')).toBeInTheDocument();
+    await expect(await canvas.findByText('(no text)')).toBeInTheDocument();
     // Neither entry has images, so no photo section renders for either.
     await expect(
       canvasElement.querySelector('.db-entry-photos'),

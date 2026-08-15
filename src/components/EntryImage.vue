@@ -46,7 +46,10 @@ const { data, isLoading, error } = useGetImageDownloadUrl(
 );
 
 const loadFailed = ref(false);
-watch(() => props.imageId, () => (loadFailed.value = false));
+watch(
+  () => props.imageId,
+  () => (loadFailed.value = false),
+);
 
 const imageUrl = computed(
   () =>

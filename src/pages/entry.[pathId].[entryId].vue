@@ -91,7 +91,7 @@
 
 <script setup lang="ts">
 import { IonPage, IonContent, IonAlert } from '@ionic/vue';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 
@@ -175,8 +175,20 @@ const unreferencedImages = computed(() =>
 
 // "On this day" across every visible path, for *this entry's* date.
 const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
-const multiPathEntries = useMultiPathEntries(visiblePathIds);
+const { pathEntries: multiPathEntries, ensureDayLoaded } =
+  useMultiPathEntries(visiblePathIds);
 const onThisDay = useOnThisDay(entryDay, visiblePaths, multiPathEntries);
+
+watch(entryDay, (day) => day && ensureDayLoaded(day), { immediate: true });
+watch(
+  () => onThisDay.value.map((entry) => entry.year),
+  (years) => {
+    if (!entryDay.value) return;
+    const monthDay = entryDay.value.slice(5);
+    for (const year of years) ensureDayLoaded(`${year}-${monthDay}`);
+  },
+  { immediate: true },
+);
 
 const showMenu = ref(false);
 const menuWrapperRef = ref<HTMLElement | null>(null);

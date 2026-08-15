@@ -101,6 +101,8 @@ describe('useMultiPathEntries – Dexie unavailable', () => {
     await flushPromises();
 
     // Content must be populated from the API even though Dexie is broken.
-    expect(result?.value[0]?.entries[0]?.content).toBe('Remote content');
+    expect(result?.pathEntries.value[0]?.entries[0]?.content).toBe(
+      'Remote content',
+    );
   });
 });

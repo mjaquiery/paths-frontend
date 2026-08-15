@@ -45,9 +45,7 @@ export const WriteEntryCarriesDayAndPath: Story = {
   args: { writeEntryQuery: { day: '2024-03-15', pathId: 'p1' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(
-      canvas.getByRole('link', { name: '+ Write Entry' }),
-    );
+    await userEvent.click(canvas.getByRole('link', { name: '+ Write Entry' }));
     await waitFor(() =>
       expect(router.currentRoute.value.path).toBe('/entry/new'),
     );

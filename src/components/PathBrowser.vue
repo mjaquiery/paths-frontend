@@ -14,9 +14,13 @@
     </div>
 
     <div class="pb-entry-section">
-      <template v-if="sortedEntries.length > 0">
+      <div v-if="isLoading" class="pb-loading" data-testid="pb-loading">
+        <ion-spinner name="crescent" aria-label="Loading entries" />
+        <span>Loading entries…</span>
+      </div>
+      <template v-else-if="visibleEntries.length > 0">
         <div
-          v-for="entry in sortedEntries"
+          v-for="entry in visibleEntries"
           :key="entry.id"
           class="pb-entry df-path-bar"
           :style="{ '--path-color': selectedPath?.color }"
@@ -28,11 +32,14 @@
           >
             <p class="pb-entry-date">{{ dateLabel(entry.day) }}</p>
             <p class="pb-entry-preview df-body">
-              {{
-                entry.content === undefined
-                  ? 'Fetching…'
-                  : entry.content || '(no text)'
-              }}
+              <ion-spinner
+                v-if="entry.content === undefined"
+                name="crescent"
+                class="pb-entry-spinner"
+                data-testid="pb-entry-spinner"
+                aria-label="Loading entry"
+              />
+              <template v-else>{{ entry.content || '(no text)' }}</template>
             </p>
           </router-link>
           <div v-if="(entry.images?.length ?? 0) > 0" class="pb-entry-photos">
@@ -45,6 +52,9 @@
             />
           </div>
         </div>
+        <button v-if="hasMore" class="pb-load-more" @click="emit('load-more')">
+          Load earlier entries
+        </button>
       </template>
       <p v-else class="pb-empty">No entries yet.</p>
     </div>
@@ -53,6 +63,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { IonSpinner } from '@ionic/vue';
 
 import type { PathResponse } from '../generated/types';
 import type { EntryWithContent } from '../composables/useMultiPathEntries';
@@ -62,9 +73,14 @@ const props = defineProps<{
   paths: PathResponse[];
   selectedPathId: string;
   entries: EntryWithContent[];
+  isLoading?: boolean;
+  hasMore?: boolean;
 }>();
 
-const emit = defineEmits<{ 'update:selectedPathId': [string] }>();
+const emit = defineEmits<{
+  'update:selectedPathId': [string];
+  'load-more': [];
+}>();
 
 const localSelectedPathId = computed({
   get: () => props.selectedPathId,
@@ -76,7 +92,13 @@ const selectedPath = computed(() =>
 );
 
 const sortedEntries = computed(() =>
-  [...props.entries].sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0)),
+  [...props.entries].sort((a, b) =>
+    a.day < b.day ? 1 : a.day > b.day ? -1 : 0,
+  ),
+);
+
+const visibleEntries = computed(() =>
+  sortedEntries.value.filter((entry) => entry.inWindow),
 );
 
 function dateLabel(day: string): string {
@@ -120,6 +142,33 @@ function dateLabel(day: string): string {
 .pb-empty {
   color: var(--color-ink-muted);
   font-size: 0.85rem;
+}
+
+.pb-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.pb-entry-spinner {
+  width: 1rem;
+  height: 1rem;
+}
+
+.pb-load-more {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.9rem 0;
+  text-align: center;
 }
 
 .pb-entry {

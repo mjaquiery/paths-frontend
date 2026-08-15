@@ -192,14 +192,13 @@ const initialDay =
 const initialPathId = (route.query.pathId as string | undefined) ?? '';
 
 const uploadProgress = ref(0);
-const { mutateAsync: createEntryMutation, isPending: saving } =
-  useCreateEntry({
-    request: {
-      onUploadProgress: (loaded, total) => {
-        uploadProgress.value = total > 0 ? Math.round((loaded / total) * 100) : 0;
-      },
+const { mutateAsync: createEntryMutation, isPending: saving } = useCreateEntry({
+  request: {
+    onUploadProgress: (loaded, total) => {
+      uploadProgress.value = total > 0 ? Math.round((loaded / total) * 100) : 0;
     },
-  });
+  },
+});
 
 const selectedPathId = ref(initialPathId);
 const day = ref(initialDay);
@@ -269,11 +268,7 @@ async function submit() {
         day: day.value,
         content: content.value,
         captions: pendingImages.value.map((img) => img.caption),
-        // orval types multipart file-array fields as string[] (an OpenAPI binary-format
-        // quirk) — the real runtime value is the File objects themselves.
-        images: pendingImages.value.map(
-          (img) => img.file,
-        ) as unknown as string[],
+        images: pendingImages.value.map((img) => img.file),
       },
     });
     await queryClient.invalidateQueries({

@@ -162,14 +162,54 @@ describe('customFetch', () => {
   it('throws when the response is not ok', async () => {
     mockFetch.mockResolvedValue({
       ok: false,
-      status: 401,
+      status: 500,
       headers: new Headers(),
     });
 
     const { customFetch } = await import('../lib/customFetch');
     await expect(customFetch('/v1/paths')).rejects.toThrow(
+      'Request failed: 500',
+    );
+  });
+
+  it('does not clear the session or flag sessionExpired on a non-401 error', async () => {
+    localStorageStore['user'] = '{"user_id":"u1"}';
+    localStorageStore['session_token'] = 'still-valid';
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      headers: new Headers(),
+    });
+
+    const { customFetch } = await import('../lib/customFetch');
+    const { sessionExpired } = await import('../lib/authSession');
+    await expect(customFetch('/v1/paths')).rejects.toThrow(
+      'Request failed: 500',
+    );
+
+    expect(localStorageStore['user']).toBeDefined();
+    expect(localStorageStore['session_token']).toBeDefined();
+    expect(sessionExpired.value).toBe(false);
+  });
+
+  it('clears the stored session and flags sessionExpired on a 401', async () => {
+    localStorageStore['user'] = '{"user_id":"u1"}';
+    localStorageStore['session_token'] = 'expired-token';
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 401,
+      headers: new Headers(),
+    });
+
+    const { customFetch } = await import('../lib/customFetch');
+    const { sessionExpired } = await import('../lib/authSession');
+    await expect(customFetch('/v1/paths')).rejects.toThrow(
       'Request failed: 401',
     );
+
+    expect(localStorageStore['user']).toBeUndefined();
+    expect(localStorageStore['session_token']).toBeUndefined();
+    expect(sessionExpired.value).toBe(true);
   });
 
   it('returns undefined data for 204 No Content responses', async () => {

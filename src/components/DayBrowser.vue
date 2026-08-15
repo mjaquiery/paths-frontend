@@ -66,7 +66,15 @@
         <p class="db-day-label">{{ selectedDayLabel }}</p>
       </div>
 
-      <template v-if="selectedEntries.length > 0">
+      <div
+        v-if="anyListLoading && selectedEntries.length === 0"
+        class="db-loading"
+        data-testid="db-loading"
+      >
+        <ion-spinner name="crescent" aria-label="Loading entries" />
+        <span>Loading entries…</span>
+      </div>
+      <template v-else-if="selectedEntries.length > 0">
         <div
           v-for="pe in selectedEntries"
           :key="pe.pathId + '-' + pe.entryId"
@@ -80,11 +88,14 @@
           >
             <p class="db-entry-path">{{ pe.pathTitle }}</p>
             <p class="db-entry-preview df-body">
-              {{
-                pe.preview === undefined
-                  ? 'Fetching…'
-                  : pe.preview || '(no text)'
-              }}
+              <ion-spinner
+                v-if="pe.preview === undefined"
+                name="crescent"
+                class="db-entry-spinner"
+                data-testid="db-entry-spinner"
+                aria-label="Loading entry"
+              />
+              <template v-else>{{ pe.preview || '(no text)' }}</template>
             </p>
           </router-link>
           <div v-if="pe.images.length > 0" class="db-entry-photos">
@@ -104,7 +115,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { IonSpinner } from '@ionic/vue';
 
 import type { PathResponse, ImageResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
@@ -116,9 +128,18 @@ const props = defineProps<{
   visiblePaths: PathResponse[];
   pathEntries: PathEntries[];
   currentUserId: string;
+  ensureDayLoaded: (day: string) => void;
 }>();
 
+const anyListLoading = computed(() =>
+  props.pathEntries.some((pe) => pe.isListLoading),
+);
+
 const selectedDate = ref(toLocalISODate(new Date()));
+
+// The currently selected day's entries always need their content, however far outside
+// the recency window they fall (e.g. jumping to an old date via the year tabs).
+watch(selectedDate, (day) => props.ensureDayLoaded(day), { immediate: true });
 
 function shiftDay(delta: number) {
   const d = new Date(selectedDate.value + 'T00:00:00');
@@ -208,6 +229,20 @@ const onThisDay = useOnThisDay(
   selectedDate,
   computed(() => props.visiblePaths),
   computed(() => props.pathEntries),
+);
+
+// "On this day" entries — one per earlier year sharing today's month-day — are shown
+// in the year tabs below and need their content loaded too, even though they're rarely
+// within the recency window.
+watch(
+  () => onThisDay.value.map((entry) => entry.year),
+  (years) => {
+    const monthDay = selectedDate.value.slice(5);
+    for (const year of years) {
+      props.ensureDayLoaded(`${year}-${monthDay}`);
+    }
+  },
+  { immediate: true },
 );
 
 const yearTabs = computed(() => {
@@ -440,6 +475,19 @@ defineExpose({ selectedDate });
 .db-day-empty {
   color: var(--color-ink-muted);
   font-size: 0.85rem;
+}
+
+.db-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+}
+
+.db-entry-spinner {
+  width: 1rem;
+  height: 1rem;
 }
 
 .db-entry {

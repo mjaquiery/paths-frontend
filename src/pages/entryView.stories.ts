@@ -46,11 +46,13 @@ type Story = StoryObj<typeof EntryViewPage>;
 
 // Logged in as the path's owner: sees Edit/⋯ controls.
 export const AsOwner: Story = {
-  decorators: [withLoggedInUser({
-    token: 'tok',
-    user_id: pathResponseFixture.owner_user_id,
-    display_name: 'Alex M.',
-  })],
+  decorators: [
+    withLoggedInUser({
+      token: 'tok',
+      user_id: pathResponseFixture.owner_user_id,
+      display_name: 'Alex M.',
+    }),
+  ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
@@ -63,7 +65,11 @@ export const AsOwner: Story = {
 // Logged in as someone else: read-only, no Edit/⋯ controls.
 export const AsReader: Story = {
   decorators: [
-    withLoggedInUser({ token: 'tok', user_id: 'someone-else', display_name: 'Guest' }),
+    withLoggedInUser({
+      token: 'tok',
+      user_id: 'someone-else',
+      display_name: 'Guest',
+    }),
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -75,11 +81,13 @@ export const AsReader: Story = {
 };
 
 export const EditNavigatesToEditor: Story = {
-  decorators: [withLoggedInUser({
-    token: 'tok',
-    user_id: pathResponseFixture.owner_user_id,
-    display_name: 'Alex M.',
-  })],
+  decorators: [
+    withLoggedInUser({
+      token: 'tok',
+      user_id: pathResponseFixture.owner_user_id,
+      display_name: 'Alex M.',
+    }),
+  ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByText('✎ Edit'));
@@ -88,11 +96,13 @@ export const EditNavigatesToEditor: Story = {
 };
 
 export const MoreMenuOffersDelete: Story = {
-  decorators: [withLoggedInUser({
-    token: 'tok',
-    user_id: pathResponseFixture.owner_user_id,
-    display_name: 'Alex M.',
-  })],
+  decorators: [
+    withLoggedInUser({
+      token: 'tok',
+      user_id: pathResponseFixture.owner_user_id,
+      display_name: 'Alex M.',
+    }),
+  ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByLabelText('More actions'));
@@ -101,11 +111,13 @@ export const MoreMenuOffersDelete: Story = {
 };
 
 export const BackNavigatesToPreviousPage: Story = {
-  decorators: [withLoggedInUser({
-    token: 'tok',
-    user_id: pathResponseFixture.owner_user_id,
-    display_name: 'Alex M.',
-  })],
+  decorators: [
+    withLoggedInUser({
+      token: 'tok',
+      user_id: pathResponseFixture.owner_user_id,
+      display_name: 'Alex M.',
+    }),
+  ],
   loaders: [
     async () => {
       // Push '/' first so router.back() has a previous entry to return to.
