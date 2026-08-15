@@ -21,12 +21,10 @@ vi.mock('../lib/db', () => ({
     entryContent: { get: vi.fn().mockResolvedValue(undefined), put: vi.fn() },
     entryImages: {
       where: vi.fn().mockReturnValue({
-        equals: vi
-          .fn()
-          .mockReturnValue({
-            toArray: vi.fn().mockResolvedValue([]),
-            delete: vi.fn(),
-          }),
+        equals: vi.fn().mockReturnValue({
+          toArray: vi.fn().mockResolvedValue([]),
+          delete: vi.fn(),
+        }),
       }),
       bulkPut: vi.fn(),
     },
