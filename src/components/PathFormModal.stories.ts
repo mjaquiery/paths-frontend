@@ -1,5 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, fireEvent, fn, screen, userEvent, waitFor } from 'storybook/test';
+import {
+  expect,
+  fireEvent,
+  fn,
+  screen,
+  userEvent,
+  waitFor,
+} from 'storybook/test';
 import { http, HttpResponse } from 'msw';
 
 import PathFormModal from './PathFormModal.vue';
@@ -61,7 +68,10 @@ export const CreatingSendsTheEnteredTitleAndDefaultColour: Story = {
     msw: {
       handlers: withDefaultHandlers(
         http.post('*/v1/paths', async ({ request }) => {
-          const body = (await request.json()) as { title: string; color: string };
+          const body = (await request.json()) as {
+            title: string;
+            color: string;
+          };
           return HttpResponse.json(
             { ...pathResponseFixture, title: body.title, color: body.color },
             { status: 201 },

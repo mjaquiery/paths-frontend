@@ -1,9 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, fireEvent, fn, screen, userEvent, waitFor } from 'storybook/test';
+import {
+  expect,
+  fireEvent,
+  fn,
+  screen,
+  userEvent,
+  waitFor,
+} from 'storybook/test';
 import { http, HttpResponse } from 'msw';
 
 import PathShareModal from './PathShareModal.vue';
-import { pathResponseFixture, subscriberResponseFixture } from '../generated/fixtures';
+import {
+  pathResponseFixture,
+  subscriberResponseFixture,
+} from '../generated/fixtures';
 import { modalRender } from '../../.storybook/modalRender';
 import { withDefaultHandlers } from '../../.storybook/msw';
 
@@ -40,9 +50,7 @@ export const Default: Story = {
 
 export const InviteButtonDisabledWhenEmailEmpty: Story = {
   play: async () => {
-    const inviteButton = (
-      await screen.findAllByText('Invite')
-    )
+    const inviteButton = (await screen.findAllByText('Invite'))
       .map((el) => el.closest('ion-button'))
       .find((el): el is HTMLIonButtonElement => el !== null)!;
     await waitFor(() => expect(inviteButton).toHaveClass('hydrated'));

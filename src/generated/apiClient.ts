@@ -268,8 +268,7 @@ export type createPathResponseError = createPathResponse422 & {
 };
 
 export type createPathResponse =
-  | createPathResponseSuccess
-  | createPathResponseError;
+  createPathResponseSuccess | createPathResponseError;
 
 export const getCreatePathUrl = () => {
   return `/v1/paths`;
@@ -375,8 +374,7 @@ export type updatePathResponseError = updatePathResponse422 & {
 };
 
 export type updatePathResponse =
-  | updatePathResponseSuccess
-  | updatePathResponseError;
+  updatePathResponseSuccess | updatePathResponseError;
 
 export const getUpdatePathUrl = (pathCode: string) => {
   return `/v1/paths/${pathCode}`;
@@ -483,8 +481,7 @@ export type deletePathResponseError = deletePathResponse422 & {
 };
 
 export type deletePathResponse =
-  | deletePathResponseSuccess
-  | deletePathResponseError;
+  deletePathResponseSuccess | deletePathResponseError;
 
 export const getDeletePathUrl = (pathCode: string) => {
   return `/v1/paths/${pathCode}`;
@@ -590,8 +587,7 @@ export type updatePathVisibilityResponseError =
   };
 
 export type updatePathVisibilityResponse =
-  | updatePathVisibilityResponseSuccess
-  | updatePathVisibilityResponseError;
+  updatePathVisibilityResponseSuccess | updatePathVisibilityResponseError;
 
 export const getUpdatePathVisibilityUrl = (pathCode: string) => {
   return `/v1/paths/${pathCode}/visibility`;
@@ -707,8 +703,7 @@ export type listEntriesResponseError = listEntriesResponse422 & {
 };
 
 export type listEntriesResponse =
-  | listEntriesResponseSuccess
-  | listEntriesResponseError;
+  listEntriesResponseSuccess | listEntriesResponseError;
 
 export const getListEntriesUrl = (pathCode: string) => {
   return `/v1/paths/${pathCode}/entries`;
@@ -817,8 +812,7 @@ export type createEntryResponseError = createEntryResponse422 & {
 };
 
 export type createEntryResponse =
-  | createEntryResponseSuccess
-  | createEntryResponseError;
+  createEntryResponseSuccess | createEntryResponseError;
 
 export const getCreateEntryUrl = (pathCode: string) => {
   return `/v1/paths/${pathCode}/entries`;
@@ -1056,15 +1050,13 @@ export type updateEntryResponseSuccess = updateEntryResponse200 & {
   headers: Headers;
 };
 export type updateEntryResponseError = (
-  | updateEntryResponse409
-  | updateEntryResponse422
+  updateEntryResponse409 | updateEntryResponse422
 ) & {
   headers: Headers;
 };
 
 export type updateEntryResponse =
-  | updateEntryResponseSuccess
-  | updateEntryResponseError;
+  updateEntryResponseSuccess | updateEntryResponseError;
 
 export const getUpdateEntryUrl = (pathCode: string, entrySlug: string) => {
   return `/v1/paths/${pathCode}/entries/${entrySlug}`;
@@ -1149,8 +1141,7 @@ export type UpdateEntryMutationResult = NonNullable<
 >;
 export type UpdateEntryMutationBody = BodyUpdateEntry;
 export type UpdateEntryMutationError =
-  | OptimisticLockHTTPErrorResponse
-  | HTTPValidationError;
+  OptimisticLockHTTPErrorResponse | HTTPValidationError;
 
 /**
  * @summary Update Entry
@@ -1199,8 +1190,7 @@ export type deleteEntryResponseError = deleteEntryResponse422 & {
 };
 
 export type deleteEntryResponse =
-  | deleteEntryResponseSuccess
-  | deleteEntryResponseError;
+  deleteEntryResponseSuccess | deleteEntryResponseError;
 
 export const getDeleteEntryUrl = (pathCode: string, entrySlug: string) => {
   return `/v1/paths/${pathCode}/entries/${entrySlug}`;
@@ -1311,8 +1301,7 @@ export type listEntryImagesResponseError = listEntryImagesResponse422 & {
 };
 
 export type listEntryImagesResponse =
-  | listEntryImagesResponseSuccess
-  | listEntryImagesResponseError;
+  listEntryImagesResponseSuccess | listEntryImagesResponseError;
 
 export const getListEntryImagesUrl = (pathCode: string, entrySlug: string) => {
   return `/v1/paths/${pathCode}/entries/${entrySlug}/images`;
@@ -1450,8 +1439,7 @@ export type listSubscriptionsResponseError = listSubscriptionsResponse422 & {
 };
 
 export type listSubscriptionsResponse =
-  | listSubscriptionsResponseSuccess
-  | listSubscriptionsResponseError;
+  listSubscriptionsResponseSuccess | listSubscriptionsResponseError;
 
 export const getListSubscriptionsUrl = (pathCode: string) => {
   return `/v1/paths/${pathCode}/subscriptions`;
@@ -1576,8 +1564,7 @@ export type inviteSubscriberResponseError = inviteSubscriberResponse422 & {
 };
 
 export type inviteSubscriberResponse =
-  | inviteSubscriberResponseSuccess
-  | inviteSubscriberResponseError;
+  inviteSubscriberResponseSuccess | inviteSubscriberResponseError;
 
 export const getInviteSubscriberUrl = (pathCode: string) => {
   return `/v1/paths/${pathCode}/subscriptions`;
@@ -1691,8 +1678,7 @@ export type deleteSubscriptionResponseError = deleteSubscriptionResponse422 & {
 };
 
 export type deleteSubscriptionResponse =
-  | deleteSubscriptionResponseSuccess
-  | deleteSubscriptionResponseError;
+  deleteSubscriptionResponseSuccess | deleteSubscriptionResponseError;
 
 export const getDeleteSubscriptionUrl = (
   pathCode: string,
@@ -1809,8 +1795,7 @@ export type adminLoginResponseError = adminLoginResponse422 & {
 };
 
 export type adminLoginResponse =
-  | adminLoginResponseSuccess
-  | adminLoginResponseError;
+  adminLoginResponseSuccess | adminLoginResponseError;
 
 export const getAdminLoginUrl = () => {
   return `/v1/admin/login`;
@@ -1918,8 +1903,7 @@ export type setPathCreationApprovalResponseError =
   };
 
 export type setPathCreationApprovalResponse =
-  | setPathCreationApprovalResponseSuccess
-  | setPathCreationApprovalResponseError;
+  setPathCreationApprovalResponseSuccess | setPathCreationApprovalResponseError;
 
 export const getSetPathCreationApprovalUrl = (userId: string) => {
   return `/v1/admin/users/${userId}/path-creation-approval`;
@@ -2128,8 +2112,7 @@ export type updateDisplayNameResponseError = updateDisplayNameResponse422 & {
 };
 
 export type updateDisplayNameResponse =
-  | updateDisplayNameResponseSuccess
-  | updateDisplayNameResponseError;
+  updateDisplayNameResponseSuccess | updateDisplayNameResponseError;
 
 export const getUpdateDisplayNameUrl = () => {
   return `/v1/account/display-name`;
@@ -2238,8 +2221,7 @@ export type updateSettingsResponseError = updateSettingsResponse422 & {
 };
 
 export type updateSettingsResponse =
-  | updateSettingsResponseSuccess
-  | updateSettingsResponseError;
+  updateSettingsResponseSuccess | updateSettingsResponseError;
 
 export const getUpdateSettingsUrl = () => {
   return `/v1/account/settings`;
@@ -2554,8 +2536,7 @@ export type updateImageCaptionResponseError = updateImageCaptionResponse422 & {
 };
 
 export type updateImageCaptionResponse =
-  | updateImageCaptionResponseSuccess
-  | updateImageCaptionResponseError;
+  updateImageCaptionResponseSuccess | updateImageCaptionResponseError;
 
 export const getUpdateImageCaptionUrl = (imageId: string) => {
   return `/v1/images/${imageId}`;
@@ -2673,8 +2654,7 @@ export type getImageDownloadUrlResponseError =
   };
 
 export type getImageDownloadUrlResponse =
-  | getImageDownloadUrlResponseSuccess
-  | getImageDownloadUrlResponseError;
+  getImageDownloadUrlResponseSuccess | getImageDownloadUrlResponseError;
 
 export const getGetImageDownloadUrlUrl = (imageId: string) => {
   return `/v1/images/${imageId}/download-url`;
@@ -2799,8 +2779,7 @@ export type createExportResponseError = createExportResponse422 & {
 };
 
 export type createExportResponse =
-  | createExportResponseSuccess
-  | createExportResponseError;
+  createExportResponseSuccess | createExportResponseError;
 
 export const getCreateExportUrl = () => {
   return `/v1/exports`;
@@ -2909,8 +2888,7 @@ export type getExportResponseError = getExportResponse422 & {
 };
 
 export type getExportResponse =
-  | getExportResponseSuccess
-  | getExportResponseError;
+  getExportResponseSuccess | getExportResponseError;
 
 export const getGetExportUrl = (exportId: string) => {
   return `/v1/exports/${exportId}`;
@@ -3020,8 +2998,7 @@ export type downloadExportJsonResponseError = downloadExportJsonResponse422 & {
 };
 
 export type downloadExportJsonResponse =
-  | downloadExportJsonResponseSuccess
-  | downloadExportJsonResponseError;
+  downloadExportJsonResponseSuccess | downloadExportJsonResponseError;
 
 export const getDownloadExportJsonUrl = (exportId: string) => {
   return `/v1/exports/${exportId}/download/json`;
@@ -3148,8 +3125,7 @@ export type downloadExportImagesResponseError =
   };
 
 export type downloadExportImagesResponse =
-  | downloadExportImagesResponseSuccess
-  | downloadExportImagesResponseError;
+  downloadExportImagesResponseSuccess | downloadExportImagesResponseError;
 
 export const getDownloadExportImagesUrl = (exportId: string) => {
   return `/v1/exports/${exportId}/download/images`;
@@ -3275,8 +3251,7 @@ export type authLoginResponseError = authLoginResponse422 & {
 };
 
 export type authLoginResponse =
-  | authLoginResponseSuccess
-  | authLoginResponseError;
+  authLoginResponseSuccess | authLoginResponseError;
 
 export const getAuthLoginUrl = (params: AuthLoginParams) => {
   const normalizedParams = new URLSearchParams();
@@ -3397,8 +3372,7 @@ export type authCallbackResponseError = authCallbackResponse422 & {
 };
 
 export type authCallbackResponse =
-  | authCallbackResponseSuccess
-  | authCallbackResponseError;
+  authCallbackResponseSuccess | authCallbackResponseError;
 
 export const getAuthCallbackUrl = () => {
   return `/v1/auth/callback`;
@@ -3514,8 +3488,7 @@ export type authCallbackRedirectResponseError =
   };
 
 export type authCallbackRedirectResponse =
-  | authCallbackRedirectResponseSuccess
-  | authCallbackRedirectResponseError;
+  authCallbackRedirectResponseSuccess | authCallbackRedirectResponseError;
 
 export const getAuthCallbackRedirectUrl = (
   params: AuthCallbackRedirectParams,
@@ -3748,8 +3721,7 @@ export type acceptInvitationResponseError = acceptInvitationResponse422 & {
 };
 
 export type acceptInvitationResponse =
-  | acceptInvitationResponseSuccess
-  | acceptInvitationResponseError;
+  acceptInvitationResponseSuccess | acceptInvitationResponseError;
 
 export const getAcceptInvitationUrl = (invitationId: string) => {
   return `/v1/invitations/${invitationId}/accept`;
@@ -3859,8 +3831,7 @@ export type ignoreInvitationResponseError = ignoreInvitationResponse422 & {
 };
 
 export type ignoreInvitationResponse =
-  | ignoreInvitationResponseSuccess
-  | ignoreInvitationResponseError;
+  ignoreInvitationResponseSuccess | ignoreInvitationResponseError;
 
 export const getIgnoreInvitationUrl = (invitationId: string) => {
   return `/v1/invitations/${invitationId}/ignore`;
@@ -4063,8 +4034,7 @@ export type blockInviterResponseError = blockInviterResponse422 & {
 };
 
 export type blockInviterResponse =
-  | blockInviterResponseSuccess
-  | blockInviterResponseError;
+  blockInviterResponseSuccess | blockInviterResponseError;
 
 export const getBlockInviterUrl = () => {
   return `/v1/invitations/blocklist`;
@@ -4173,8 +4143,7 @@ export type unblockUserResponseError = unblockUserResponse422 & {
 };
 
 export type unblockUserResponse =
-  | unblockUserResponseSuccess
-  | unblockUserResponseError;
+  unblockUserResponseSuccess | unblockUserResponseError;
 
 export const getUnblockUserUrl = (blockedUserId: string) => {
   return `/v1/invitations/blocklist/${blockedUserId}`;

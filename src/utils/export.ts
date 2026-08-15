@@ -91,8 +91,7 @@ export function exportLocalData(
         })
         .sort((a, b) => b.state.dataUpdatedAt - a.state.dataUpdatedAt)[0];
       const data = contentQuery?.state.data as
-        | { content: string; images: ImageResponse[] }
-        | undefined;
+        { content: string; images: ImageResponse[] } | undefined;
 
       entries.push({
         entry_id: entry.id,

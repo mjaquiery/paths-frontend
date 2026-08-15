@@ -17,10 +17,17 @@ const config: StorybookConfig = {
     // VitePWA() returns an array of plugins nested inside the top-level plugins array
     // (not a single Plugin), so this has to recurse rather than filter one level.
     const dropPwaPlugins = (plugins) =>
-      plugins?.map((plugin) => (Array.isArray(plugin) ? dropPwaPlugins(plugin) : plugin)).filter((plugin) => {
-        const name = plugin && !Array.isArray(plugin) && 'name' in plugin ? plugin.name : '';
-        return !name?.startsWith('vite-plugin-pwa');
-      });
+      plugins
+        ?.map((plugin) =>
+          Array.isArray(plugin) ? dropPwaPlugins(plugin) : plugin,
+        )
+        .filter((plugin) => {
+          const name =
+            plugin && !Array.isArray(plugin) && 'name' in plugin
+              ? plugin.name
+              : '';
+          return !name?.startsWith('vite-plugin-pwa');
+        });
     viteConfig.plugins = dropPwaPlugins(viteConfig.plugins);
     // useServiceWorkerUpdate.ts statically imports 'virtual:pwa-register', which only
     // resolves via the plugin just dropped above. Stub it — Storybook never calls

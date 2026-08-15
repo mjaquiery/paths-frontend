@@ -31,7 +31,11 @@ const meta: Meta<typeof EntryNewPage> = {
   loaders: [routeLoader('/entry/new'), clearLocalDraftsLoader()],
   decorators: [
     withAppShell(),
-    withLoggedInUser({ token: 'tok', user_id: 'user-1', display_name: 'Alex M.' }),
+    withLoggedInUser({
+      token: 'tok',
+      user_id: 'user-1',
+      display_name: 'Alex M.',
+    }),
   ],
   parameters: {
     msw: {
@@ -39,7 +43,12 @@ const meta: Meta<typeof EntryNewPage> = {
         http.get('*/v1/paths', () => HttpResponse.json([path])),
         http.post('*/v1/paths/:pathCode/entries', () =>
           HttpResponse.json(
-            { id: 'new-entry', path_id: path.path_id, day: '2024-03-15', edit_id: 1 },
+            {
+              id: 'new-entry',
+              path_id: path.path_id,
+              day: '2024-03-15',
+              edit_id: 1,
+            },
             { status: 201 },
           ),
         ),
@@ -104,16 +113,18 @@ export const PreviewTogglesRenderedMarkdown: Story = {
     await userEvent.type(textarea, '**bold text**');
 
     await userEvent.click(canvas.getByText('Preview'));
-    await expect(canvas.queryByPlaceholderText(
-      'Write your entry… (markdown supported)',
-    )).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByPlaceholderText('Write your entry… (markdown supported)'),
+    ).not.toBeInTheDocument();
     await expect(
       canvas.getByText('bold text', { selector: 'strong' }),
     ).toBeInTheDocument();
 
     await userEvent.click(canvas.getByText('Preview'));
     await expect(
-      await canvas.findByPlaceholderText('Write your entry… (markdown supported)'),
+      await canvas.findByPlaceholderText(
+        'Write your entry… (markdown supported)',
+      ),
     ).toBeInTheDocument();
   },
 };
@@ -126,7 +137,12 @@ export const SlowServerShowsSavingState: Story = {
         http.post('*/v1/paths/:pathCode/entries', async () => {
           await delay(5000);
           return HttpResponse.json(
-            { id: 'new-entry', path_id: path.path_id, day: '2024-03-15', edit_id: 1 },
+            {
+              id: 'new-entry',
+              path_id: path.path_id,
+              day: '2024-03-15',
+              edit_id: 1,
+            },
             { status: 201 },
           );
         }),
@@ -148,7 +164,9 @@ export const SlowServerShowsSavingState: Story = {
     await expect(saveButton).toBeDisabled();
     // The SavingOverlay shows the same label inside its own ion-modal, so
     // it's checked separately (via the testid) rather than by text alone.
-    await expect(await screen.findByTestId('saving-overlay')).toBeInTheDocument();
+    await expect(
+      await screen.findByTestId('saving-overlay'),
+    ).toBeInTheDocument();
 
     await waitFor(
       () =>
@@ -157,7 +175,9 @@ export const SlowServerShowsSavingState: Story = {
         ).not.toBeInTheDocument(),
       { timeout: 8000 },
     );
-    await expect(screen.queryByTestId('saving-overlay')).not.toBeInTheDocument();
+    await expect(
+      screen.queryByTestId('saving-overlay'),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -167,7 +187,10 @@ export const ServerErrorShowsInlineMessage: Story = {
       handlers: [
         http.get('*/v1/paths', () => HttpResponse.json([path])),
         http.post('*/v1/paths/:pathCode/entries', () =>
-          HttpResponse.json({ detail: 'Internal Server Error' }, { status: 500 }),
+          HttpResponse.json(
+            { detail: 'Internal Server Error' },
+            { status: 500 },
+          ),
         ),
       ],
     },
@@ -227,7 +250,12 @@ export const SavingWithImageShowsPercentProgress: Story = {
         http.post('*/v1/paths/:pathCode/entries', async () => {
           await delay(5000);
           return HttpResponse.json(
-            { id: 'new-entry', path_id: path.path_id, day: '2024-03-15', edit_id: 1 },
+            {
+              id: 'new-entry',
+              path_id: path.path_id,
+              day: '2024-03-15',
+              edit_id: 1,
+            },
             { status: 201 },
           );
         }),
@@ -257,12 +285,17 @@ export const SavingWithImageShowsPercentProgress: Story = {
     await expect(
       await canvas.findByText('Saving… 0%', { selector: '.pill-btn' }),
     ).toBeInTheDocument();
-    await expect(await screen.findByTestId('saving-overlay')).toBeInTheDocument();
+    await expect(
+      await screen.findByTestId('saving-overlay'),
+    ).toBeInTheDocument();
 
     await waitFor(
       () =>
         expect(
-          canvas.queryByText('Saving…', { exact: false, selector: '.pill-btn' }),
+          canvas.queryByText('Saving…', {
+            exact: false,
+            selector: '.pill-btn',
+          }),
         ).not.toBeInTheDocument(),
       { timeout: 8000 },
     );

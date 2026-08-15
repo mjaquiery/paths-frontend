@@ -17,7 +17,11 @@ export default defineConfig({
     // stories involved still pass their assertions — only the async
     // rejection is spurious — so don't fail the whole run over it.
     onUnhandledError: (error) => {
-      if (/Failed to fetch dynamically imported module/.test((error as Error)?.message ?? '')) {
+      if (
+        /Failed to fetch dynamically imported module/.test(
+          (error as Error)?.message ?? '',
+        )
+      ) {
         return false;
       }
     },

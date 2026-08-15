@@ -192,14 +192,13 @@ const initialDay =
 const initialPathId = (route.query.pathId as string | undefined) ?? '';
 
 const uploadProgress = ref(0);
-const { mutateAsync: createEntryMutation, isPending: saving } =
-  useCreateEntry({
-    request: {
-      onUploadProgress: (loaded, total) => {
-        uploadProgress.value = total > 0 ? Math.round((loaded / total) * 100) : 0;
-      },
+const { mutateAsync: createEntryMutation, isPending: saving } = useCreateEntry({
+  request: {
+    onUploadProgress: (loaded, total) => {
+      uploadProgress.value = total > 0 ? Math.round((loaded / total) * 100) : 0;
     },
-  });
+  },
+});
 
 const selectedPathId = ref(initialPathId);
 const day = ref(initialDay);
