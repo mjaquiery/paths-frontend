@@ -180,7 +180,9 @@ export const ShowsErrorWhenInvitationFails: Story = {
     await userEvent.click(inviteButton);
 
     await expect(
-      await screen.findByText('Failed to invite', { exact: false }),
+      await screen.findByText('Unable to invite subscriber: User not found', {
+        exact: false,
+      }),
     ).toBeInTheDocument();
   },
 };

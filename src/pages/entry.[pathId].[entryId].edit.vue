@@ -186,7 +186,7 @@ import {
 import { usePaths } from '../composables/usePaths';
 import { useLocalDraft } from '../composables/useLocalDraft';
 import { pickImages } from '../composables/useImagePicker';
-import { extractErrorMessage } from '../lib/errors';
+import { describeError, isApiErrorWithStatus } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import SavingOverlay from '../components/SavingOverlay.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
@@ -309,15 +309,11 @@ async function submit() {
     await clearDraft();
     router.push(`/entry/${pathId}/${entryId}`);
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes('409')) {
+    if (isApiErrorWithStatus(err, 409)) {
       conflictError.value =
         'A newer version of this entry exists. Go back and reopen it to edit the latest version.';
     } else {
-      const detail = extractErrorMessage(err);
-      error.value = detail
-        ? `Failed to save entry: ${detail}`
-        : 'Failed to save entry. Please try again.';
+      error.value = describeError('save entry', err);
     }
   } finally {
     saving.value = false;

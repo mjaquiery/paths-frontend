@@ -74,6 +74,7 @@ import type {
   OAuthLoginResponse,
 } from '../generated/types';
 import { authLogin } from '../generated/apiClient';
+import { describeError } from '../lib/errors';
 import { usePaths } from '../composables/usePaths';
 import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
@@ -126,11 +127,11 @@ async function loginWithGoogle() {
     if (loginData?.authorization_url) {
       window.location.href = loginData.authorization_url;
     } else {
-      loginError.value = 'Could not start login. Please try again.';
+      loginError.value = 'Unable to sign in: no authorization URL returned';
       loggingIn.value = false;
     }
-  } catch {
-    loginError.value = 'Could not start login. Please try again.';
+  } catch (err: unknown) {
+    loginError.value = describeError('sign in', err);
     loggingIn.value = false;
   }
 }

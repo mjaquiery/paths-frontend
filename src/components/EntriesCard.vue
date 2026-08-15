@@ -72,6 +72,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 
 import { useCreateEntry, getListEntriesQueryKey } from '../generated/apiClient';
 import { useEntries } from '../composables/useEntries';
+import { describeError } from '../lib/errors';
 
 const props = withDefaults(
   defineProps<{
@@ -106,8 +107,8 @@ async function createEntry() {
     await queryClient.invalidateQueries({
       queryKey: getListEntriesQueryKey(props.pathId),
     });
-  } catch {
-    createError.value = 'Failed to create entry. Please try again.';
+  } catch (err: unknown) {
+    createError.value = describeError('create entry', err);
   }
 }
 

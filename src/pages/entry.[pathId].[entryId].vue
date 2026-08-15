@@ -104,7 +104,7 @@ import { usePaths } from '../composables/usePaths';
 import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { useOnThisDay } from '../composables/useOnThisDay';
-import { extractErrorMessage } from '../lib/errors';
+import { describeError } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import EntryImage from '../components/EntryImage.vue';
 import { referencedImageFilenames } from '../utils/markdown';
@@ -230,7 +230,7 @@ async function performDelete() {
     });
     router.back();
   } catch (err: unknown) {
-    deleteError.value = extractErrorMessage(err) ?? 'Failed to delete entry.';
+    deleteError.value = describeError('delete entry', err);
   }
 }
 </script>

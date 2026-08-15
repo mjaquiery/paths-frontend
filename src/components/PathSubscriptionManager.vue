@@ -56,7 +56,7 @@ import {
   getListSubscriptionsQueryKey,
 } from '../generated/apiClient';
 import type { SubscriberResponse } from '../generated/types';
-import { extractErrorMessage } from '../lib/errors';
+import { describeError } from '../lib/errors';
 
 const props = defineProps<{
   pathCode: string;
@@ -94,10 +94,7 @@ async function invite() {
     inviteSuccess.value = 'Invitation sent successfully.';
     inviteEmail.value = '';
   } catch (err: unknown) {
-    const detail = extractErrorMessage(err);
-    inviteError.value = detail
-      ? `Failed to invite: ${detail}`
-      : 'Failed to send invitation. Please try again.';
+    inviteError.value = describeError('invite subscriber', err);
   } finally {
     inviting.value = false;
   }

@@ -159,17 +159,50 @@ describe('customFetch', () => {
     expect(fetchOptions.body).toBe(JSON.stringify({ name: 'test' }));
   });
 
-  it('throws when the response is not ok', async () => {
+  it('throws an ApiError with a status-based fallback reason when the response has no body', async () => {
     mockFetch.mockResolvedValue({
       ok: false,
       status: 500,
       headers: new Headers(),
     });
 
-    const { customFetch } = await import('../lib/customFetch');
+    const { customFetch, ApiError } = await import('../lib/customFetch');
     await expect(customFetch('/v1/paths')).rejects.toThrow(
-      'Request failed: 500',
+      'internal server error',
     );
+    try {
+      await customFetch('/v1/paths');
+      throw new Error('expected customFetch to reject');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiError);
+      expect((err as InstanceType<typeof ApiError>).status).toBe(500);
+      expect((err as InstanceType<typeof ApiError>).detail).toBeUndefined();
+    }
+  });
+
+  it('surfaces the backend-provided detail message from a JSON error body', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 500,
+      headers: new Headers(),
+      json: vi.fn().mockResolvedValue({
+        detail:
+          'An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.',
+      }),
+    });
+
+    const { customFetch, ApiError } = await import('../lib/customFetch');
+    await expect(customFetch('/v1/paths')).rejects.toThrow(
+      'An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.',
+    );
+    try {
+      await customFetch('/v1/paths');
+      throw new Error('expected customFetch to reject');
+    } catch (err) {
+      expect((err as InstanceType<typeof ApiError>).detail).toBe(
+        'An error occurred (AccessDenied) when calling the PutObject operation: Access Denied.',
+      );
+    }
   });
 
   it('does not clear the session or flag sessionExpired on a non-401 error', async () => {
@@ -184,7 +217,7 @@ describe('customFetch', () => {
     const { customFetch } = await import('../lib/customFetch');
     const { sessionExpired } = await import('../lib/authSession');
     await expect(customFetch('/v1/paths')).rejects.toThrow(
-      'Request failed: 500',
+      'internal server error',
     );
 
     expect(localStorageStore['user']).toBeDefined();
@@ -203,13 +236,18 @@ describe('customFetch', () => {
 
     const { customFetch } = await import('../lib/customFetch');
     const { sessionExpired } = await import('../lib/authSession');
-    await expect(customFetch('/v1/paths')).rejects.toThrow(
-      'Request failed: 401',
-    );
+    await expect(customFetch('/v1/paths')).rejects.toThrow('not signed in');
 
     expect(localStorageStore['user']).toBeUndefined();
     expect(localStorageStore['session_token']).toBeUndefined();
     expect(sessionExpired.value).toBe(true);
+  });
+
+  it('rejects with a network-error message when fetch itself throws', async () => {
+    mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const { customFetch } = await import('../lib/customFetch');
+    await expect(customFetch('/v1/paths')).rejects.toThrow('network error');
   });
 
   it('returns undefined data for 204 No Content responses', async () => {

@@ -26,6 +26,7 @@ import { useRouter, useRoute } from 'vue-router';
 
 import { useAuthCallback } from '../generated/apiClient';
 import type { OAuthCallbackResponse } from '../generated/types';
+import { describeError } from '../lib/errors';
 
 const router = useRouter();
 const route = useRoute();
@@ -40,7 +41,7 @@ onMounted(async () => {
   const state = Array.isArray(rawState) ? rawState[0] : rawState;
 
   if (!code || !state) {
-    error.value = 'Missing code or state parameter.';
+    error.value = 'Unable to complete login: missing code or state parameter';
     return;
   }
 
@@ -55,8 +56,8 @@ onMounted(async () => {
       localStorage.setItem('session_token', token);
       localStorage.setItem('user', JSON.stringify(safeData));
     }
-  } catch {
-    error.value = 'Login failed. Please try again.';
+  } catch (err: unknown) {
+    error.value = describeError('complete login', err);
   } finally {
     router.push('/');
   }

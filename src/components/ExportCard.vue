@@ -91,6 +91,7 @@ import {
   downloadFileFromUrl,
   exportLocalData,
 } from '../utils/export';
+import { describeError, extractErrorMessage } from '../lib/errors';
 
 defineProps<{ paths: PathResponse[] }>();
 
@@ -117,7 +118,7 @@ async function handleDownload(url: string, extension: string) {
       `paths_backup_${todayYYYYMMDD()}.${extension}`,
     );
   } catch (e) {
-    downloadError.value = e instanceof Error ? e.message : String(e);
+    downloadError.value = describeError('download export', e);
   }
 }
 
@@ -137,8 +138,8 @@ async function triggerExport() {
     ).data as ExportJobResponse;
     await pollExport();
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    localExportAlertMessage.value = `Remote export failed: ${msg}. Would you like to export your locally cached data instead?`;
+    const reason = extractErrorMessage(e) ?? 'unknown error';
+    localExportAlertMessage.value = `Unable to export: ${reason}. Would you like to export your locally cached data instead?`;
     showLocalExportAlert.value = true;
   }
 }
@@ -165,7 +166,7 @@ function handleLocalExport() {
   try {
     exportLocalData(queryClient, [...selectedForExport.value]);
   } catch (e) {
-    downloadError.value = e instanceof Error ? e.message : String(e);
+    downloadError.value = describeError('export local data', e);
   }
 }
 
