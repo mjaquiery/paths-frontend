@@ -7,9 +7,9 @@
 
 export interface PathCreateRequest {
   /**
-   * @minLength 1
-   * @maxLength 120
-   */
+     * @minLength 1
+     * @maxLength 120
+     */
   title: string;
   description?: string | null;
   /** @pattern ^#[0-9A-Fa-f]{6}$ */
