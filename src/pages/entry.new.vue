@@ -41,56 +41,31 @@
         </div>
 
         <div class="editor-toolbar">
-          <button
-            type="button"
-            :disabled="contentTab === 'preview'"
-            @click="wrapSelection('**')"
-          >
-            <strong>B</strong>
-          </button>
-          <button
-            type="button"
-            :disabled="contentTab === 'preview'"
-            @click="wrapSelection('*')"
-          >
-            <em>I</em>
-          </button>
-          <button
-            type="button"
-            :disabled="contentTab === 'preview'"
-            @click="prefixLine('# ')"
-          >
-            H1
-          </button>
-          <button
-            type="button"
-            :disabled="contentTab === 'preview'"
-            @click="prefixLine('## ')"
-          >
-            H2
-          </button>
-          <button
-            type="button"
-            :disabled="contentTab === 'preview'"
-            @click="prefixLine('- ')"
-          >
-            • List
-          </button>
-          <button
-            type="button"
-            :disabled="contentTab === 'preview'"
-            aria-label="Insert link"
-            @click="wrapSelection('[', '](url)')"
-          >
-            🔗
-          </button>
+          <template v-if="contentTab === 'write'">
+            <button type="button" @click="wrapSelection('**')">
+              <strong>B</strong>
+            </button>
+            <button type="button" @click="wrapSelection('*')">
+              <em>I</em>
+            </button>
+            <button type="button" @click="prefixLine('# ')">H1</button>
+            <button type="button" @click="prefixLine('## ')">H2</button>
+            <button type="button" @click="prefixLine('- ')">• List</button>
+            <button
+              type="button"
+              aria-label="Insert link"
+              @click="wrapSelection('[', '](url)')"
+            >
+              🔗
+            </button>
+          </template>
           <button
             type="button"
             class="preview-toggle"
             :class="{ 'preview-toggle--active': contentTab === 'preview' }"
             @click="contentTab = contentTab === 'preview' ? 'write' : 'preview'"
           >
-            Preview
+            {{ contentTab === 'preview' ? 'Write' : 'Preview' }}
           </button>
         </div>
 
