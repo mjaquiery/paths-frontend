@@ -133,9 +133,7 @@ export const PreviewTogglesRenderedMarkdown: Story = {
         'Write your entry… (markdown supported)',
       ),
     ).toBeInTheDocument();
-    await expect(
-      canvas.getByRole('button', { name: 'B' }),
-    ).toBeInTheDocument();
+    await expect(canvas.getByRole('button', { name: 'B' })).toBeInTheDocument();
   },
 };
 
