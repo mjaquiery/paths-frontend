@@ -119,12 +119,22 @@ export const PreviewTogglesRenderedMarkdown: Story = {
     await expect(
       canvas.getByText('bold text', { selector: 'strong' }),
     ).toBeInTheDocument();
+    // The formatting toolbar buttons are hidden in preview mode so the
+    // preview reads visibly differently from the write view, and the
+    // toggle button itself flips to "Write".
+    await expect(
+      canvas.queryByRole('button', { name: 'B' }),
+    ).not.toBeInTheDocument();
+    await expect(canvas.queryByText('Preview')).not.toBeInTheDocument();
 
-    await userEvent.click(canvas.getByText('Preview'));
+    await userEvent.click(canvas.getByText('Write'));
     await expect(
       await canvas.findByPlaceholderText(
         'Write your entry… (markdown supported)',
       ),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('button', { name: 'B' }),
     ).toBeInTheDocument();
   },
 };
