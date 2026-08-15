@@ -1,7 +1,19 @@
+import { clearSession } from './authSession';
+
 export interface CustomFetchOptions extends RequestInit {
   // Only fires for FormData bodies — fetch has no upload-progress hook, so this
   // path drops down to XMLHttpRequest instead.
   onUploadProgress?: (loaded: number, total: number) => void;
+}
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(status: number) {
+    super(`Request failed: ${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+  }
 }
 
 export const customFetch = async <T>(
@@ -40,7 +52,10 @@ export const customFetch = async <T>(
     credentials: 'include',
     headers,
   });
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  if (!response.ok) {
+    if (response.status === 401) clearSession();
+    throw new ApiError(response.status);
+  }
   const data = response.status === 204 ? undefined : await response.json();
   return { data, status: response.status, headers: response.headers } as T;
 };
@@ -63,7 +78,8 @@ function uploadWithProgress<T>(
     xhr.onerror = () => reject(new Error('Request failed: network error'));
     xhr.onload = () => {
       if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new Error(`Request failed: ${xhr.status}`));
+        if (xhr.status === 401) clearSession();
+        reject(new ApiError(xhr.status));
         return;
       }
       const data =

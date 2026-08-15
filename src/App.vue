@@ -11,6 +11,13 @@
       :buttons="installToastButtons"
       @didDismiss="dismissInstall"
     />
+    <ion-toast
+      :is-open="sessionExpired"
+      message="Session expired — please log in again"
+      position="top"
+      :duration="4000"
+      @didDismiss="dismissSessionExpiredToast"
+    />
   </ion-app>
 </template>
 
@@ -56,10 +63,11 @@ import { IonApp, IonRouterOutlet, IonToast } from '@ionic/vue';
 import { Capacitor } from '@capacitor/core';
 import { Keyboard } from '@capacitor/keyboard';
 import { App as CapacitorApp } from '@capacitor/app';
-import { onBeforeUnmount, onMounted } from 'vue';
+import { onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useInstallBanner } from './composables/useInstallBanner';
 import { useVirtualKeyboard } from './composables/useVirtualKeyboard';
+import { sessionExpired } from './lib/authSession';
 import AppFooter from './components/AppFooter.vue';
 
 const router = useRouter();
@@ -70,6 +78,17 @@ const installToastButtons = [
   { text: 'Install', handler: promptInstall },
   { text: 'Not now', role: 'cancel' },
 ];
+
+// A 401 anywhere (see lib/customFetch.ts) already cleared the stored session — this just
+// surfaces that to the user and sends them back to the logged-out view, instead of the
+// app quietly continuing to look "broken" with no explanation.
+watch(sessionExpired, (expired) => {
+  if (expired) void router.replace('/');
+});
+
+function dismissSessionExpiredToast() {
+  sessionExpired.value = false;
+}
 
 // iOS/Android keyboard-overlay fix is platform-conditional: native uses Capacitor's own
 // Keyboard plugin (authoritative inside a WebView, where visualViewport is less reliable),

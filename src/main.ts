@@ -15,6 +15,7 @@ import './assets/design-f.css';
 import App from './App.vue';
 import router from './router';
 import { dexiePersister } from './lib/queryPersister';
+import { ApiError } from './lib/customFetch';
 import { useDarkMode } from './composables/useDarkMode';
 import { registerServiceWorkerUpdates } from './composables/useServiceWorkerUpdate';
 
@@ -30,6 +31,12 @@ const queryClient = new QueryClient({
     queries: {
       gcTime: 1000 * 60 * 60 * 24, // 24 hours
       staleTime: 1000 * 60 * 5, // 5 minutes
+      // An expired/invalid session isn't going to fix itself on retry — fail fast so
+      // the 401 handling (clearSession + redirect) surfaces immediately instead of
+      // after 3 retries with backoff.
+      retry: (failureCount, error) =>
+        !(error instanceof ApiError && error.status === 401) &&
+        failureCount < 3,
     },
   },
 });
