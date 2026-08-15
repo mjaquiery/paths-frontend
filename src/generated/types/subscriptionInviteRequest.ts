@@ -7,8 +7,8 @@
 
 export interface SubscriptionInviteRequest {
   /**
-   * @maxLength 256
-   * @pattern ^[^@\s]+@[^@\s]+$
-   */
+     * @maxLength 256
+     * @pattern ^[^@\s]+@[^@\s]+$
+     */
   email: string;
 }
