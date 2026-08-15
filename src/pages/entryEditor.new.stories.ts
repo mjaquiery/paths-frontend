@@ -250,7 +250,9 @@ export const AddingImageShowsThumbnailAndCaptionPrompt: Story = {
     await expect(
       await canvas.findByLabelText('Change photo sunset.jpg'),
     ).toBeInTheDocument();
-    await expect(canvas.getByText('Add a caption')).toBeInTheDocument();
+    await expect(
+      canvas.getByPlaceholderText('Add a caption'),
+    ).toBeInTheDocument();
     await expect(
       canvas.getByLabelText('Remove image sunset.jpg'),
     ).toBeInTheDocument();
@@ -285,12 +287,10 @@ export const PendingImageWithCaptionRequiresConfirmationToRemove: Story = {
     await selectFile(
       new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
     );
-    await userEvent.click(await canvas.findByText('Add a caption'));
     await userEvent.type(
-      canvas.getByPlaceholderText('Add a caption'),
+      await canvas.findByPlaceholderText('Add a caption'),
       'Golden hour',
     );
-    await userEvent.tab();
 
     await userEvent.click(canvas.getByLabelText('Remove image sunset.jpg'));
     await expect(await screen.findByText('Remove photo')).toBeInTheDocument();

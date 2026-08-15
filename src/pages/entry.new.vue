@@ -97,8 +97,7 @@
             variant="pending"
             :file="img.file"
             :filename="img.file.name"
-            :caption="img.caption"
-            @commit-caption="(caption) => (img.caption = caption)"
+            v-model:caption="img.caption"
             @change="(file) => (img.file = file)"
             @remove="removePendingImage(img.id)"
           />

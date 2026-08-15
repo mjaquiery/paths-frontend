@@ -9,7 +9,7 @@
       <img
         v-if="thumbnailSrc && !loadFailed"
         :src="thumbnailSrc"
-        :alt="filename"
+        :alt="caption || filename"
         class="photo-row-thumb-img"
         @error="loadFailed = true"
       />
@@ -28,25 +28,17 @@
     </button>
 
     <div class="photo-row-caption">
+      <label class="sr-only" :for="captionInputId"
+        >Caption for {{ filename }}</label
+      >
       <input
-        v-if="editingCaption"
-        ref="captionInputRef"
-        v-model="draftCaption"
+        :id="captionInputId"
+        v-model="captionModel"
+        type="text"
         class="photo-row-caption-input"
         placeholder="Add a caption"
-        :aria-label="`Caption for ${filename}`"
-        @blur="commitCaption"
         @keydown.enter="($event.target as HTMLInputElement).blur()"
       />
-      <button
-        v-else
-        type="button"
-        class="photo-row-caption-display"
-        :class="{ 'photo-row-caption-display--empty': !caption }"
-        @click="startEditingCaption"
-      >
-        {{ caption || 'Add a caption' }}
-      </button>
     </div>
 
     <button
@@ -69,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, ref, useId, watch } from 'vue';
 import { IonAlert } from '@ionic/vue';
 
 import { useGetImageDownloadUrl } from '../generated/apiClient';
@@ -93,8 +85,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  /** Fired once editing ends (blur / Enter), not on every keystroke. */
-  'commit-caption': [string];
+  'update:caption': [string];
   remove: [];
   /** The user picked a replacement image for this row. */
   change: [File];
@@ -152,25 +143,21 @@ const isLoadingThumbnail = computed(
   () => props.variant === 'existing' && isLoading.value,
 );
 
-// --- Caption editing (click-to-edit; commits on blur/Enter) --------------
+// --- Caption editing --------------------------------------------------
+//
+// A real, always-present <input> rather than a button-that-becomes-an-input:
+// that keeps its role, focusability and label constant regardless of edit
+// state, so keyboard and screen-reader users get standard text-field
+// behaviour (Tab to reach it, no separate "activate to edit" step, no
+// focus lost to the page after committing) instead of a custom two-step
+// disclosure pattern. Nothing is saved to the server as the user types —
+// see the parent page for when edits are actually persisted.
 
-const editingCaption = ref(false);
-const draftCaption = ref(props.caption);
-const captionInputRef = ref<HTMLInputElement | null>(null);
-
-async function startEditingCaption() {
-  draftCaption.value = props.caption;
-  editingCaption.value = true;
-  await nextTick();
-  captionInputRef.value?.focus();
-}
-
-function commitCaption() {
-  editingCaption.value = false;
-  if (draftCaption.value !== props.caption) {
-    emit('commit-caption', draftCaption.value);
-  }
-}
+const captionInputId = useId();
+const captionModel = computed({
+  get: () => props.caption,
+  set: (value: string) => emit('update:caption', value),
+});
 
 // --- Removal, with confirmation for already-invested content --------------
 
@@ -250,33 +237,47 @@ function onConfirmDismiss() {
 
 .photo-row-caption-input {
   width: 100%;
-  border: 1px solid var(--color-rule);
+  border: 1px solid transparent;
   border-radius: 6px;
   background: none;
   color: var(--color-ink);
   font-size: 0.9rem;
   padding: 0.4rem 0.6rem;
+  margin: 0;
   font-family: var(--font-sans);
+  cursor: text;
 }
 
-.photo-row-caption-display {
-  display: block;
-  width: 100%;
-  background: none;
-  border: none;
-  text-align: left;
-  padding: 0.4rem 0;
-  font-size: 0.9rem;
-  color: var(--color-ink);
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.photo-row-caption-input:hover {
+  border-color: var(--color-rule);
 }
 
-.photo-row-caption-display--empty {
+/* Keep the browser's default focus ring (never suppressed) — this is the
+   primary visible cue that the field is focused and editable for keyboard
+   and low-vision users, on top of the border filling in. */
+.photo-row-caption-input:focus {
+  border-color: var(--color-ink);
+}
+
+.photo-row-caption-input::placeholder {
   color: var(--color-ink-muted);
   font-style: italic;
+}
+
+/* Visually hidden but still announced by screen readers — pairs with the
+   caption <input>'s id/for so the field always has an accessible name,
+   even though the placeholder already carries the empty-state hint
+   visually. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .photo-row-remove {

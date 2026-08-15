@@ -80,7 +80,7 @@
             :image-id="img.id"
             :filename="img.filename"
             :caption="img.caption ?? ''"
-            @commit-caption="(caption) => updateExistingCaption(img, caption)"
+            @update:caption="(caption) => (img.caption = caption)"
             @change="(file) => replaceExistingImage(img, file)"
             @remove="removeExistingImage(img.id)"
           />
@@ -90,8 +90,7 @@
             variant="pending"
             :file="img.file"
             :filename="img.file.name"
-            :caption="img.caption"
-            @commit-caption="(caption) => (img.caption = caption)"
+            v-model:caption="img.caption"
             @change="(file) => (img.file = file)"
             @remove="removePendingImage(img.id)"
           />
@@ -137,7 +136,11 @@ import MarkdownContent from '../components/MarkdownContent.vue';
 import PhotoStripItem from '../components/PhotoStripItem.vue';
 import SavingOverlay from '../components/SavingOverlay.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
-import type { EntryContentResponse, ImageResponse } from '../generated/types';
+import type {
+  EntryContentResponse,
+  ImageCaptionUpdateResponse,
+  ImageResponse,
+} from '../generated/types';
 
 const route = useRoute<'/entry.[pathId].[entryId].edit'>();
 const router = useRouter();
@@ -167,6 +170,10 @@ const { mutateAsync: doUpdateEntry } = useUpdateEntry({
 
 const contentTab = ref<'write' | 'preview'>('write');
 const keptImages = ref<ImageResponse[]>([]);
+// Snapshot of each kept image's caption as last loaded from the server, so
+// submit() can tell which captions were actually edited (and only persist
+// those) rather than re-sending every caption on every save.
+const originalCaptions = ref<Map<string, string | null>>(new Map());
 const removedImageIds = ref<string[]>([]);
 const pendingImages = ref<{ id: string; file: File; caption: string }[]>([]);
 const saving = ref(false);
@@ -207,6 +214,9 @@ watch(imagesData, (images) => {
     // Query results are deeply readonly (shared TanStack Query cache
     // entries) — clone so caption edits below can mutate freely.
     keptImages.value = images.map((img) => ({ ...img }));
+    originalCaptions.value = new Map(
+      images.map((img) => [img.id, img.caption]),
+    );
     removedImageIds.value = [];
   }
 });
@@ -223,21 +233,6 @@ function removeExistingImage(imageId: string) {
   if (idx !== -1) {
     keptImages.value.splice(idx, 1);
     removedImageIds.value.push(imageId);
-  }
-}
-
-async function updateExistingCaption(image: ImageResponse, caption: string) {
-  if (entryData.value?.edit_id === undefined) return;
-  const previousCaption = image.caption;
-  image.caption = caption;
-  try {
-    await doUpdateImageCaption({
-      imageId: image.id,
-      data: { caption, expected_edit_id: entryData.value.edit_id },
-    });
-  } catch (err: unknown) {
-    image.caption = previousCaption;
-    error.value = describeError('update caption', err);
   }
 }
 
@@ -269,11 +264,29 @@ async function submit() {
   conflictError.value = '';
 
   try {
+    // Caption edits on already-uploaded images are held only in local state
+    // (see keptImages/originalCaptions above) until Save is actually
+    // pressed. Persist just the ones that changed, one request at a time —
+    // each response bumps the entry's edit_id, which the *next* request
+    // (including the final entry update below) must present back for
+    // optimistic-concurrency checking.
+    let expectedEditId = entryData.value.edit_id;
+    const changedCaptionImages = keptImages.value.filter(
+      (img) => img.caption !== (originalCaptions.value.get(img.id) ?? null),
+    );
+    for (const img of changedCaptionImages) {
+      const result = await doUpdateImageCaption({
+        imageId: img.id,
+        data: { caption: img.caption, expected_edit_id: expectedEditId },
+      });
+      expectedEditId = (result.data as ImageCaptionUpdateResponse).edit_id;
+    }
+
     await doUpdateEntry({
       pathCode: pathId,
       entrySlug: entryId,
       data: {
-        expected_edit_id: entryData.value.edit_id,
+        expected_edit_id: expectedEditId,
         content: content.value,
         captions: pendingImages.value.map((img) => img.caption),
         remove_image_ids: removedImageIds.value,

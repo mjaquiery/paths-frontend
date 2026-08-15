@@ -283,7 +283,7 @@ export const ExistingImageRequiresConfirmationToRemove: Story = {
   },
 };
 
-export const ExistingImageCaptionCanBeEditedByTapping: Story = {
+export const ExistingImageCaptionEditPersistsOnlyOnSave: Story = {
   parameters: {
     msw: {
       handlers: withDefaultHandlers(
@@ -294,6 +294,15 @@ export const ExistingImageCaptionCanBeEditedByTapping: Story = {
             image: { ...existingImage, caption: 'Sunset over the bay' },
           }),
         ),
+        http.put('*/v1/paths/:pathCode/entries/:entrySlug', () =>
+          HttpResponse.json({
+            id: entryId,
+            path_id: path.path_id,
+            day: '2024-03-15',
+            edit_id: 3,
+            content: 'Morning run along the river.',
+          }),
+        ),
       ),
     },
   },
@@ -301,16 +310,19 @@ export const ExistingImageCaptionCanBeEditedByTapping: Story = {
     const canvas = within(canvasElement);
     await canvas.findByLabelText('Change photo beach.jpg');
 
-    await userEvent.click(canvas.getByText('Add a caption'));
-    await userEvent.type(
-      canvas.getByPlaceholderText('Add a caption'),
-      'Sunset over the bay',
-    );
-    await userEvent.tab();
+    // Typing updates the field locally straight away — nothing is sent to
+    // the server until Save is pressed.
+    const captionInput = canvas.getByPlaceholderText('Add a caption');
+    await userEvent.type(captionInput, 'Sunset over the bay');
+    await expect(captionInput).toHaveValue('Sunset over the bay');
 
+    await userEvent.click(canvas.getByText('Save'));
+    await waitFor(() =>
+      expect(canvas.queryByText('Saving…')).not.toBeInTheDocument(),
+    );
     await expect(
-      await canvas.findByText('Sunset over the bay'),
-    ).toBeInTheDocument();
+      canvas.queryByText('Unable to save entry', { exact: false }),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -327,7 +339,9 @@ export const AddingNewImageShowsThumbnailAndCaptionPrompt: Story = {
     await expect(
       await canvas.findByLabelText('Change photo sunset.jpg'),
     ).toBeInTheDocument();
-    await expect(canvas.getByText('Add a caption')).toBeInTheDocument();
+    await expect(
+      canvas.getByPlaceholderText('Add a caption'),
+    ).toBeInTheDocument();
     await expect(
       canvas.getByLabelText('Remove image sunset.jpg'),
     ).toBeInTheDocument();
@@ -362,12 +376,10 @@ export const PendingImageWithCaptionRequiresConfirmationToRemove: Story = {
     await selectFile(
       new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
     );
-    await userEvent.click(await canvas.findByText('Add a caption'));
     await userEvent.type(
-      canvas.getByPlaceholderText('Add a caption'),
+      await canvas.findByPlaceholderText('Add a caption'),
       'Golden hour',
     );
-    await userEvent.tab();
 
     await userEvent.click(canvas.getByLabelText('Remove image sunset.jpg'));
     await expect(await screen.findByText('Remove photo')).toBeInTheDocument();
