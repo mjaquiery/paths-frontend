@@ -100,17 +100,26 @@
           </router-link>
           <div v-if="pe.images.length > 0" class="db-entry-photos">
             <EntryImage
-              v-for="img in pe.images.slice(0, 3)"
+              v-for="(img, idx) in pe.images.slice(0, 3)"
               :key="img.id"
               :image-id="img.id"
               :alt="img.filename"
               class="db-entry-photo"
+              @open="openLightbox(pe.images, idx)"
             />
           </div>
         </div>
       </template>
       <p v-else class="db-day-empty">No entries yet.</p>
     </div>
+
+    <ImageLightbox
+      :is-open="lightbox !== null"
+      :images="lightbox?.images ?? []"
+      :start-index="lightbox?.index ?? 0"
+      :day="selectedDate"
+      @dismiss="lightbox = null"
+    />
   </div>
 </template>
 
@@ -123,6 +132,7 @@ import type { PathEntries } from '../composables/useMultiPathEntries';
 import { useOnThisDay } from '../composables/useOnThisDay';
 import { toLocalISODate } from '../utils/date';
 import EntryImage from './EntryImage.vue';
+import ImageLightbox from './ImageLightbox.vue';
 
 const props = defineProps<{
   visiblePaths: PathResponse[];
@@ -300,6 +310,11 @@ const selectedEntries = computed<DayPathEntry[]>(() => {
   }
   return result;
 });
+
+const lightbox = ref<{ images: ImageResponse[]; index: number } | null>(null);
+function openLightbox(images: ImageResponse[], index: number) {
+  lightbox.value = { images, index };
+}
 
 defineExpose({ selectedDate });
 </script>

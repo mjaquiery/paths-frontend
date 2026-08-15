@@ -1,10 +1,10 @@
 <template>
-  <a
-    :href="imageUrl || undefined"
-    target="_blank"
-    rel="noopener noreferrer"
+  <button
+    type="button"
     class="entry-image-link"
-    :aria-label="alt || 'View image'"
+    :aria-label="alt ? `View ${alt}` : 'View image'"
+    :disabled="!imageUrl || loadFailed"
+    @click="emit('open')"
   >
     <img
       v-if="imageUrl && !loadFailed"
@@ -27,7 +27,7 @@
       :aria-label="errorMessage || 'Failed to load image'"
       >⚠️</span
     >
-  </a>
+  </button>
 </template>
 
 <script setup lang="ts">
@@ -39,6 +39,10 @@ import { extractErrorMessage } from '../lib/errors';
 const props = defineProps<{
   imageId: string;
   alt?: string;
+}>();
+
+const emit = defineEmits<{
+  open: [];
 }>();
 
 const { data, isLoading, error } = useGetImageDownloadUrl(
@@ -66,7 +70,14 @@ const errorMessage = computed(() => extractErrorMessage(error.value));
 <style scoped>
 .entry-image-link {
   display: inline-block;
-  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.entry-image-link:disabled {
+  cursor: default;
 }
 
 .entry-image-thumb {

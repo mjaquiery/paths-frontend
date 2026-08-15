@@ -44,11 +44,12 @@
           </router-link>
           <div v-if="(entry.images?.length ?? 0) > 0" class="pb-entry-photos">
             <EntryImage
-              v-for="img in entry.images!.slice(0, 3)"
+              v-for="(img, idx) in entry.images!.slice(0, 3)"
               :key="img.id"
               :image-id="img.id"
               :alt="img.filename"
               class="pb-entry-photo"
+              @open="openLightbox(entry.images!, idx, entry.day)"
             />
           </div>
         </div>
@@ -58,16 +59,25 @@
       </template>
       <p v-else class="pb-empty">No entries yet.</p>
     </div>
+
+    <ImageLightbox
+      :is-open="lightbox !== null"
+      :images="lightbox?.images ?? []"
+      :start-index="lightbox?.index ?? 0"
+      :day="lightbox?.day ?? ''"
+      @dismiss="lightbox = null"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { IonSpinner } from '@ionic/vue';
 
-import type { PathResponse } from '../generated/types';
+import type { ImageResponse, PathResponse } from '../generated/types';
 import type { EntryWithContent } from '../composables/useMultiPathEntries';
 import EntryImage from './EntryImage.vue';
+import ImageLightbox from './ImageLightbox.vue';
 
 const props = defineProps<{
   paths: PathResponse[];
@@ -100,6 +110,15 @@ const sortedEntries = computed(() =>
 const visibleEntries = computed(() =>
   sortedEntries.value.filter((entry) => entry.inWindow),
 );
+
+const lightbox = ref<{
+  images: ImageResponse[];
+  index: number;
+  day: string;
+} | null>(null);
+function openLightbox(images: ImageResponse[], index: number, day: string) {
+  lightbox.value = { images, index, day };
+}
 
 function dateLabel(day: string): string {
   return new Date(day + 'T00:00:00').toLocaleDateString(undefined, {
