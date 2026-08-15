@@ -156,7 +156,7 @@ import { useCreateEntry } from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
 import { useLocalDraft } from '../composables/useLocalDraft';
 import { pickImages } from '../composables/useImagePicker';
-import { extractErrorMessage } from '../lib/errors';
+import { describeError } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import SavingOverlay from '../components/SavingOverlay.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
@@ -277,10 +277,7 @@ async function submit() {
     await clearDraft();
     router.back();
   } catch (err: unknown) {
-    const detail = extractErrorMessage(err);
-    error.value = detail
-      ? `Failed to create entry: ${detail}`
-      : 'Failed to create entry. Please try again.';
+    error.value = describeError('create entry', err);
   }
 }
 </script>

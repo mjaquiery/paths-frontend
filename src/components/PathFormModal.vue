@@ -81,6 +81,7 @@ import {
   useUpdatePath,
   useUpdatePathVisibility,
 } from '../generated/apiClient';
+import { describeError, isApiErrorWithStatus } from '../lib/errors';
 
 const PATH_SWATCHES = [
   '#5b52f0',
@@ -184,10 +185,9 @@ async function save() {
     emit('saved', saved);
     emit('dismiss');
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    errorMessage.value = msg.includes('Request failed: 409')
+    errorMessage.value = isApiErrorWithStatus(err, 409)
       ? 'A path with that name already exists. Please choose a different title.'
-      : `Failed to ${props.path ? 'update' : 'create'} path. Please try again.`;
+      : describeError(props.path ? 'update path' : 'create path', err);
   } finally {
     saving.value = false;
   }

@@ -146,7 +146,7 @@ export const SavingSucceeds: Story = {
       expect(canvas.queryByText('Saving…')).not.toBeInTheDocument(),
     );
     await expect(
-      canvas.queryByText('Failed to save entry', { exact: false }),
+      canvas.queryByText('Unable to save entry', { exact: false }),
     ).not.toBeInTheDocument();
   },
 };
@@ -218,7 +218,9 @@ export const ServerErrorShowsInlineMessage: Story = {
     await userEvent.click(canvas.getByText('Save'));
 
     await expect(
-      await canvas.findByText('Failed to save entry', { exact: false }),
+      await canvas.findByText('Unable to save entry: Internal Server Error', {
+        exact: false,
+      }),
     ).toBeInTheDocument();
     await expect(canvas.getByText('Save')).not.toBeDisabled();
   },

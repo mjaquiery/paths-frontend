@@ -112,7 +112,9 @@ export const ShowsAnErrorAndStaysOpenIfCreationFails: Story = {
     await userEvent.click(screen.getByText('Create'));
 
     await expect(
-      await screen.findByText('Failed to create path', { exact: false }),
+      await screen.findByText('Unable to create path: Server error', {
+        exact: false,
+      }),
     ).toBeInTheDocument();
     await expect(args.onDismiss).not.toHaveBeenCalled();
   },

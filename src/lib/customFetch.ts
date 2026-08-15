@@ -6,13 +6,65 @@ export interface CustomFetchOptions extends RequestInit {
   onUploadProgress?: (loaded: number, total: number) => void;
 }
 
+const NETWORK_ERROR_MESSAGE = 'network error';
+
+// Sensible copy for known failure classes when the backend response carries
+// no usable detail (e.g. an unhandled exception returning a bare 500) — this
+// is what shows up after "Unable to <action>: " on a mobile-first UI, so it
+// must never be a raw status code.
+function fallbackReason(status: number): string {
+  if (status === 401) return 'not signed in';
+  if (status === 403) return 'access denied';
+  if (status === 404) return 'not found';
+  if (status === 409) return 'conflicting change';
+  if (status >= 500) return 'internal server error';
+  return `request failed (${status})`;
+}
+
+/** Pull a `detail`/`message`/`error` string out of a parsed JSON error body, if there is one. */
+function detailFromBody(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') return undefined;
+  const b = body as Record<string, unknown>;
+  if (typeof b.detail === 'string') return b.detail;
+  if (Array.isArray(b.detail)) {
+    // FastAPI 422 validation errors: detail is a list of {loc, msg, type}.
+    const msgs = b.detail
+      .map((d) =>
+        d && typeof d === 'object'
+          ? (d as Record<string, unknown>).msg
+          : undefined,
+      )
+      .filter((m): m is string => typeof m === 'string');
+    if (msgs.length > 0) return msgs.join('; ');
+  }
+  if (typeof b.message === 'string') return b.message;
+  if (typeof b.error === 'string') return b.error;
+  return undefined;
+}
+
+async function detailFromResponse(
+  response: Response,
+): Promise<string | undefined> {
+  if (typeof response.json !== 'function') return undefined;
+  try {
+    return detailFromBody(await response.json());
+  } catch {
+    // Not JSON (or empty body) — e.g. a plain-text 500 from an unhandled
+    // exception with no custom error handler.
+    return undefined;
+  }
+}
+
 export class ApiError extends Error {
   status: number;
+  /** Backend-provided detail text, when the response body had one. */
+  detail?: string;
 
-  constructor(status: number) {
-    super(`Request failed: ${status}`);
+  constructor(status: number, detail?: string) {
+    super(detail ?? fallbackReason(status));
     this.name = 'ApiError';
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -47,14 +99,20 @@ export const customFetch = async <T>(
     return uploadWithProgress<T>(`${baseUrl}${url}`, options, headers);
   }
 
-  const response = await fetch(`${baseUrl}${url}`, {
-    ...options,
-    credentials: 'include',
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}${url}`, {
+      ...options,
+      credentials: 'include',
+      headers,
+    });
+  } catch {
+    throw new Error(NETWORK_ERROR_MESSAGE);
+  }
   if (!response.ok) {
+    const detail = await detailFromResponse(response);
     if (response.status === 401) clearSession();
-    throw new ApiError(response.status);
+    throw new ApiError(response.status, detail);
   }
   const data = response.status === 204 ? undefined : await response.json();
   return { data, status: response.status, headers: response.headers } as T;
@@ -75,11 +133,17 @@ function uploadWithProgress<T>(
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) options.onUploadProgress?.(e.loaded, e.total);
     };
-    xhr.onerror = () => reject(new Error('Request failed: network error'));
+    xhr.onerror = () => reject(new Error(NETWORK_ERROR_MESSAGE));
     xhr.onload = () => {
       if (xhr.status < 200 || xhr.status >= 300) {
         if (xhr.status === 401) clearSession();
-        reject(new ApiError(xhr.status));
+        let detail: string | undefined;
+        try {
+          detail = detailFromBody(JSON.parse(xhr.responseText));
+        } catch {
+          detail = undefined;
+        }
+        reject(new ApiError(xhr.status, detail));
         return;
       }
       const data =

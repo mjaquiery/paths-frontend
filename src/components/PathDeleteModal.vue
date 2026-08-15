@@ -64,6 +64,7 @@ import { useQueryClient } from '@tanstack/vue-query';
 
 import type { PathResponse } from '../generated/types';
 import { useDeletePath } from '../generated/apiClient';
+import { describeError } from '../lib/errors';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -101,8 +102,8 @@ async function confirmDelete() {
     void queryClient.invalidateQueries({ queryKey: ['v1', 'paths'] });
     emit('deleted');
     emit('dismiss');
-  } catch {
-    errorMessage.value = 'Failed to delete path. Please try again.';
+  } catch (err: unknown) {
+    errorMessage.value = describeError('delete path', err);
   } finally {
     deleting.value = false;
   }

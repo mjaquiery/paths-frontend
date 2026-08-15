@@ -3,7 +3,8 @@ import { nextTick } from 'vue';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { mount, flushPromises } from '@vue/test-utils';
 
-vi.mock('../lib/customFetch', () => ({
+vi.mock('../lib/customFetch', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../lib/customFetch')>()),
   customFetch: vi.fn(),
 }));
 
@@ -231,7 +232,7 @@ describe('EntriesCard', () => {
     await createButton!.trigger('click');
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Failed to create entry');
+    expect(wrapper.text()).toContain('Unable to create entry');
     expect(wrapper.find('textarea').exists()).toBe(true);
   });
 

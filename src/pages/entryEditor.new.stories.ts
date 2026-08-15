@@ -204,7 +204,9 @@ export const ServerErrorShowsInlineMessage: Story = {
     await userEvent.click(canvas.getByText('Save'));
 
     await expect(
-      await canvas.findByText('Failed to create entry', { exact: false }),
+      await canvas.findByText('Unable to create entry: Internal Server Error', {
+        exact: false,
+      }),
     ).toBeInTheDocument();
     await expect(canvas.getByText('Save')).not.toBeDisabled();
   },

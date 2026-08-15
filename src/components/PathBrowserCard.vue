@@ -97,6 +97,7 @@ import type { PathResponse } from '../generated/types';
 import { isPathHidden, setPathHidden } from '../lib/db';
 import { usePaths } from '../composables/usePaths';
 import { useCreatePath } from '../generated/apiClient';
+import { describeError } from '../lib/errors';
 
 withDefaults(
   defineProps<{
@@ -167,8 +168,8 @@ async function createPath() {
     });
     cancelCreate();
     await refetch();
-  } catch (e) {
-    createError.value = 'Failed to create path. Please try again.';
+  } catch (err: unknown) {
+    createError.value = describeError('create path', err);
   }
 }
 
