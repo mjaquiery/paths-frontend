@@ -50,19 +50,10 @@
       ✕
     </button>
   </div>
-
-  <ion-alert
-    :is-open="showRemoveConfirm"
-    header="Remove photo"
-    :message="`Remove ${filename} from this entry?`"
-    :buttons="confirmButtons"
-    @didDismiss="onConfirmDismiss"
-  />
 </template>
 
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue';
-import { IonAlert } from '@ionic/vue';
 
 import { useGetImageDownloadUrl } from '../generated/apiClient';
 import { pickImages } from '../composables/useImagePicker';
@@ -86,7 +77,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:caption': [string];
+  /** Remove this row now — no confirmation needed. */
   remove: [];
+  /** Ask the parent to confirm before removing this row (see needsConfirm). */
+  'request-remove': [];
   /** The user picked a replacement image for this row. */
   change: [File];
 }>();
@@ -160,38 +154,26 @@ const captionModel = computed({
 });
 
 // --- Removal, with confirmation for already-invested content --------------
+//
+// The confirmation <ion-alert> itself lives on the parent page, not here —
+// this row (and everything in it, including an alert if one were nested
+// here) gets unmounted the moment 'remove' fires, since that's what drops
+// the row out of the parent's list. An alert mid-dismiss racing its own
+// host element's removal is exactly the crash this split avoids: Ionic
+// closes the alert by removing its element from the DOM itself, and if
+// Vue *also* tries to unmount that same element a tick later (because the
+// row it lived in just disappeared), the two can trip over each other.
+// Keeping the alert on the page, which never itself gets removed, means
+// there's nothing left for that race to happen to.
 
 const needsConfirm = computed(
   () => props.variant === 'existing' || props.caption.trim().length > 0,
 );
-const showRemoveConfirm = ref(false);
-// Only actually removes the row once the alert has finished dismissing
-// itself (see onConfirmDismiss) — removing it eagerly, from inside the
-// button handler, would tear down this component (and the still-closing
-// <ion-alert> along with it) mid-animation.
-const removalConfirmed = ref(false);
 
 function onRemoveClick() {
   if (needsConfirm.value) {
-    showRemoveConfirm.value = true;
+    emit('request-remove');
   } else {
-    emit('remove');
-  }
-}
-
-const confirmButtons = computed(() => [
-  { text: 'Cancel', role: 'cancel' },
-  {
-    text: 'Remove',
-    role: 'destructive',
-    handler: () => (removalConfirmed.value = true),
-  },
-]);
-
-function onConfirmDismiss() {
-  showRemoveConfirm.value = false;
-  if (removalConfirmed.value) {
-    removalConfirmed.value = false;
     emit('remove');
   }
 }

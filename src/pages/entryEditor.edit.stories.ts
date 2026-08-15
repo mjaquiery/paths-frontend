@@ -41,6 +41,16 @@ const existingImage = {
   byte_size: 1024,
 };
 
+const secondExistingImage = {
+  id: 'story-image-2',
+  entry_id: entryId,
+  filename: 'pier.jpg',
+  caption: null,
+  status: 'ready',
+  content_type: 'image/jpeg',
+  byte_size: 2048,
+};
+
 function entryReadHandlers(images: unknown[] = []) {
   return [
     http.get('*/v1/paths', () => HttpResponse.json([path])),
@@ -71,6 +81,19 @@ async function selectFile(file: File) {
     'input[type="file"]',
   ) as HTMLInputElement;
   await userEvent.upload(fileInput, file);
+}
+
+// A real (if tiny) transparent GIF — tests that assert on the rendered
+// thumbnail <img> need actual decodable image bytes, since the object URL
+// is loaded by a genuine browser <img> here (not jsdom): plain placeholder
+// text would fire a real decode error and hide the thumbnail behind the
+// component's error state.
+const PIXEL_GIF_BASE64 =
+  'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7';
+function pixelGifFile(name: string): File {
+  const binary = atob(PIXEL_GIF_BASE64);
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  return new File([bytes], name, { type: 'image/gif' });
 }
 
 const saveSucceedsHandler = http.put(
@@ -262,14 +285,31 @@ export const ExistingImageRequiresConfirmationToRemove: Story = {
       await canvas.findByLabelText('Change photo beach.jpg'),
     ).toBeInTheDocument();
 
+    // A real thumbnail, resolved from the server (the default download-url
+    // handler swaps in a placeholder image — see src/mocks/handlers.ts).
+    // findByRole (not getByRole): resolving it is a network round trip.
+    const thumb = await canvas.findByRole('img', { name: 'beach.jpg' });
+    await expect(thumb).toHaveAttribute(
+      'src',
+      expect.stringMatching(/^data:image/),
+    );
+
     await userEvent.click(canvas.getByLabelText('Remove image beach.jpg'));
-    await expect(await screen.findByText('Remove photo')).toBeInTheDocument();
+    await expect(
+      await screen.findByRole('alertdialog', { name: 'Remove photo' }),
+    ).toBeInTheDocument();
 
     // Cancelling leaves the photo in place.
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await expect(
       canvas.getByLabelText('Remove image beach.jpg'),
     ).toBeInTheDocument();
+    // Let the alert actually finish closing before reopening it — Ionic's
+    // own dismiss lifecycle is async, and re-presenting mid-dismiss is a
+    // real race, not just a test artifact.
+    await waitFor(() =>
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument(),
+    );
 
     await userEvent.click(canvas.getByLabelText('Remove image beach.jpg'));
     await userEvent.click(
@@ -332,19 +372,80 @@ export const AddingNewImageShowsThumbnailAndCaptionPrompt: Story = {
     await canvas.findByDisplayValue('Morning run along the river.');
 
     await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
-    await selectFile(
-      new File(['fake-image-bytes'], 'sunset.jpg', { type: 'image/jpeg' }),
-    );
+    await selectFile(pixelGifFile('sunset.jpg'));
 
     await expect(
       await canvas.findByLabelText('Change photo sunset.jpg'),
     ).toBeInTheDocument();
     await expect(
-      canvas.getByPlaceholderText('Add a caption'),
-    ).toBeInTheDocument();
-    await expect(
       canvas.getByLabelText('Remove image sunset.jpg'),
     ).toBeInTheDocument();
+
+    // A real thumbnail, rendered from the picked File via an object URL.
+    const thumb = await canvas.findByRole('img', { name: 'sunset.jpg' });
+    await expect(thumb).toHaveAttribute('src', expect.stringMatching(/^blob:/));
+
+    // The caption field is reachable by its accessible name (the
+    // visually-hidden <label>, not just its placeholder), and typing
+    // updates it immediately.
+    const captionInput = canvas.getByLabelText('Caption for sunset.jpg');
+    await expect(captionInput).toBe(
+      canvas.getByPlaceholderText('Add a caption'),
+    );
+    await userEvent.type(captionInput, 'Golden hour');
+    await expect(captionInput).toHaveValue('Golden hour');
+  },
+};
+
+export const TappingQueuedImageThumbnailReplacesIt: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByDisplayValue('Morning run along the river.');
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Add an image' }));
+    await selectFile(pixelGifFile('sunset.jpg'));
+    await userEvent.type(
+      await canvas.findByPlaceholderText('Add a caption'),
+      'Golden hour',
+    );
+
+    await userEvent.click(canvas.getByLabelText('Change photo sunset.jpg'));
+    await selectFile(pixelGifFile('moonrise.jpg'));
+
+    await expect(
+      await canvas.findByLabelText('Change photo moonrise.jpg'),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.queryByLabelText('Change photo sunset.jpg'),
+    ).not.toBeInTheDocument();
+    await expect(canvas.getByPlaceholderText('Add a caption')).toHaveValue(
+      'Golden hour',
+    );
+  },
+};
+
+export const TappingExistingImageThumbnailQueuesAReplacement: Story = {
+  parameters: {
+    msw: {
+      handlers: withDefaultHandlers(...entryReadHandlers([existingImage])),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByLabelText('Change photo beach.jpg');
+
+    await userEvent.click(canvas.getByLabelText('Change photo beach.jpg'));
+    await selectFile(pixelGifFile('sunset.jpg'));
+
+    // The already-uploaded photo is replaced by a freshly queued one —
+    // still just one row, not both side by side.
+    await expect(
+      await canvas.findByLabelText('Change photo sunset.jpg'),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.queryByLabelText('Change photo beach.jpg'),
+    ).not.toBeInTheDocument();
+    await expect(canvas.getAllByRole('img')).toHaveLength(1);
   },
 };
 
@@ -363,7 +464,7 @@ export const PendingImageWithoutCaptionIsRemovedImmediately: Story = {
     await expect(
       canvas.queryByLabelText('Remove image sunset.jpg'),
     ).not.toBeInTheDocument();
-    await expect(screen.queryByText('Remove photo')).not.toBeInTheDocument();
+    await expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   },
 };
 
@@ -382,7 +483,9 @@ export const PendingImageWithCaptionRequiresConfirmationToRemove: Story = {
     );
 
     await userEvent.click(canvas.getByLabelText('Remove image sunset.jpg'));
-    await expect(await screen.findByText('Remove photo')).toBeInTheDocument();
+    await expect(
+      await screen.findByRole('alertdialog', { name: 'Remove photo' }),
+    ).toBeInTheDocument();
     await userEvent.click(
       await screen.findByRole('button', { name: 'Remove' }),
     );
@@ -461,5 +564,86 @@ export const SavingWithImageChangesShowsPercentProgress: Story = {
         ).not.toBeInTheDocument(),
       { timeout: 8000 },
     );
+  },
+};
+
+export const MultipleCaptionEditsChainEditIdThroughToSave: Story = {
+  parameters: {
+    msw: {
+      handlers: withDefaultHandlers(
+        ...entryReadHandlers([existingImage, secondExistingImage]),
+        // Each caption update bumps the entry's edit_id, and the *next*
+        // request (the second caption update, then the final entry save)
+        // must present that new value back — this handler 409s if submit()
+        // ever sends a stale one, so a chaining regression fails loudly
+        // instead of silently saving with the wrong optimistic-lock value.
+        http.patch('*/v1/images/:imageId', async ({ request, params }) => {
+          const body = (await request.json()) as {
+            caption?: string | null;
+            expected_edit_id: number;
+          };
+          if (params.imageId === existingImage.id) {
+            if (body.expected_edit_id !== 1) {
+              return HttpResponse.json({ detail: 'conflict' }, { status: 409 });
+            }
+            return HttpResponse.json({
+              edit_id: 2,
+              image: { ...existingImage, caption: body.caption ?? null },
+            });
+          }
+          if (body.expected_edit_id !== 2) {
+            return HttpResponse.json({ detail: 'conflict' }, { status: 409 });
+          }
+          return HttpResponse.json({
+            edit_id: 3,
+            image: { ...secondExistingImage, caption: body.caption ?? null },
+          });
+        }),
+        http.put(
+          '*/v1/paths/:pathCode/entries/:entrySlug',
+          async ({ request }) => {
+            const body = await request.formData();
+            if (body.get('expected_edit_id') !== '3') {
+              return HttpResponse.json({ detail: 'conflict' }, { status: 409 });
+            }
+            return HttpResponse.json({
+              id: entryId,
+              path_id: path.path_id,
+              day: '2024-03-15',
+              edit_id: 4,
+              content: 'Morning run along the river.',
+            });
+          },
+        ),
+      ),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByLabelText('Change photo beach.jpg');
+    await canvas.findByLabelText('Change photo pier.jpg');
+
+    await userEvent.type(
+      canvas.getByLabelText('Caption for beach.jpg'),
+      'Morning swim',
+    );
+    await userEvent.type(
+      canvas.getByLabelText('Caption for pier.jpg'),
+      'Evening walk',
+    );
+
+    await userEvent.click(canvas.getByText('Save'));
+
+    await waitFor(() =>
+      expect(canvas.queryByText('Saving…')).not.toBeInTheDocument(),
+    );
+    await expect(
+      canvas.queryByText('A newer version of this entry exists', {
+        exact: false,
+      }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByText('Unable to save entry', { exact: false }),
+    ).not.toBeInTheDocument();
   },
 };

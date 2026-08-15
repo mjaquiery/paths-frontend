@@ -83,6 +83,13 @@
             @update:caption="(caption) => (img.caption = caption)"
             @change="(file) => replaceExistingImage(img, file)"
             @remove="removeExistingImage(img.id)"
+            @request-remove="
+              requestRemove({
+                kind: 'existing',
+                id: img.id,
+                filename: img.filename,
+              })
+            "
           />
           <PhotoStripItem
             v-for="img in pendingImages"
@@ -93,6 +100,13 @@
             v-model:caption="img.caption"
             @change="(file) => (img.file = file)"
             @remove="removePendingImage(img.id)"
+            @request-remove="
+              requestRemove({
+                kind: 'pending',
+                id: img.id,
+                filename: img.file.name,
+              })
+            "
           />
           <button
             type="button"
@@ -113,11 +127,23 @@
       </div>
     </ion-content>
     <SavingOverlay :active="saving" :label="saveLabel" />
+
+    <ion-alert
+      :is-open="pendingRemoval !== null"
+      header="Remove photo"
+      :message="
+        pendingRemoval
+          ? `Remove ${pendingRemoval.filename} from this entry?`
+          : ''
+      "
+      :buttons="removeConfirmButtons"
+      @didDismiss="onRemoveConfirmDismiss"
+    />
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonTextarea } from '@ionic/vue';
+import { IonAlert, IonPage, IonContent, IonTextarea } from '@ionic/vue';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -131,6 +157,7 @@ import {
 import { usePaths } from '../composables/usePaths';
 import { useLocalDraft } from '../composables/useLocalDraft';
 import { pickImages } from '../composables/useImagePicker';
+import { usePhotoRemoveConfirm } from '../composables/usePhotoRemoveConfirm';
 import { describeError, isApiErrorWithStatus } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import PhotoStripItem from '../components/PhotoStripItem.vue';
@@ -255,6 +282,16 @@ async function addImages() {
 function removePendingImage(id: string) {
   pendingImages.value = pendingImages.value.filter((img) => img.id !== id);
 }
+
+const {
+  pending: pendingRemoval,
+  requestRemove,
+  buttons: removeConfirmButtons,
+  onDismiss: onRemoveConfirmDismiss,
+} = usePhotoRemoveConfirm((removal) => {
+  if (removal.kind === 'existing') removeExistingImage(removal.id);
+  else removePendingImage(removal.id);
+});
 
 async function submit() {
   if (!content.value.trim() || entryData.value?.edit_id === undefined) return;

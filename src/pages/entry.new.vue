@@ -100,6 +100,13 @@
             v-model:caption="img.caption"
             @change="(file) => (img.file = file)"
             @remove="removePendingImage(img.id)"
+            @request-remove="
+              requestRemove({
+                kind: 'pending',
+                id: img.id,
+                filename: img.file.name,
+              })
+            "
           />
           <button
             type="button"
@@ -120,11 +127,23 @@
       </div>
     </ion-content>
     <SavingOverlay :active="saving" :label="saveLabel" />
+
+    <ion-alert
+      :is-open="pendingRemoval !== null"
+      header="Remove photo"
+      :message="
+        pendingRemoval
+          ? `Remove ${pendingRemoval.filename} from this entry?`
+          : ''
+      "
+      :buttons="removeConfirmButtons"
+      @didDismiss="onRemoveConfirmDismiss"
+    />
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonContent, IonTextarea } from '@ionic/vue';
+import { IonAlert, IonPage, IonContent, IonTextarea } from '@ionic/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -133,6 +152,7 @@ import { useCreateEntry } from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
 import { useLocalDraft } from '../composables/useLocalDraft';
 import { pickImages } from '../composables/useImagePicker';
+import { usePhotoRemoveConfirm } from '../composables/usePhotoRemoveConfirm';
 import { describeError } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import PhotoStripItem from '../components/PhotoStripItem.vue';
@@ -241,6 +261,13 @@ async function addImages() {
 function removePendingImage(id: string) {
   pendingImages.value = pendingImages.value.filter((img) => img.id !== id);
 }
+
+const {
+  pending: pendingRemoval,
+  requestRemove,
+  buttons: removeConfirmButtons,
+  onDismiss: onRemoveConfirmDismiss,
+} = usePhotoRemoveConfirm((removal) => removePendingImage(removal.id));
 
 async function submit() {
   if (!selectedPathId.value || !day.value || !content.value) return;
