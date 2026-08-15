@@ -3,7 +3,10 @@
     <ion-content class="df-ui">
       <div class="settings-page">
         <div class="settings-header">
-          <h1 class="settings-title">Settings</h1>
+          <div class="settings-header-left">
+            <button class="text-btn" @click="router.back()">← Back</button>
+            <h1 class="settings-title">Settings</h1>
+          </div>
           <div class="settings-header-right">
             <span v-if="currentUser" class="settings-username">{{
               currentUser.display_name || currentUser.user_id
@@ -443,6 +446,21 @@ const deleteOpen = ref(false);
   padding-bottom: 0.75rem;
   border-bottom: 2px solid var(--color-ink);
   margin-bottom: 1.25rem;
+}
+
+.settings-header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: var(--color-ink-muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0.2rem;
 }
 
 .settings-title {

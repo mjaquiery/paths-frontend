@@ -1,5 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
+import {
+  expect,
+  fireEvent,
+  screen,
+  userEvent,
+  waitFor,
+  within,
+} from 'storybook/test';
 import { http, HttpResponse } from 'msw';
 
 import SettingsPage from './settings.vue';
@@ -102,7 +109,9 @@ export const Default: Story = {
     await expect(canvas.getByText('shared')).toBeInTheDocument();
     await expect(canvas.getByText('Alex M.')).toBeInTheDocument();
     // Pending invitations show path_title and inviter_email, not path_code.
-    await expect(canvas.getByText("Maya's Cooking Journey")).toBeInTheDocument();
+    await expect(
+      canvas.getByText("Maya's Cooking Journey"),
+    ).toBeInTheDocument();
     await expect(
       canvas.getByText('maya@example.com', { exact: false }),
     ).toBeInTheDocument();
@@ -149,7 +158,9 @@ export const PendingInvitationWithoutInviterEmail: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText('Secret Project')).toBeInTheDocument();
-    await expect(canvas.queryByText('From', { exact: false })).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByText('From', { exact: false }),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -180,7 +191,9 @@ export const TogglingVisibility: Story = {
     msw: {
       handlers: [
         http.get('*/v1/paths', () =>
-          HttpResponse.json([{ ...dailyLife, path_id: 'toggle-visibility-path' }]),
+          HttpResponse.json([
+            { ...dailyLife, path_id: 'toggle-visibility-path' },
+          ]),
         ),
         http.get('*/v1/paths/:pathCode/entries', () => HttpResponse.json([])),
         http.get('*/v1/invitations', () => HttpResponse.json([])),
@@ -286,18 +299,16 @@ export const DeletePathRequiresTypingTitle: Story = {
     await userEvent.click(await canvas.findByLabelText('Delete path'));
 
     // "Delete Path" appears twice (title + confirm button) — pick the button.
-    const deleteButton = (
-      await screen.findAllByText('Delete Path')
-    )
+    const deleteButton = (await screen.findAllByText('Delete Path'))
       .map((el) => el.closest('ion-button'))
       .find((el): el is HTMLIonButtonElement => el !== null)!;
     await waitFor(() => expect(deleteButton).toHaveClass('hydrated'));
     await expect(deleteButton).toHaveAttribute('disabled');
 
-    const input = screen.getByPlaceholderText(
-      'Daily Life',
-    ) as HTMLInputElement;
-    await waitFor(() => expect(input.closest('ion-input')).toHaveClass('hydrated'));
+    const input = screen.getByPlaceholderText('Daily Life') as HTMLInputElement;
+    await waitFor(() =>
+      expect(input.closest('ion-input')).toHaveClass('hydrated'),
+    );
     // A single synthetic input event, not userEvent.type's char-by-char
     // simulation — each keystroke round-trips through Stencil back down to
     // this native <input> as a controlled value, and re-typing into the
@@ -369,6 +380,14 @@ export const ExpandingDeleteAccountSection: Story = {
     await expect(
       canvas.getByText('please contact support', { exact: false }),
     ).toBeInTheDocument();
+  },
+};
+
+export const BackButtonNavigatesBack: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByText('← Back'));
+    await expect(router.currentRoute.value.path).toBe('/');
   },
 };
 
