@@ -49,6 +49,7 @@
           :path-entries="multiPathEntries"
           :current-user-id="currentUser.user_id"
           :ensure-day-loaded="ensureDayLoaded"
+          :initial-date="initialDate"
         />
       </ion-content>
 
@@ -66,6 +67,7 @@
 <script setup lang="ts">
 import { IonPage, IonContent } from '@ionic/vue';
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 import DayBrowser from '../components/DayBrowser.vue';
 import BottomBar from '../components/BottomBar.vue';
@@ -76,8 +78,12 @@ import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { useGoogleLogin } from '../composables/useGoogleLogin';
 import { toLocalISODate } from '../utils/date';
 
+const route = useRoute();
 const { loggingIn, loginError, loginWithGoogle } = useGoogleLogin();
 const currentUser = ref<OAuthCallbackResponse | null>(null);
+
+const initialDate =
+  typeof route.query.day === 'string' ? route.query.day : undefined;
 
 const { data: allPaths } = usePaths();
 const { visiblePaths } = usePathVisibility(allPaths);

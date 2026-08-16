@@ -139,13 +139,14 @@ const props = defineProps<{
   pathEntries: PathEntries[];
   currentUserId: string;
   ensureDayLoaded: (day: string) => void;
+  initialDate?: string;
 }>();
 
 const anyListLoading = computed(() =>
   props.pathEntries.some((pe) => pe.isListLoading),
 );
 
-const selectedDate = ref(toLocalISODate(new Date()));
+const selectedDate = ref(props.initialDate ?? toLocalISODate(new Date()));
 
 // The currently selected day's entries always need their content, however far outside
 // the recency window they fall (e.g. jumping to an old date via the year tabs).

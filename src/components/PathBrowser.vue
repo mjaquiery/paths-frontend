@@ -22,12 +22,17 @@
         <div
           v-for="entry in visibleEntries"
           :key="entry.id"
+          :ref="(el) => registerEntryEl(entry.day, el)"
           class="pb-entry df-path-bar"
+          :class="{ 'pb-entry--centered': entry.day === props.centerDay }"
           :style="{ '--path-color': selectedPath?.color }"
         >
           <router-link
             class="pb-entry-main"
-            :to="`/entry/${props.selectedPathId}/${entry.id}`"
+            :to="{
+              path: `/entry/${props.selectedPathId}/${entry.id}`,
+              query: { from: 'paths' },
+            }"
             :aria-label="`View entry from ${dateLabel(entry.day)}`"
           >
             <p class="pb-entry-date">{{ dateLabel(entry.day) }}</p>
@@ -71,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { IonSpinner } from '@ionic/vue';
 
 import type { ImageResponse, PathResponse } from '../generated/types';
@@ -85,6 +90,8 @@ const props = defineProps<{
   entries: EntryWithContent[];
   isLoading?: boolean;
   hasMore?: boolean;
+  /** When set, scrolls to and highlights the entry for this day once it renders. */
+  centerDay?: string;
 }>();
 
 const emit = defineEmits<{
@@ -127,6 +134,25 @@ function dateLabel(day: string): string {
     year: 'numeric',
   });
 }
+
+const entryEls = new Map<string, HTMLElement>();
+function registerEntryEl(day: string, el: unknown) {
+  if (el instanceof HTMLElement) entryEls.set(day, el);
+  else entryEls.delete(day);
+}
+
+// Scrolls to the day the caller wants this view "centred" on (e.g. arriving
+// here from an entry's path label) as soon as that entry's row exists —
+// which may only be after ensureDayLoaded() pulls it into the render window.
+watch(
+  () => [props.centerDay, visibleEntries.value.length] as const,
+  async () => {
+    if (!props.centerDay) return;
+    await nextTick();
+    entryEls.get(props.centerDay)?.scrollIntoView({ block: 'center' });
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
@@ -197,6 +223,14 @@ function dateLabel(day: string): string {
 
 .pb-entry:last-child {
   border-bottom: none;
+}
+
+.pb-entry--centered {
+  background: color-mix(
+    in srgb,
+    var(--path-color, var(--color-ink)) 8%,
+    transparent
+  );
 }
 
 .pb-entry-main {

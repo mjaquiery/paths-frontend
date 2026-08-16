@@ -8,6 +8,7 @@
         :entries="selectedPathEntries"
         :is-loading="selectedPathIsLoading"
         :has-more="selectedPathHasMore"
+        :center-day="centerDay"
         @load-more="loadMore(selectedPathId)"
       />
     </ion-content>
@@ -26,6 +27,7 @@
 <script setup lang="ts">
 import { IonPage, IonContent } from '@ionic/vue';
 import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 import PathBrowser from '../components/PathBrowser.vue';
 import BottomBar from '../components/BottomBar.vue';
@@ -35,12 +37,18 @@ import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { toLocalISODate } from '../utils/date';
 
+const route = useRoute();
 const currentUser = ref<OAuthCallbackResponse | null>(null);
 
 const { data: allPaths } = usePaths();
 const { visiblePaths } = usePathVisibility(allPaths);
 
-const selectedPathId = ref('');
+const centerDay =
+  typeof route.query.day === 'string' ? route.query.day : undefined;
+
+const selectedPathId = ref(
+  typeof route.query.pathId === 'string' ? route.query.pathId : '',
+);
 watch(
   visiblePaths,
   (paths) => {
@@ -54,8 +62,19 @@ watch(
 const selectedPathIds = computed(() =>
   selectedPathId.value ? [selectedPathId.value] : [],
 );
-const { pathEntries: multiPathEntries, loadMore } =
-  useMultiPathEntries(selectedPathIds);
+const {
+  pathEntries: multiPathEntries,
+  loadMore,
+  ensureDayLoaded,
+} = useMultiPathEntries(selectedPathIds);
+
+watch(
+  selectedPathIds,
+  (ids) => {
+    if (centerDay && ids.length > 0) ensureDayLoaded(centerDay);
+  },
+  { immediate: true },
+);
 const selectedPathEntries = computed(
   () => multiPathEntries.value[0]?.entries ?? [],
 );

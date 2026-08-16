@@ -3,12 +3,15 @@
     <ion-content>
       <div class="entry-page df-ui">
         <div class="entry-header">
-          <button class="text-btn" @click="router.back()">← Back</button>
+          <button class="text-btn" @click="goBack">← Back</button>
           <div ref="menuWrapperRef" class="entry-header-actions">
             <router-link
               v-if="canEdit"
               class="text-btn"
-              :to="`/entry/${pathId}/${entryId}/edit`"
+              :to="{
+                path: `/entry/${pathId}/${entryId}/edit`,
+                query: entryLinkQuery,
+              }"
             >
               ✎ Edit
             </router-link>
@@ -31,8 +34,21 @@
           </div>
         </div>
 
-        <p class="entry-path-label">{{ path?.title }}</p>
-        <h1 class="entry-date">{{ formattedDate || 'Loading…' }}</h1>
+        <p class="entry-path-label">
+          <router-link v-if="path" :to="pathViewLink" class="entry-path-link">{{
+            path.title
+          }}</router-link>
+          <template v-else>Loading…</template>
+        </p>
+        <h1 class="entry-date">
+          <router-link
+            v-if="entryDay"
+            :to="dateViewLink"
+            class="entry-date-link"
+            >{{ formattedDate }}</router-link
+          >
+          <template v-else>Loading…</template>
+        </h1>
 
         <p v-if="deleteError" class="entry-error">{{ deleteError }}</p>
         <p v-if="content === undefined" class="entry-body-placeholder">
@@ -69,7 +85,10 @@
             v-for="item in onThisDay"
             :key="item.pathId + '-' + item.entryId"
             class="on-this-day-row"
-            :to="`/entry/${item.pathId}/${item.entryId}`"
+            :to="{
+              path: `/entry/${item.pathId}/${item.entryId}`,
+              query: entryLinkQuery,
+            }"
           >
             <span class="on-this-day-year">{{ item.year }}</span>
             <span class="on-this-day-preview">{{
@@ -118,6 +137,7 @@ import MarkdownContent from '../components/MarkdownContent.vue';
 import EntryImage from '../components/EntryImage.vue';
 import ImageLightbox from '../components/ImageLightbox.vue';
 import { referencedImageFilenames } from '../utils/markdown';
+import { dateViewPath, pathViewPath } from '../utils/viewLinks';
 import type {
   EntryContentResponse,
   ImageResponse,
@@ -130,6 +150,20 @@ const queryClient = useQueryClient();
 
 const pathId = computed(() => route.params.pathId);
 const entryId = computed(() => route.params.entryId);
+
+// Entry view is only ever reached from the date view or the path view, so
+// "where to go back to" only needs a one-bit hint, not a stored URL — date
+// view is the default assumption, and a `from=paths` query flag is the one
+// case that needs to override it. The actual destination (which path, which
+// day) is reconstructed from data the entry already has (its own pathId
+// route param, its own day), not carried in the URL.
+const cameFromPaths = computed(() => route.query.from === 'paths');
+// Forwarded onto edit/"on this day" links so hopping between entries never
+// loses the original path/date view — you're always exactly one back-press
+// away from it, no matter how many entries you've hopped through.
+const entryLinkQuery = computed(() =>
+  cameFromPaths.value ? { from: 'paths' } : {},
+);
 
 const currentUser = ref<OAuthCallbackResponse | null>(null);
 onMounted(() => {
@@ -164,6 +198,27 @@ const { data: imagesData } = useListEntryImages(pathId, entryId, {
 const content = computed(() => entryData.value?.content);
 const images = computed(() => imagesData.value ?? []);
 const entryDay = computed(() => entryData.value?.day ?? '');
+
+// The path name jumps to the path view centred on this entry's date; the
+// date jumps to that day in the date view — each one page away, matching
+// how the user got here in the first place.
+const pathViewLink = computed(() =>
+  pathViewPath(pathId.value, entryDay.value || undefined),
+);
+const dateViewLink = computed(() => dateViewPath(entryDay.value));
+
+// Not relied on via browser history so it survives a login round trip
+// untouched (a full-page redirect out to Google and back inserts extra
+// history entries router.back() would otherwise land on).
+const backLink = computed(() =>
+  cameFromPaths.value
+    ? pathViewLink.value
+    : dateViewPath(entryDay.value || undefined),
+);
+
+function goBack() {
+  router.replace(backLink.value);
+}
 
 const formattedDate = computed(() => {
   if (!entryDay.value) return '';
@@ -243,7 +298,7 @@ async function performDelete() {
     await queryClient.invalidateQueries({
       queryKey: ['v1', 'paths', pathId.value, 'entries'],
     });
-    router.back();
+    goBack();
   } catch (err: unknown) {
     deleteError.value = describeError('delete entry', err);
   }
@@ -323,12 +378,30 @@ async function performDelete() {
   margin: 0;
 }
 
+.entry-path-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.entry-path-link:hover {
+  text-decoration: underline;
+}
+
 .entry-date {
   font-family: var(--font-serif);
   font-weight: 400;
   font-size: 1.7rem;
   margin: 0.2rem 0 1.25rem;
   color: var(--color-ink);
+}
+
+.entry-date-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.entry-date-link:hover {
+  text-decoration: underline;
 }
 
 .entry-error {

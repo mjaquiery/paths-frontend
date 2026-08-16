@@ -243,7 +243,7 @@ export const SavingCreatesTheEntry: Story = {
     await userEvent.click(canvas.getByText('Save'));
 
     // The story mounts the page directly (no <router-view>), so a successful
-    // submit's router.back() doesn't unmount it — instead assert its own
+    // submit's navigation away doesn't unmount it — instead assert its own
     // post-success side effect: the local draft is cleared.
     await waitFor(() => expect(textarea.value).toBe(''));
     await expect(canvas.getByText('Save')).toBeDisabled();
