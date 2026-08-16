@@ -159,6 +159,7 @@ import PhotoStripItem from '../components/PhotoStripItem.vue';
 import SavingOverlay from '../components/SavingOverlay.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { toLocalISODate } from '../utils/date';
+import { dateViewPath, pathViewPath } from '../utils/viewLinks';
 import type { OAuthCallbackResponse } from '../generated/types';
 
 const route = useRoute();
@@ -188,10 +189,16 @@ const ownedPaths = computed(
 const initialDay =
   (route.query.day as string | undefined) ?? toLocalISODate(new Date());
 const initialPathId = (route.query.pathId as string | undefined) ?? '';
-const fromPath = (route.query.from as string | undefined) ?? '/';
 
+// Only reachable from the path view (which always passes a pathId) or the
+// date view (which never does) — so that alone says which one to return to,
+// no separate "from" hint needed.
 function goBack() {
-  router.replace(fromPath);
+  router.replace(
+    initialPathId
+      ? pathViewPath(initialPathId, initialDay)
+      : dateViewPath(initialDay),
+  );
 }
 
 const uploadProgress = ref(0);

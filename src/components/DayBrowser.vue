@@ -83,10 +83,7 @@
         >
           <router-link
             class="db-entry-main"
-            :to="{
-              path: `/entry/${pe.pathId}/${pe.entryId}`,
-              query: { from: dateViewPath(selectedDate) },
-            }"
+            :to="`/entry/${pe.pathId}/${pe.entryId}`"
             :aria-label="`View entry from ${pe.pathTitle}`"
           >
             <p class="db-entry-path">{{ pe.pathTitle }}</p>
@@ -134,7 +131,6 @@ import type { PathResponse, ImageResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
 import { useOnThisDay } from '../composables/useOnThisDay';
 import { toLocalISODate } from '../utils/date';
-import { dateViewPath } from '../utils/viewLinks';
 import EntryImage from './EntryImage.vue';
 import ImageLightbox from './ImageLightbox.vue';
 

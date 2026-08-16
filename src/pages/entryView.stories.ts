@@ -111,7 +111,8 @@ export const MoreMenuOffersDelete: Story = {
 };
 
 // With no `from` query (e.g. the entry URL was opened directly), Back falls
-// back to the date view rather than erroring or doing nothing.
+// back to the date view — centred on this entry's own day, which the entry
+// already knows without needing it passed in.
 export const BackFallsBackToDateViewWithNoFromQuery: Story = {
   decorators: [
     withLoggedInUser({
@@ -123,16 +124,23 @@ export const BackFallsBackToDateViewWithNoFromQuery: Story = {
   loaders: [routeLoader(entryUrl)],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    // Wait for the entry's own day to load — Back centres on it, so it must
+    // be known before the click.
+    await canvas.findByText(entryContentResponseFixture.content);
     await userEvent.click(await canvas.findByText('← Back'));
-    await expect(router.currentRoute.value.path).toBe('/');
+    await expect(router.currentRoute.value.fullPath).toBe(
+      `/?day=${entryContentResponseFixture.day}`,
+    );
   },
 };
 
-// Back must return to the `from` URL regardless of what's piled up in
-// browser history — logging in mid-browse redirects out to Google and back
-// (see auth.callback.vue), which inserts history entries router.back()
-// would otherwise land on instead of the page the user actually came from.
-export const BackReturnsToFromQueryDespiteHistoryPollution: Story = {
+// Back must return to the path view regardless of what's piled up in browser
+// history — logging in mid-browse redirects out to Google and back (see
+// auth.callback.vue), which inserts history entries router.back() would
+// otherwise land on instead of the page the user actually came from. The
+// `from=paths` flag (not a stored URL) is enough to reconstruct the target,
+// since the entry already knows its own pathId and day.
+export const BackReturnsToPathViewDespiteHistoryPollution: Story = {
   decorators: [
     withLoggedInUser({
       token: 'tok',
@@ -146,16 +154,16 @@ export const BackReturnsToFromQueryDespiteHistoryPollution: Story = {
       // behind between "where the user was" and "the entry they land back
       // on" (auth.callback.vue's own page).
       await router.push('/settings');
-      const from = encodeURIComponent('/paths?pathId=other-path');
-      await router.push(`${entryUrl}?from=${from}`);
+      await router.push(`${entryUrl}?from=paths`);
       return {};
     },
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await canvas.findByText(entryContentResponseFixture.content);
     await userEvent.click(await canvas.findByText('← Back'));
     await expect(router.currentRoute.value.fullPath).toBe(
-      '/paths?pathId=other-path',
+      `/paths?pathId=${pathResponseFixture.path_id}&day=${entryContentResponseFixture.day}`,
     );
   },
 };
@@ -239,16 +247,13 @@ export const OnThisDayLinkForwardsFromParam: Story = {
   },
   loaders: [
     async () => {
-      const from = encodeURIComponent('/paths?pathId=abc');
-      await router.push(`${entryUrl}?from=${from}`);
+      await router.push(`${entryUrl}?from=paths`);
       return {};
     },
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByText('2020'));
-    await expect(router.currentRoute.value.query.from).toBe(
-      '/paths?pathId=abc',
-    );
+    await expect(router.currentRoute.value.query.from).toBe('paths');
   },
 };

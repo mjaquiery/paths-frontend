@@ -19,11 +19,7 @@
       alt-label="Browse days"
       alt-to="/"
       :can-create="canCreateAny"
-      :write-entry-query="{
-        day: todayStr,
-        pathId: selectedPathId,
-        from: pathViewPath(selectedPathId),
-      }"
+      :write-entry-query="{ day: todayStr, pathId: selectedPathId }"
     />
   </ion-page>
 </template>
@@ -40,7 +36,6 @@ import { usePaths } from '../composables/usePaths';
 import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { toLocalISODate } from '../utils/date';
-import { pathViewPath } from '../utils/viewLinks';
 
 const route = useRoute();
 const currentUser = ref<OAuthCallbackResponse | null>(null);

@@ -58,7 +58,7 @@
         alt-label="Browse paths"
         alt-to="/paths"
         :can-create="canCreateAny"
-        :write-entry-query="{ day: currentDay, from: dateViewPath(currentDay) }"
+        :write-entry-query="{ day: currentDay }"
       />
     </template>
   </ion-page>
@@ -77,7 +77,6 @@ import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { useGoogleLogin } from '../composables/useGoogleLogin';
 import { toLocalISODate } from '../utils/date';
-import { dateViewPath } from '../utils/viewLinks';
 
 const route = useRoute();
 const { loggingIn, loginError, loginWithGoogle } = useGoogleLogin();

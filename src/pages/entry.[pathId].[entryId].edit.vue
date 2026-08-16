@@ -176,10 +176,11 @@ const queryClient = useQueryClient();
 const pathId = route.params.pathId;
 const entryId = route.params.entryId;
 
-// Forwarded from the entry view so Cancel/Save return there with its own
-// "from" (the originating path/date view) still intact.
+// Forwarded from the entry view so Cancel/Save return there with the same
+// "came from path view" hint still intact (date view is the default; see
+// entry.[pathId].[entryId].vue for why this only needs a one-bit flag).
 const fromQuery = computed(() =>
-  typeof route.query.from === 'string' ? { from: route.query.from } : {},
+  route.query.from === 'paths' ? { from: 'paths' } : {},
 );
 const entryViewLink = computed(() => ({
   path: `/entry/${pathId}/${entryId}`,

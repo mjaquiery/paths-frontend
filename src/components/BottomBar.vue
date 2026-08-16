@@ -22,7 +22,7 @@ defineProps<{
   altLabel: string;
   altTo: string;
   canCreate: boolean;
-  writeEntryQuery: { day: string; pathId?: string; from?: string };
+  writeEntryQuery: { day: string; pathId?: string };
 }>();
 </script>
 

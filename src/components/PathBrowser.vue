@@ -31,7 +31,7 @@
             class="pb-entry-main"
             :to="{
               path: `/entry/${props.selectedPathId}/${entry.id}`,
-              query: { from: pathViewPath(props.selectedPathId, entry.day) },
+              query: { from: 'paths' },
             }"
             :aria-label="`View entry from ${dateLabel(entry.day)}`"
           >
@@ -81,7 +81,6 @@ import { IonSpinner } from '@ionic/vue';
 
 import type { ImageResponse, PathResponse } from '../generated/types';
 import type { EntryWithContent } from '../composables/useMultiPathEntries';
-import { pathViewPath } from '../utils/viewLinks';
 import EntryImage from './EntryImage.vue';
 import ImageLightbox from './ImageLightbox.vue';
 

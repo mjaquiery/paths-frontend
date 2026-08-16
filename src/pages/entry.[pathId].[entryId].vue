@@ -151,21 +151,19 @@ const queryClient = useQueryClient();
 const pathId = computed(() => route.params.pathId);
 const entryId = computed(() => route.params.entryId);
 
-// Where to return to when the user presses "Back" — the path/date view they
-// came from, carried as a URL rather than relied on via browser history so
-// it survives a login round trip untouched (a full-page redirect out to
-// Google and back inserts extra history entries router.back() would land on).
-const fromPath = computed(() =>
-  typeof route.query.from === 'string' ? route.query.from : '/',
-);
+// Entry view is only ever reached from the date view or the path view, so
+// "where to go back to" only needs a one-bit hint, not a stored URL — date
+// view is the default assumption, and a `from=paths` query flag is the one
+// case that needs to override it. The actual destination (which path, which
+// day) is reconstructed from data the entry already has (its own pathId
+// route param, its own day), not carried in the URL.
+const cameFromPaths = computed(() => route.query.from === 'paths');
 // Forwarded onto edit/"on this day" links so hopping between entries never
 // loses the original path/date view — you're always exactly one back-press
 // away from it, no matter how many entries you've hopped through.
-const entryLinkQuery = computed(() => ({ from: fromPath.value }));
-
-function goBack() {
-  router.replace(fromPath.value);
-}
+const entryLinkQuery = computed(() =>
+  cameFromPaths.value ? { from: 'paths' } : {},
+);
 
 const currentUser = ref<OAuthCallbackResponse | null>(null);
 onMounted(() => {
@@ -208,6 +206,19 @@ const pathViewLink = computed(() =>
   pathViewPath(pathId.value, entryDay.value || undefined),
 );
 const dateViewLink = computed(() => dateViewPath(entryDay.value));
+
+// Not relied on via browser history so it survives a login round trip
+// untouched (a full-page redirect out to Google and back inserts extra
+// history entries router.back() would otherwise land on).
+const backLink = computed(() =>
+  cameFromPaths.value
+    ? pathViewLink.value
+    : dateViewPath(entryDay.value || undefined),
+);
+
+function goBack() {
+  router.replace(backLink.value);
+}
 
 const formattedDate = computed(() => {
   if (!entryDay.value) return '';
