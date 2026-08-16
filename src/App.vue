@@ -11,12 +11,9 @@
       :buttons="installToastButtons"
       @didDismiss="dismissInstall"
     />
-    <ion-toast
+    <SessionExpiredModal
       :is-open="sessionExpired"
-      message="Session expired — please log in again"
-      position="top"
-      :duration="4000"
-      @didDismiss="dismissSessionExpiredToast"
+      @dismiss="dismissSessionExpired"
     />
   </ion-app>
 </template>
@@ -63,12 +60,13 @@ import { IonApp, IonRouterOutlet, IonToast } from '@ionic/vue';
 import { Capacitor } from '@capacitor/core';
 import { Keyboard } from '@capacitor/keyboard';
 import { App as CapacitorApp } from '@capacitor/app';
-import { onBeforeUnmount, onMounted, watch } from 'vue';
+import { onBeforeUnmount, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useInstallBanner } from './composables/useInstallBanner';
 import { useVirtualKeyboard } from './composables/useVirtualKeyboard';
 import { sessionExpired } from './lib/authSession';
 import AppFooter from './components/AppFooter.vue';
+import SessionExpiredModal from './components/SessionExpiredModal.vue';
 
 const router = useRouter();
 
@@ -79,14 +77,10 @@ const installToastButtons = [
   { text: 'Not now', role: 'cancel' },
 ];
 
-// A 401 anywhere (see lib/customFetch.ts) already cleared the stored session — this just
-// surfaces that to the user and sends them back to the logged-out view, instead of the
-// app quietly continuing to look "broken" with no explanation.
-watch(sessionExpired, (expired) => {
-  if (expired) void router.replace('/');
-});
-
-function dismissSessionExpiredToast() {
+// A 401 anywhere (see lib/customFetch.ts) already cleared the stored session — SessionExpiredModal
+// surfaces that and offers a way back in, right on top of whatever page the user was on, instead
+// of a toast that vanishes after a few seconds and forces them back to the logged-out view.
+function dismissSessionExpired() {
   sessionExpired.value = false;
 }
 

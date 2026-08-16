@@ -69,19 +69,14 @@ import { computed, onMounted, ref } from 'vue';
 
 import DayBrowser from '../components/DayBrowser.vue';
 import BottomBar from '../components/BottomBar.vue';
-import type {
-  OAuthCallbackResponse,
-  OAuthLoginResponse,
-} from '../generated/types';
-import { authLogin } from '../generated/apiClient';
-import { describeError } from '../lib/errors';
+import type { OAuthCallbackResponse } from '../generated/types';
 import { usePaths } from '../composables/usePaths';
 import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
+import { useGoogleLogin } from '../composables/useGoogleLogin';
 import { toLocalISODate } from '../utils/date';
 
-const loggingIn = ref(false);
-const loginError = ref('');
+const { loggingIn, loginError, loginWithGoogle } = useGoogleLogin();
 const currentUser = ref<OAuthCallbackResponse | null>(null);
 
 const { data: allPaths } = usePaths();
@@ -116,25 +111,6 @@ onMounted(() => {
     }
   }
 });
-
-async function loginWithGoogle() {
-  loggingIn.value = true;
-  loginError.value = '';
-  try {
-    const callbackUri = `${window.location.origin}/auth/callback`;
-    const result = await authLogin({ callback_uri: callbackUri });
-    const loginData = result.data as OAuthLoginResponse;
-    if (loginData?.authorization_url) {
-      window.location.href = loginData.authorization_url;
-    } else {
-      loginError.value = 'Unable to sign in: no authorization URL returned';
-      loggingIn.value = false;
-    }
-  } catch (err: unknown) {
-    loginError.value = describeError('sign in', err);
-    loggingIn.value = false;
-  }
-}
 </script>
 
 <style scoped>

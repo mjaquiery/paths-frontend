@@ -27,6 +27,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthCallback } from '../generated/apiClient';
 import type { OAuthCallbackResponse } from '../generated/types';
 import { describeError } from '../lib/errors';
+import { consumeReturnPath } from '../lib/authSession';
 
 const router = useRouter();
 const route = useRoute();
@@ -59,7 +60,7 @@ onMounted(async () => {
   } catch (err: unknown) {
     error.value = describeError('complete login', err);
   } finally {
-    router.push('/');
+    router.push(consumeReturnPath());
   }
 });
 </script>

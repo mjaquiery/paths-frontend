@@ -1,9 +1,11 @@
 /**
- * A 401 anywhere used to just look like the app was broken — no indication the user was
- * logged out, nothing to explain it. customFetch (lib/customFetch.ts) now clears the
- * stored session and flags lib/authSession.ts's sessionExpired on a 401; these tests
- * confirm App.vue reacts to that flag by showing a toast and returning to the logged-out
- * view, rather than leaving the broken-looking page up with no explanation.
+ * A 401 anywhere used to just look like the app was broken — a toast flashed for a few
+ * seconds, covering whatever buttons were on screen, then the app force-navigated back to
+ * "/" with no way to log back in from the toast itself and no memory of where the user had
+ * been. customFetch (lib/customFetch.ts) flags lib/authSession.ts's sessionExpired on a 401;
+ * these tests confirm App.vue reacts to that flag by opening a persistent SessionExpiredModal
+ * on top of the current page (instead of navigating away), and that the modal offers a way to
+ * log back in.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
@@ -11,6 +13,17 @@ import { IonicVue } from '@ionic/vue';
 import { createRouter, createMemoryHistory } from '@ionic/vue-router';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { ref } from 'vue';
+
+// ion-modal's real present() animation reaches for matchMedia, which jsdom doesn't
+// implement — stub it so opening SessionExpiredModal doesn't throw in these tests.
+vi.stubGlobal(
+  'matchMedia',
+  vi.fn(() => ({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })),
+);
 
 vi.mock('../composables/useInstallBanner', () => ({
   useInstallBanner: () => ({
@@ -25,6 +38,7 @@ vi.mock('../composables/useVirtualKeyboard', () => ({
 }));
 
 import App from '../App.vue';
+import SessionExpiredModal from '../components/SessionExpiredModal.vue';
 import { sessionExpired } from '../lib/authSession';
 
 let activeWrapper: ReturnType<typeof mount> | undefined;
@@ -60,7 +74,7 @@ describe('App — session expired', () => {
     activeWrapper = undefined;
   });
 
-  it('sends the user back to "/" and surfaces a toast when the session expires', async () => {
+  it('opens the session-expired modal without navigating away from the current page', async () => {
     const { router } = await mountApp();
     await router.push('/settings');
     await flushPromises();
@@ -69,24 +83,31 @@ describe('App — session expired', () => {
     sessionExpired.value = true;
     await flushPromises();
 
-    expect(router.currentRoute.value.path).toBe('/');
+    // Stays on "/settings" — the modal surfaces on top instead of forcing a redirect,
+    // so whatever the user was doing is still there once they log back in.
+    expect(router.currentRoute.value.path).toBe('/settings');
+    const modal = activeWrapper!.findComponent(SessionExpiredModal);
+    expect(modal.props('isOpen')).toBe(true);
   });
 
-  it('resets sessionExpired once the toast is dismissed', async () => {
-    const { wrapper } = await mountApp();
+  it('offers a "Continue with Google" way back in on the modal', async () => {
+    await mountApp();
     sessionExpired.value = true;
     await flushPromises();
 
-    const toast = wrapper
-      .findAll('ion-toast')
-      .map((t) => t.element)
-      .find((el) =>
-        (el as unknown as { message?: string }).message?.includes(
-          'Session expired',
-        ),
-      );
-    expect(toast).toBeDefined();
-    toast!.dispatchEvent(new CustomEvent('didDismiss'));
+    const button = activeWrapper!
+      .findAll('button')
+      .find((b) => b.text().includes('Continue with Google'));
+    expect(button).toBeDefined();
+  });
+
+  it('resets sessionExpired once the modal is dismissed', async () => {
+    await mountApp();
+    sessionExpired.value = true;
+    await flushPromises();
+
+    const modal = activeWrapper!.findComponent(SessionExpiredModal);
+    modal.vm.$emit('dismiss');
     await flushPromises();
 
     expect(sessionExpired.value).toBe(false);
