@@ -123,7 +123,10 @@ export const ClickingAnEntryIsAccessible: Story = {
     const entry = (await canvas.findByText('Today entry')).closest(
       '.pb-entry-main',
     );
-    await expect(entry).toHaveAttribute('href', '/entry/p1/e1');
+    await expect(entry).toHaveAttribute(
+      'href',
+      `/entry/p1/e1?from=/paths?pathId=p1%26day=${daysAgo(0)}`,
+    );
     await userEvent.click(entry!);
     await waitFor(() =>
       expect(router.currentRoute.value.path).toBe('/entry/p1/e1'),

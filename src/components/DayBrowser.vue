@@ -83,7 +83,10 @@
         >
           <router-link
             class="db-entry-main"
-            :to="`/entry/${pe.pathId}/${pe.entryId}`"
+            :to="{
+              path: `/entry/${pe.pathId}/${pe.entryId}`,
+              query: { from: dateViewPath(selectedDate) },
+            }"
             :aria-label="`View entry from ${pe.pathTitle}`"
           >
             <p class="db-entry-path">{{ pe.pathTitle }}</p>
@@ -131,6 +134,7 @@ import type { PathResponse, ImageResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
 import { useOnThisDay } from '../composables/useOnThisDay';
 import { toLocalISODate } from '../utils/date';
+import { dateViewPath } from '../utils/viewLinks';
 import EntryImage from './EntryImage.vue';
 import ImageLightbox from './ImageLightbox.vue';
 
@@ -139,13 +143,14 @@ const props = defineProps<{
   pathEntries: PathEntries[];
   currentUserId: string;
   ensureDayLoaded: (day: string) => void;
+  initialDate?: string;
 }>();
 
 const anyListLoading = computed(() =>
   props.pathEntries.some((pe) => pe.isListLoading),
 );
 
-const selectedDate = ref(toLocalISODate(new Date()));
+const selectedDate = ref(props.initialDate ?? toLocalISODate(new Date()));
 
 // The currently selected day's entries always need their content, however far outside
 // the recency window they fall (e.g. jumping to an old date via the year tabs).

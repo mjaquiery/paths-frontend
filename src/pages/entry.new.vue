@@ -3,7 +3,7 @@
     <ion-content>
       <div class="editor-page df-ui">
         <div class="editor-header">
-          <button class="text-btn" @click="router.back()">Cancel</button>
+          <button class="text-btn" @click="goBack">Cancel</button>
           <div class="editor-header-title">
             <span class="editor-header-label">Entry</span>
             <span class="editor-header-date">{{ headerDateLabel }}</span>
@@ -188,6 +188,11 @@ const ownedPaths = computed(
 const initialDay =
   (route.query.day as string | undefined) ?? toLocalISODate(new Date());
 const initialPathId = (route.query.pathId as string | undefined) ?? '';
+const fromPath = (route.query.from as string | undefined) ?? '/';
+
+function goBack() {
+  router.replace(fromPath);
+}
 
 const uploadProgress = ref(0);
 const { mutateAsync: createEntryMutation, isPending: saving } = useCreateEntry({
@@ -288,7 +293,7 @@ async function submit() {
       queryKey: ['v1', 'paths', selectedPathId.value, 'entries'],
     });
     await clearDraft();
-    router.back();
+    goBack();
   } catch (err: unknown) {
     error.value = describeError('create entry', err);
   }

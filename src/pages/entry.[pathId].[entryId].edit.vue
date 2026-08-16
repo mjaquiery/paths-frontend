@@ -3,7 +3,7 @@
     <ion-content>
       <div class="editor-page df-ui">
         <div class="editor-header">
-          <router-link class="text-btn" :to="`/entry/${pathId}/${entryId}`">
+          <router-link class="text-btn" :to="entryViewLink">
             Cancel
           </router-link>
           <div class="editor-header-title">
@@ -176,6 +176,16 @@ const queryClient = useQueryClient();
 const pathId = route.params.pathId;
 const entryId = route.params.entryId;
 
+// Forwarded from the entry view so Cancel/Save return there with its own
+// "from" (the originating path/date view) still intact.
+const fromQuery = computed(() =>
+  typeof route.query.from === 'string' ? { from: route.query.from } : {},
+);
+const entryViewLink = computed(() => ({
+  path: `/entry/${pathId}/${entryId}`,
+  query: fromQuery.value,
+}));
+
 const { data: allPaths } = usePaths();
 const path = computed(() => allPaths.value?.find((p) => p.path_id === pathId));
 
@@ -335,7 +345,7 @@ async function submit() {
       queryKey: ['v1', 'paths', pathId, 'entries'],
     });
     await clearDraft();
-    router.push(`/entry/${pathId}/${entryId}`);
+    router.push(entryViewLink.value);
   } catch (err: unknown) {
     if (isApiErrorWithStatus(err, 409)) {
       conflictError.value =

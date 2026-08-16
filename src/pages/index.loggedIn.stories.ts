@@ -415,7 +415,10 @@ export const ClickingAnEntryIsAccessible: Story = {
         'Morning run along the river. The cherry blossoms are just starting to open.',
       )
     ).closest('.db-entry-main');
-    await expect(entry).toHaveAttribute('href', '/entry/p1/e1');
+    await expect(entry).toHaveAttribute(
+      'href',
+      `/entry/p1/e1?from=/?day=${today}`,
+    );
     await userEvent.click(entry!);
     await waitFor(() =>
       expect(router.currentRoute.value.path).toBe('/entry/p1/e1'),

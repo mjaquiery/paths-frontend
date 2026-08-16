@@ -49,6 +49,7 @@
           :path-entries="multiPathEntries"
           :current-user-id="currentUser.user_id"
           :ensure-day-loaded="ensureDayLoaded"
+          :initial-date="initialDate"
         />
       </ion-content>
 
@@ -57,7 +58,7 @@
         alt-label="Browse paths"
         alt-to="/paths"
         :can-create="canCreateAny"
-        :write-entry-query="{ day: currentDay }"
+        :write-entry-query="{ day: currentDay, from: dateViewPath(currentDay) }"
       />
     </template>
   </ion-page>
@@ -66,6 +67,7 @@
 <script setup lang="ts">
 import { IonPage, IonContent } from '@ionic/vue';
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 import DayBrowser from '../components/DayBrowser.vue';
 import BottomBar from '../components/BottomBar.vue';
@@ -75,9 +77,14 @@ import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { useGoogleLogin } from '../composables/useGoogleLogin';
 import { toLocalISODate } from '../utils/date';
+import { dateViewPath } from '../utils/viewLinks';
 
+const route = useRoute();
 const { loggingIn, loginError, loginWithGoogle } = useGoogleLogin();
 const currentUser = ref<OAuthCallbackResponse | null>(null);
+
+const initialDate =
+  typeof route.query.day === 'string' ? route.query.day : undefined;
 
 const { data: allPaths } = usePaths();
 const { visiblePaths } = usePathVisibility(allPaths);

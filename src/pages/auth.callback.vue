@@ -60,7 +60,10 @@ onMounted(async () => {
   } catch (err: unknown) {
     error.value = describeError('complete login', err);
   } finally {
-    router.push(consumeReturnPath());
+    // replace, not push: this callback page's own history entry shouldn't
+    // linger — the destination page should sit where the pre-login page
+    // would have, not stack a redundant entry the user has to back past.
+    router.replace(consumeReturnPath());
   }
 });
 </script>
