@@ -3,6 +3,10 @@
     <div id="ion-view-container-root">
       <ion-router-outlet />
       <AppFooter />
+      <SessionExpiredBanner
+        :visible="sessionExpired"
+        @login="showLoginModal = true"
+      />
     </div>
     <ion-toast
       :is-open="!!deferredPrompt"
@@ -12,8 +16,8 @@
       @didDismiss="dismissInstall"
     />
     <SessionExpiredModal
-      :is-open="sessionExpired"
-      @dismiss="dismissSessionExpired"
+      :is-open="showLoginModal"
+      @dismiss="showLoginModal = false"
     />
   </ion-app>
 </template>
@@ -60,12 +64,13 @@ import { IonApp, IonRouterOutlet, IonToast } from '@ionic/vue';
 import { Capacitor } from '@capacitor/core';
 import { Keyboard } from '@capacitor/keyboard';
 import { App as CapacitorApp } from '@capacitor/app';
-import { onBeforeUnmount, onMounted } from 'vue';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useInstallBanner } from './composables/useInstallBanner';
 import { useVirtualKeyboard } from './composables/useVirtualKeyboard';
 import { sessionExpired } from './lib/authSession';
 import AppFooter from './components/AppFooter.vue';
+import SessionExpiredBanner from './components/SessionExpiredBanner.vue';
 import SessionExpiredModal from './components/SessionExpiredModal.vue';
 
 const router = useRouter();
@@ -77,12 +82,12 @@ const installToastButtons = [
   { text: 'Not now', role: 'cancel' },
 ];
 
-// A 401 anywhere (see lib/customFetch.ts) already cleared the stored session — SessionExpiredModal
-// surfaces that and offers a way back in, right on top of whatever page the user was on, instead
-// of a toast that vanishes after a few seconds and forces them back to the logged-out view.
-function dismissSessionExpired() {
-  sessionExpired.value = false;
-}
+// A 401 anywhere (see lib/customFetch.ts) already cleared the stored session — SessionExpiredBanner
+// surfaces that with a persistent, non-timing-out banner (rather than a toast that vanishes after a
+// few seconds) so there's always a way back in, however many screens the user wanders through first.
+// The login modal itself is opt-in: tapping the banner opens it, and closing it just hides the modal —
+// sessionExpired (and the banner) only clear once a real login succeeds.
+const showLoginModal = ref(false);
 
 // iOS/Android keyboard-overlay fix is platform-conditional: native uses Capacitor's own
 // Keyboard plugin (authoritative inside a WebView, where visualViewport is less reliable),

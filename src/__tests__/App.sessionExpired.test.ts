@@ -3,9 +3,10 @@
  * seconds, covering whatever buttons were on screen, then the app force-navigated back to
  * "/" with no way to log back in from the toast itself and no memory of where the user had
  * been. customFetch (lib/customFetch.ts) flags lib/authSession.ts's sessionExpired on a 401;
- * these tests confirm App.vue reacts to that flag by opening a persistent SessionExpiredModal
- * on top of the current page (instead of navigating away), and that the modal offers a way to
- * log back in.
+ * these tests confirm App.vue reacts to that flag by opening a persistent, non-timing-out
+ * SessionExpiredBanner on top of the current page (instead of navigating away or auto-hiding),
+ * and that tapping the banner opens a login modal the user can freely dismiss — dismissing it
+ * only hides the modal, since only a real login clears the underlying expired-session state.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
@@ -38,6 +39,7 @@ vi.mock('../composables/useVirtualKeyboard', () => ({
 }));
 
 import App from '../App.vue';
+import SessionExpiredBanner from '../components/SessionExpiredBanner.vue';
 import SessionExpiredModal from '../components/SessionExpiredModal.vue';
 import { sessionExpired } from '../lib/authSession';
 
@@ -74,7 +76,7 @@ describe('App — session expired', () => {
     activeWrapper = undefined;
   });
 
-  it('opens the session-expired modal without navigating away from the current page', async () => {
+  it('shows the session-expired banner without navigating away from the current page', async () => {
     const { router } = await mountApp();
     await router.push('/settings');
     await flushPromises();
@@ -83,33 +85,57 @@ describe('App — session expired', () => {
     sessionExpired.value = true;
     await flushPromises();
 
-    // Stays on "/settings" — the modal surfaces on top instead of forcing a redirect,
+    // Stays on "/settings" — the banner surfaces on top instead of forcing a redirect,
     // so whatever the user was doing is still there once they log back in.
     expect(router.currentRoute.value.path).toBe('/settings');
-    const modal = activeWrapper!.findComponent(SessionExpiredModal);
-    expect(modal.props('isOpen')).toBe(true);
+    const banner = activeWrapper!.findComponent(SessionExpiredBanner);
+    expect(banner.props('visible')).toBe(true);
   });
 
-  it('offers a "Continue with Google" way back in on the modal', async () => {
+  it('does not open the login modal just because the banner is visible', async () => {
     await mountApp();
     sessionExpired.value = true;
     await flushPromises();
 
+    const modal = activeWrapper!.findComponent(SessionExpiredModal);
+    expect(modal.props('isOpen')).toBe(false);
+  });
+
+  it('opens the login modal when the banner is tapped, offering a way back in', async () => {
+    await mountApp();
+    sessionExpired.value = true;
+    await flushPromises();
+
+    const banner = activeWrapper!.findComponent(SessionExpiredBanner);
+    banner.vm.$emit('login');
+    await flushPromises();
+
+    const modal = activeWrapper!.findComponent(SessionExpiredModal);
+    expect(modal.props('isOpen')).toBe(true);
     const button = activeWrapper!
       .findAll('button')
       .find((b) => b.text().includes('Continue with Google'));
     expect(button).toBeDefined();
   });
 
-  it('resets sessionExpired once the modal is dismissed', async () => {
+  it('dismissing the modal only hides it — the banner and sessionExpired stay put', async () => {
     await mountApp();
     sessionExpired.value = true;
+    await flushPromises();
+
+    activeWrapper!.findComponent(SessionExpiredBanner).vm.$emit('login');
     await flushPromises();
 
     const modal = activeWrapper!.findComponent(SessionExpiredModal);
     modal.vm.$emit('dismiss');
     await flushPromises();
 
-    expect(sessionExpired.value).toBe(false);
+    expect(
+      activeWrapper!.findComponent(SessionExpiredModal).props('isOpen'),
+    ).toBe(false);
+    expect(sessionExpired.value).toBe(true);
+    expect(
+      activeWrapper!.findComponent(SessionExpiredBanner).props('visible'),
+    ).toBe(true);
   });
 });

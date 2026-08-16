@@ -1,13 +1,15 @@
 <template>
   <ion-modal
     :is-open="isOpen"
-    :backdrop-dismiss="false"
     aria-label="Session expired"
     @didDismiss="onDismiss"
   >
     <ion-header>
       <ion-toolbar>
         <ion-title>Session expired</ion-title>
+        <ion-buttons slot="end">
+          <ion-button @click="onDismiss">Close</ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
     <ion-content class="ion-padding">
@@ -27,7 +29,6 @@
           >
             {{ loggingIn ? 'Redirecting…' : 'Continue with Google' }}
           </button>
-          <ion-button fill="clear" @click="onDismiss">Not now</ion-button>
         </div>
       </ion-toolbar>
     </ion-footer>
@@ -40,6 +41,7 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
+  IonButtons,
   IonContent,
   IonFooter,
   IonButton,
