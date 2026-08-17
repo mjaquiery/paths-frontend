@@ -17,7 +17,11 @@ import '../src/assets/design-f.css';
 import { handlers } from '../src/mocks/handlers';
 import { router, resetRouteLoader, setNavAlertSuppressed } from './router';
 
-initialize();
+// Default worker URL is absolute ('/mockServiceWorker.js'), which 404s once
+// Storybook is served from a subpath (e.g. the GitHub Pages deploy at
+// /paths-frontend/). A relative URL resolves against iframe.html's own
+// directory instead, so it works both at the root and under a subpath.
+initialize({ serviceWorker: { url: './mockServiceWorker.js' } });
 
 // Mirrors useDarkMode's logic: toggles the same class/attribute the real app uses.
 function applyTheme(theme: 'light' | 'dark') {
