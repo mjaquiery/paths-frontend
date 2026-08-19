@@ -3,7 +3,7 @@
   "info": {
     "title": "paths backend API",
     "summary": "Path-centric backend API for Shared Journal PWA",
-    "version": "0.3.4"
+    "version": "0.4.0"
   },
   "paths": {
     "/health": {
@@ -3172,7 +3172,7 @@
       },
       "HTTPBearer": {
         "type": "http",
-        "description": "Bearer token from the OAuth callback response body",
+        "description": "****** from the OAuth callback response body",
         "scheme": "bearer"
       }
     }
