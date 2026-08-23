@@ -6,6 +6,7 @@
         :paths="visiblePaths"
         v-model:selected-path-ids="selectedPathIds"
         :path-entries="multiPathEntries"
+        :is-loading="anyPathIsListLoading"
         :has-more="anyPathHasMore"
         :not-found-path-ids="notFoundPathIds"
         :center-day="centerDay"
@@ -91,6 +92,9 @@ watch(
   { immediate: true },
 );
 
+const anyPathIsListLoading = computed(() =>
+  multiPathEntries.value.some((pe) => pe.isListLoading),
+);
 const anyPathHasMore = computed(() =>
   multiPathEntries.value.some((pe) => pe.hasMore),
 );

@@ -147,7 +147,7 @@ export const MultiplePathsMergedByDate: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.getByRole('button', { name: ownedPath.title }),
+      await canvas.findByRole('button', { name: ownedPath.title }),
     ).toBeInTheDocument();
     await expect(
       canvas.getByRole('button', { name: secondPath.title }),

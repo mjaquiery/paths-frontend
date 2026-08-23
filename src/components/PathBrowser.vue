@@ -325,7 +325,10 @@ watch(
 }
 
 .pb-entry-path {
-  color: var(--path-color, var(--color-ink-muted));
+  /* Not --path-color: an arbitrary user-chosen path color can't be guaranteed
+     to meet text contrast against the paper background (unlike its use as a
+     decorative accent bar/border elsewhere), so this stays a fixed ink tone. */
+  color: var(--color-ink-muted);
 }
 
 .pb-entry-preview {
