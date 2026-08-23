@@ -19,7 +19,7 @@
     "test:storybook:ci": "npm run build-storybook -- -o storybook-static && concurrently -k -s first \"http-server storybook-static --port 6006 --silent\" \"wait-on tcp:6006 && test-storybook --testTimeout=60000 --url http://localhost:6006\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "deploy": "flyctl deploy --build-arg VITE_APP_VERSION=$(git rev-parse --short HEAD)"
+    "deploy": "flyctl deploy --build-arg VITE_APP_VERSION=$(date -u +%Y-%m-%d)-$(git rev-parse --short HEAD)"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.1",
