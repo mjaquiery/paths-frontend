@@ -1,22 +1,23 @@
 <template>
   <ion-page>
+    <ion-header class="editor-toolbar-header">
+      <div class="editor-header">
+        <button class="text-btn" @click="goBack">Cancel</button>
+        <div class="editor-header-title">
+          <span class="editor-header-label">Entry</span>
+          <span class="editor-header-date">{{ headerDateLabel }}</span>
+        </div>
+        <button
+          class="pill-btn"
+          :disabled="!selectedPathId || !day || !content || saving"
+          @click="submit"
+        >
+          {{ saveLabel }}
+        </button>
+      </div>
+    </ion-header>
     <ion-content>
       <div class="editor-page df-ui">
-        <div class="editor-header">
-          <button class="text-btn" @click="goBack">Cancel</button>
-          <div class="editor-header-title">
-            <span class="editor-header-label">Entry</span>
-            <span class="editor-header-date">{{ headerDateLabel }}</span>
-          </div>
-          <button
-            class="pill-btn"
-            :disabled="!selectedPathId || !day || !content || saving"
-            @click="submit"
-          >
-            {{ saveLabel }}
-          </button>
-        </div>
-
         <div class="editor-meta-row">
           <select
             v-model="selectedPathId"
@@ -143,7 +144,13 @@
 </template>
 
 <script setup lang="ts">
-import { IonAlert, IonPage, IonContent, IonTextarea } from '@ionic/vue';
+import {
+  IonAlert,
+  IonPage,
+  IonHeader,
+  IonContent,
+  IonTextarea,
+} from '@ionic/vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
@@ -317,13 +324,26 @@ async function submit() {
   padding: 1rem var(--page-margin, 0.75rem) 2rem;
 }
 
+/* No footer clearance is reserved on this page (see ion-content override
+   below) since AppFooter is hidden here — the on-screen keyboard covering
+   it would defeat the point of keeping Save reachable while typing. */
+ion-content {
+  --padding-bottom: 1rem !important;
+}
+
+.editor-toolbar-header {
+  background: var(--color-paper);
+}
+
 .editor-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 0.75rem;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: max(0.6rem, env(safe-area-inset-top)) var(--page-margin, 0.75rem)
+    0.75rem;
   border-bottom: 1px solid var(--color-rule);
-  margin-bottom: 1rem;
 }
 
 .text-btn {

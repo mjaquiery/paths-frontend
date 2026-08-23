@@ -2,7 +2,7 @@
   <ion-app>
     <div id="ion-view-container-root">
       <ion-router-outlet />
-      <AppFooter />
+      <AppFooter v-if="!isEntryEditorRoute" />
       <SessionExpiredBanner
         :visible="sessionExpired"
         @login="showLoginModal = true"
@@ -64,8 +64,8 @@ import { IonApp, IonRouterOutlet, IonToast } from '@ionic/vue';
 import { Capacitor } from '@capacitor/core';
 import { Keyboard } from '@capacitor/keyboard';
 import { App as CapacitorApp } from '@capacitor/app';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useInstallBanner } from './composables/useInstallBanner';
 import { useVirtualKeyboard } from './composables/useVirtualKeyboard';
 import { sessionExpired } from './lib/authSession';
@@ -74,6 +74,17 @@ import SessionExpiredBanner from './components/SessionExpiredBanner.vue';
 import SessionExpiredModal from './components/SessionExpiredModal.vue';
 
 const router = useRouter();
+const route = useRoute();
+
+// AppFooter is fixed to the viewport bottom outside every page's ion-content
+// (see theme.css), which puts it right where the on-screen keyboard opens on
+// the entry write/edit screens — there's no useful place left to pin it once
+// the keyboard is up, so it's dropped entirely on those two routes instead.
+const isEntryEditorRoute = computed(
+  () =>
+    route.name === '/entry.new' ||
+    route.name === '/entry.[pathId].[entryId].edit',
+);
 
 const { deferredPrompt, promptInstall, dismissInstall } = useInstallBanner();
 
