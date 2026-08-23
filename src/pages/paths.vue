@@ -8,6 +8,7 @@
         :entries="selectedPathEntries"
         :is-loading="selectedPathIsLoading"
         :has-more="selectedPathHasMore"
+        :path-not-found="selectedPathNotFound"
         :center-day="centerDay"
         @load-more="loadMore(selectedPathId)"
       />
@@ -40,7 +41,7 @@ import { toLocalISODate } from '../utils/date';
 const route = useRoute();
 const currentUser = ref<OAuthCallbackResponse | null>(null);
 
-const { data: allPaths } = usePaths();
+const { data: allPaths, isPending: pathsLoading } = usePaths();
 const { visiblePaths } = usePathVisibility(allPaths);
 
 const centerDay =
@@ -57,6 +58,16 @@ watch(
     }
   },
   { immediate: true },
+);
+
+// Checked against allPaths (not visiblePaths, which also excludes paths the
+// user has merely hidden) — a pathId absent from the user's own path list
+// entirely means deleted, or a stale/bad link, not a display preference.
+const selectedPathNotFound = computed(
+  () =>
+    !pathsLoading.value &&
+    !!selectedPathId.value &&
+    !allPaths.value?.some((p) => p.path_id === selectedPathId.value),
 );
 
 const selectedPathIds = computed(() =>

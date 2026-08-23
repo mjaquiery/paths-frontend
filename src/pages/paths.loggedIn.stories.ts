@@ -78,6 +78,22 @@ export const WriteEntryCarriesPathAndDay: Story = {
   },
 };
 
+// A deleted path (or a stale/bad link) linked to directly — e.g. from a
+// path label on an entry whose path no longer exists — should say so
+// clearly rather than silently looking like an empty path.
+export const PathNotFound: Story = {
+  loaders: [routeLoader('/paths?pathId=deleted-path')],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(
+        "This path couldn't be found. It may have been deleted.",
+        { exact: false },
+      ),
+    ).toBeInTheDocument();
+  },
+};
+
 export const CalendarIconNavigatesToDayBrowser: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

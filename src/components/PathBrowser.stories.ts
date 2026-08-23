@@ -155,6 +155,21 @@ export const NoEntriesForSelectedPath: Story = {
   },
 };
 
+// A deleted path (or a stale/bad link) — distinct from a real path that
+// simply has no entries yet.
+export const PathNotFound: Story = {
+  args: { entries: [], pathNotFound: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(
+        "This path couldn't be found. It may have been deleted.",
+      ),
+    ).toBeInTheDocument();
+    await expect(canvas.queryByText('No entries yet.')).not.toBeInTheDocument();
+  },
+};
+
 // The expected case for this component — a followed path can easily
 // accumulate dozens of posts, unlike Day Browser's one-per-day-per-path.
 export const ManyEntries: Story = {
