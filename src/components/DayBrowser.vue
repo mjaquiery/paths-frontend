@@ -130,7 +130,7 @@ import { IonSpinner } from '@ionic/vue';
 import type { PathResponse, ImageResponse } from '../generated/types';
 import type { PathEntries } from '../composables/useMultiPathEntries';
 import { useOnThisDay } from '../composables/useOnThisDay';
-import { toLocalISODate } from '../utils/date';
+import { focusDayIndex, toLocalISODate } from '../utils/date';
 import EntryImage from './EntryImage.vue';
 import ImageLightbox from './ImageLightbox.vue';
 
@@ -217,13 +217,13 @@ function colorsForDay(dateStr: string): string[] {
 
 const weekDays = computed<WeekDay[]>(() => {
   const base = selectedDateObj.value;
-  const sunday = new Date(base);
-  sunday.setDate(base.getDate() - base.getDay());
+  const start = new Date(base);
+  start.setDate(base.getDate() - focusDayIndex(selectedDate.value, todayStr));
 
   const days: WeekDay[] = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date(sunday);
-    d.setDate(sunday.getDate() + i);
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
     const dateStr = toLocalISODate(d);
     days.push({
       dateStr,
