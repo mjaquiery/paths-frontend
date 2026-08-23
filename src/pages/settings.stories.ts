@@ -341,6 +341,21 @@ export const UnsubscribeFromSharedPath: Story = {
 };
 
 export const AcceptingAnInvitation: Story = {
+  parameters: {
+    msw: {
+      // Without a mock, acceptInv's POST falls through msw and fires a real
+      // fetch to http://localhost:8080 — whether/how fast that fails is
+      // environment-dependent, so waitFor below raced real network timing
+      // instead of a deterministic response (flaky in CI).
+      handlers: [
+        ...baseHandlers,
+        http.post(
+          '*/v1/invitations/:id/accept',
+          () => new HttpResponse(null, { status: 204 }),
+        ),
+      ],
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByText('✓ Accept'));
@@ -351,6 +366,20 @@ export const AcceptingAnInvitation: Story = {
 };
 
 export const IgnoringAnInvitation: Story = {
+  parameters: {
+    msw: {
+      // Same fix as AcceptingAnInvitation: mock the mutation so the busy
+      // state resolves deterministically instead of via a real, unmocked
+      // network request to http://localhost:8080.
+      handlers: [
+        ...baseHandlers,
+        http.post(
+          '*/v1/invitations/:id/ignore',
+          () => new HttpResponse(null, { status: 204 }),
+        ),
+      ],
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByText('Ignore'));
