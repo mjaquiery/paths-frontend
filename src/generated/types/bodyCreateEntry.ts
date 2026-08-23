@@ -6,11 +6,11 @@
  */
 
 export interface BodyCreateEntry {
-  /** Client-generated id; retries are idempotent. */
-  entry_id: string;
-  day: string;
+  captions?: string[];
   /** @minLength 1 */
   content: string;
-  captions?: string[];
+  day: string;
+  /** Client-generated id; retries are idempotent. */
+  entry_id: string;
   images?: Blob[];
 }

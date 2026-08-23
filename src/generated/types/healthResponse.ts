@@ -6,12 +6,12 @@
  */
 
 export interface HealthResponse {
-  /** Service health state. */
-  status: string;
-  /** Service identifier. */
-  service: string;
   /** Database connectivity status. */
   db: string;
   /** Object storage connectivity status. */
   s3: string;
+  /** Service identifier. */
+  service: string;
+  /** Service health state. */
+  status: string;
 }

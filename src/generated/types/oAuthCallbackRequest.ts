@@ -6,7 +6,7 @@
  */
 
 export interface OAuthCallbackRequest {
+  callback_uri: string;
   code: string;
   state: string;
-  callback_uri: string;
 }

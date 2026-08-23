@@ -6,11 +6,11 @@
  */
 
 export interface BodyUpdateEntry {
-  /** @minimum 1 */
-  expected_edit_id: number;
+  captions?: string[];
   /** @minLength 1 */
   content: string;
-  captions?: string[];
-  remove_image_ids?: string[];
+  /** @minimum 1 */
+  expected_edit_id: number;
   images?: Blob[];
+  remove_image_ids?: string[];
 }

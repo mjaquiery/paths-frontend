@@ -1,4 +1,5 @@
 import { ref } from 'vue';
+import { clearEtags } from './etagStore';
 
 /**
  * Flips true when a request comes back 401 — the session is invalid or expired.
@@ -12,6 +13,9 @@ export function clearSession(): void {
   localStorage.removeItem('user');
   localStorage.removeItem('session_token');
   sessionExpired.value = true;
+  // Fire-and-forget: a cached response body must never survive to the next
+  // account that signs in on this browser.
+  void clearEtags();
 }
 
 const RETURN_PATH_KEY = 'post_login_redirect';

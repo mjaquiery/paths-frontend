@@ -6,7 +6,7 @@
  */
 
 export interface OAuthCallbackResponse {
+  display_name: string | null;
   token: string;
   user_id: string;
-  display_name: string | null;
 }

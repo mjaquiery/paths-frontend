@@ -1,8 +1,44 @@
 import { computed, ref, watch, type Ref } from 'vue';
-import { useQueries } from '@tanstack/vue-query';
-import { listEntries, getEntry } from '../generated/apiClient';
+import { useQueries, useQueryClient } from '@tanstack/vue-query';
+import {
+  listEntries,
+  getEntry,
+  useGetEntryVersions,
+} from '../generated/apiClient';
 import type { EntryContentResponse, EntryResponse } from '../generated/types';
 import type { ImageResponse } from '../generated/types';
+
+type VersionsMap = Record<string, Record<string, number>>;
+
+/** Which path_ids have at least one entry whose edit_id differs between two version
+ *  snapshots (including an entry appearing/disappearing). `undefined` previous means
+ *  "nothing to compare against yet" (first poll after mount) — reported as no changes,
+ *  since there's nothing meaningfully different to invalidate. */
+function changedPathIds(
+  previous: VersionsMap | undefined,
+  next: VersionsMap,
+): string[] {
+  if (!previous) return [];
+  const changed: string[] = [];
+  for (const pathId of new Set([
+    ...Object.keys(previous),
+    ...Object.keys(next),
+  ])) {
+    const prevEntries = previous[pathId] ?? {};
+    const nextEntries = next[pathId] ?? {};
+    const entryIds = new Set([
+      ...Object.keys(prevEntries),
+      ...Object.keys(nextEntries),
+    ]);
+    for (const entryId of entryIds) {
+      if (prevEntries[entryId] !== nextEntries[entryId]) {
+        changed.push(pathId);
+        break;
+      }
+    }
+  }
+  return changed;
+}
 
 export interface EntryWithContent extends EntryResponse {
   content?: string;
@@ -48,24 +84,60 @@ function byDayDesc(a: EntryResponse, b: EntryResponse): number {
  * cleared. This can't be TanStack's own `keepPreviousData`: `useQueries` matches array
  * slots to observers strictly by queryHash, so a changed key gets a brand-new
  * `QueryObserver` with no prior state of its own to carry over.
+ *
+ * Freshness while idle comes from one shared poll of GET /v1/entries/versions (a cheap
+ * {path_id: {entry_id: edit_id}} map) rather than each path's list query polling on its
+ * own interval — N per-path list refetches every tick become one small versions request,
+ * with only the paths whose version map actually changed getting invalidated (and thus
+ * refetched in full). The per-path list queries below keep refetchOnWindowFocus/Reconnect
+ * as an immediate correctness net; only the interval poll moves to the versions endpoint.
  */
 export function useMultiPathEntries(
   pathIds: Ref<string[]>,
   windowSize = DEFAULT_CONTENT_WINDOW,
 ) {
+  const queryClient = useQueryClient();
+
   const listResults = useQueries({
     queries: computed(() =>
       pathIds.value.map((pathId) => ({
         queryKey: ['v1', 'paths', pathId, 'entries'],
         queryFn: () => listEntries(pathId),
         enabled: !!pathId,
-        refetchInterval: 25_000,
-        refetchIntervalInBackground: false,
         refetchOnWindowFocus: true,
         refetchOnReconnect: true,
       })),
     ),
   });
+
+  const versionsQuery = useGetEntryVersions(
+    computed(() => ({ path_ids: pathIds.value })),
+    {
+      query: {
+        enabled: computed(() => pathIds.value.length > 0),
+        refetchInterval: 25_000,
+        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
+      },
+    },
+  );
+
+  // Plain (non-reactive) memo of the last-seen versions snapshot, purely for diffing —
+  // not composable state, so it doesn't need to participate in Vue's reactivity graph.
+  let previousVersions: VersionsMap | undefined;
+  watch(
+    () => versionsQuery.data.value?.data as VersionsMap | undefined,
+    (next) => {
+      if (!next) return;
+      for (const pathId of changedPathIds(previousVersions, next)) {
+        queryClient.invalidateQueries({
+          queryKey: ['v1', 'paths', pathId, 'entries'],
+        });
+      }
+      previousVersions = next;
+    },
+  );
 
   const entryLists = computed<
     { pathId: string; entries: EntryResponse[]; isListLoading: boolean }[]

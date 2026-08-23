@@ -5,8 +5,6 @@
  * OpenAPI spec version: 0.4.0
  */
 
-export interface BlocklistEntryResponse {
-  blocked_user_id: string;
-  created_at: string;
-  id: string;
-}
+export type GetEntryVersionsParams = {
+  path_ids?: string[];
+};

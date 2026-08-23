@@ -78,7 +78,11 @@ interface EtagRecord {
 }
 // Dexie table `etagCache`, keyed by url
 export async function getEtag(url: string): Promise<EtagRecord | undefined>;
-export async function setEtag(url: string, etag: string, body: unknown): Promise<void>;
+export async function setEtag(
+  url: string,
+  etag: string,
+  body: unknown,
+): Promise<void>;
 export async function clearEtags(): Promise<void>; // called from clearSession()
 ```
 

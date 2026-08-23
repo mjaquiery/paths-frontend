@@ -7,11 +7,11 @@
 import type { DeletionRequestResponseState } from './deletionRequestResponseState';
 
 export interface DeletionRequestResponse {
-  id: string;
-  state: DeletionRequestResponseState;
-  error_message?: string | null;
-  failure_code?: string | null;
   attempt_count: number;
   created_at: string;
+  error_message?: string | null;
+  failure_code?: string | null;
+  id: string;
+  state: DeletionRequestResponseState;
   updated_at: string;
 }

@@ -6,15 +6,15 @@
  */
 
 export interface InvitationResponse {
+  created_at: string;
   id: string;
-  path_id: string;
-  path_code: string;
-  path_title: string;
-  inviter_user_id: string;
-  inviter_email: string | null;
   invited_email: string;
   invited_user_id?: string | null;
+  inviter_email: string | null;
+  inviter_user_id: string;
+  path_code: string;
+  path_id: string;
+  path_title: string;
   status: string;
-  created_at: string;
   updated_at: string;
 }
