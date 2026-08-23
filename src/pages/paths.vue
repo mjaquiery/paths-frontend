@@ -4,13 +4,12 @@
       <PathBrowser
         v-if="currentUser"
         :paths="visiblePaths"
-        v-model:selected-path-id="selectedPathId"
-        :entries="selectedPathEntries"
-        :is-loading="selectedPathIsLoading"
-        :has-more="selectedPathHasMore"
-        :path-not-found="selectedPathNotFound"
+        v-model:selected-path-ids="selectedPathIds"
+        :path-entries="multiPathEntries"
+        :has-more="anyPathHasMore"
+        :not-found-path-ids="notFoundPathIds"
         :center-day="centerDay"
-        @load-more="loadMore(selectedPathId)"
+        @load-more="loadMore()"
       />
     </ion-content>
 
@@ -20,7 +19,7 @@
       alt-label="Browse days"
       alt-to="/"
       :can-create="canCreateAny"
-      :write-entry-query="{ day: todayStr, pathId: selectedPathId }"
+      :write-entry-query="{ day: todayStr, pathId: writeEntryPathId }"
     />
   </ion-page>
 </template>
@@ -47,14 +46,21 @@ const { visiblePaths } = usePathVisibility(allPaths);
 const centerDay =
   typeof route.query.day === 'string' ? route.query.day : undefined;
 
-const selectedPathId = ref(
-  typeof route.query.pathId === 'string' ? route.query.pathId : '',
-);
+// Repeated ?pathId=a&pathId=b query params select multiple paths; a single
+// ?pathId=a still works (vue-router hands it back as a plain string). No
+// pathId at all defaults to every currently-visible path once they load.
+function pathIdsFromQuery(): string[] {
+  const raw = route.query.pathId;
+  if (Array.isArray(raw)) return raw.filter((v): v is string => !!v);
+  return typeof raw === 'string' ? [raw] : [];
+}
+
+const selectedPathIds = ref<string[]>(pathIdsFromQuery());
 watch(
   visiblePaths,
   (paths) => {
-    if (!selectedPathId.value && paths.length > 0) {
-      selectedPathId.value = paths[0]!.path_id;
+    if (selectedPathIds.value.length === 0 && paths.length > 0) {
+      selectedPathIds.value = paths.map((p) => p.path_id);
     }
   },
   { immediate: true },
@@ -63,16 +69,14 @@ watch(
 // Checked against allPaths (not visiblePaths, which also excludes paths the
 // user has merely hidden) — a pathId absent from the user's own path list
 // entirely means deleted, or a stale/bad link, not a display preference.
-const selectedPathNotFound = computed(
-  () =>
-    !pathsLoading.value &&
-    !!selectedPathId.value &&
-    !allPaths.value?.some((p) => p.path_id === selectedPathId.value),
+const notFoundPathIds = computed(() =>
+  pathsLoading.value
+    ? []
+    : selectedPathIds.value.filter(
+        (id) => !allPaths.value?.some((p) => p.path_id === id),
+      ),
 );
 
-const selectedPathIds = computed(() =>
-  selectedPathId.value ? [selectedPathId.value] : [],
-);
 const {
   pathEntries: multiPathEntries,
   loadMore,
@@ -86,15 +90,21 @@ watch(
   },
   { immediate: true },
 );
-const selectedPathEntries = computed(
-  () => multiPathEntries.value[0]?.entries ?? [],
+
+const anyPathHasMore = computed(() =>
+  multiPathEntries.value.some((pe) => pe.hasMore),
 );
-const selectedPathIsLoading = computed(
-  () => multiPathEntries.value[0]?.isListLoading ?? false,
-);
-const selectedPathHasMore = computed(
-  () => multiPathEntries.value[0]?.hasMore ?? false,
-);
+
+// New entries need a single path to attach to — the first selected path the
+// current user owns, falling back to the first selected path at all.
+const writeEntryPathId = computed(() => {
+  const owned = visiblePaths.value.find(
+    (p) =>
+      selectedPathIds.value.includes(p.path_id) &&
+      p.owner_user_id === currentUser.value?.user_id,
+  );
+  return owned?.path_id ?? selectedPathIds.value[0];
+});
 
 const todayStr = toLocalISODate(new Date());
 

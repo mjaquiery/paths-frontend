@@ -3,7 +3,10 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import PathBrowser from './PathBrowser.vue';
 import type { PathResponse } from '../generated/types';
-import type { EntryWithContent } from '../composables/useMultiPathEntries';
+import type {
+  EntryWithContent,
+  PathEntries,
+} from '../composables/useMultiPathEntries';
 import { toLocalISODate } from '../utils/date';
 import { router } from '../../.storybook/router';
 
@@ -37,7 +40,7 @@ function daysAgo(n: number): string {
   return toLocalISODate(d);
 }
 
-const entries: EntryWithContent[] = [
+const p1Entries: EntryWithContent[] = [
   {
     id: 'e1',
     path_id: 'p1',
@@ -77,13 +80,26 @@ const entries: EntryWithContent[] = [
   },
 ];
 
+function pathEntriesFor(
+  pathId: string,
+  entries: EntryWithContent[],
+): PathEntries {
+  return {
+    pathId,
+    entries,
+    isListLoading: false,
+    hasMore: false,
+    remainingCount: 0,
+  };
+}
+
 const meta: Meta<typeof PathBrowser> = {
   title: 'Components/PathBrowser',
   component: PathBrowser,
   args: {
     paths: [dailyLife, samsTravel],
-    selectedPathId: 'p1',
-    entries,
+    selectedPathIds: ['p1'],
+    pathEntries: [pathEntriesFor('p1', p1Entries)],
   },
 };
 
@@ -102,17 +118,24 @@ export const Default: Story = {
     await expect(
       canvasElement.querySelector('.pb-entry-photo'),
     ).toBeInTheDocument();
+    // Only one path selected — no path badge clutters each row.
+    await expect(
+      canvasElement.querySelector('.pb-entry-path'),
+    ).not.toBeInTheDocument();
   },
 };
 
-export const SwitchingPathEmitsUpdate: Story = {
-  args: { 'onUpdate:selectedPathId': fn() },
+export const TogglingAPathEmitsUpdate: Story = {
+  args: { 'onUpdate:selectedPathIds': fn() },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const select = canvas.getByLabelText('Path') as HTMLSelectElement;
-    await userEvent.selectOptions(select, "Sam's Travel");
+    const toggle = canvas.getByRole('button', { name: "Sam's Travel" });
+    await userEvent.click(toggle);
     await waitFor(() =>
-      expect(args['onUpdate:selectedPathId']).toHaveBeenCalledWith('p2'),
+      expect(args['onUpdate:selectedPathIds']).toHaveBeenCalledWith([
+        'p1',
+        'p2',
+      ]),
     );
   },
 };
@@ -146,7 +169,7 @@ export const NavigatingAnEntryWithTheKeyboard: Story = {
 };
 
 export const NoEntriesForSelectedPath: Story = {
-  args: { entries: [] },
+  args: { pathEntries: [pathEntriesFor('p1', [])] },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
@@ -158,7 +181,11 @@ export const NoEntriesForSelectedPath: Story = {
 // A deleted path (or a stale/bad link) — distinct from a real path that
 // simply has no entries yet.
 export const PathNotFound: Story = {
-  args: { entries: [], pathNotFound: true },
+  args: {
+    selectedPathIds: ['deleted-path'],
+    pathEntries: [],
+    notFoundPathIds: ['deleted-path'],
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
@@ -174,15 +201,20 @@ export const PathNotFound: Story = {
 // accumulate dozens of posts, unlike Day Browser's one-per-day-per-path.
 export const ManyEntries: Story = {
   args: {
-    entries: Array.from({ length: 30 }, (_, i) => ({
-      id: `me${i}`,
-      path_id: 'p1',
-      day: daysAgo(i),
-      edit_id: 1,
-      content: `Entry ${i}`,
-      images: [],
-      inWindow: true,
-    })),
+    pathEntries: [
+      pathEntriesFor(
+        'p1',
+        Array.from({ length: 30 }, (_, i) => ({
+          id: `me${i}`,
+          path_id: 'p1',
+          day: daysAgo(i),
+          edit_id: 1,
+          content: `Entry ${i}`,
+          images: [],
+          inWindow: true,
+        })),
+      ),
+    ],
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -195,20 +227,58 @@ export const ManyEntries: Story = {
   },
 };
 
+// Multiple paths selected at once: entries from every selected path merge
+// into one feed ordered by overall recency, each row tagged with its path.
+export const MultiplePathsMergedByDate: Story = {
+  args: {
+    selectedPathIds: ['p1', 'p2'],
+    pathEntries: [
+      pathEntriesFor('p1', p1Entries),
+      pathEntriesFor('p2', [
+        {
+          id: 'f1',
+          path_id: 'p2',
+          day: daysAgo(1),
+          edit_id: 1,
+          content: 'Landed in Tokyo',
+          images: [],
+          inWindow: true,
+        },
+      ]),
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // Merged in date order across paths, not grouped by path.
+    const previews = canvasElement.querySelectorAll('.pb-entry-preview');
+    await expect(previews[0]).toHaveTextContent('Today entry');
+    await expect(previews[1]).toHaveTextContent('Landed in Tokyo');
+    await expect(previews[2]).toHaveTextContent('A few days ago');
+    // Each entry is tagged with the path it belongs to.
+    await expect(await canvas.findByText("· Sam's Travel")).toBeInTheDocument();
+    await expect(await canvas.findAllByText('· Daily Life')).toHaveLength(3);
+  },
+};
+
 // ion-content clips its slotted children to a fixed-height scroll box, so this
 // decorator stands in for it — the real regression only shows up once the
 // header shares a scroll container with the entries below it.
 export const HeaderStaysVisibleWhileScrolling: Story = {
   args: {
-    entries: Array.from({ length: 30 }, (_, i) => ({
-      id: `me${i}`,
-      path_id: 'p1',
-      day: daysAgo(i),
-      edit_id: 1,
-      content: `Entry ${i}`,
-      images: [],
-      inWindow: true,
-    })),
+    pathEntries: [
+      pathEntriesFor(
+        'p1',
+        Array.from({ length: 30 }, (_, i) => ({
+          id: `me${i}`,
+          path_id: 'p1',
+          day: daysAgo(i),
+          edit_id: 1,
+          content: `Entry ${i}`,
+          images: [],
+          inWindow: true,
+        })),
+      ),
+    ],
   },
   decorators: [
     () => ({

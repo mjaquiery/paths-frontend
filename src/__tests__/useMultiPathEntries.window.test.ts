@@ -133,7 +133,7 @@ describe('useMultiPathEntries – content window', () => {
     expect(result().pathEntries.value[0]!.remainingCount).toBe(70);
 
     // loadMore grows the window and fetches the next batch.
-    result().loadMore('p1');
+    result().loadMore();
     await flushPromises();
     await flushPromises();
 
@@ -212,6 +212,105 @@ describe('useMultiPathEntries – content window', () => {
     expect(entries).toHaveLength(6);
     // Every entry that was already in the window before the refresh still is.
     expect(entries.every((e) => e.inWindow)).toBe(true);
+  });
+});
+
+describe('useMultiPathEntries – multi-path window', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('windows content by overall recency across paths, not per path', async () => {
+    // p1 posts often (40 recent entries); p2 posts rarely and only has old
+    // entries. Windowing "top 30 per path" would still fetch all 5 of p2's
+    // entries (well under its own cap) even though every one of them is far
+    // older than p1's 40th-most-recent entry — exactly the lopsided-window
+    // bug reported for a path view showing multiple paths. Windowing "top 30
+    // overall" must skip p2 entirely until the shared window grows past 40.
+    const p1Ids = Array.from({ length: 40 }, (_, i) => `e${i}`);
+    const p2Ids = Array.from({ length: 5 }, (_, i) => `f${i}`);
+    const getEntryCalls = new Set<string>();
+
+    vi.mocked(customFetch).mockImplementation((url: string) => {
+      if (url === '/v1/paths/p1/entries') {
+        return Promise.resolve({
+          data: p1Ids.map((id, i) => ({
+            id,
+            path_id: 'p1',
+            day: isoDaysAgo(i),
+            edit_id: 1,
+          })),
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      if (url === '/v1/paths/p2/entries') {
+        return Promise.resolve({
+          data: p2Ids.map((id, i) => ({
+            id,
+            path_id: 'p2',
+            day: isoDaysAgo(1000 + i), // far older than any p1 entry
+            edit_id: 1,
+          })),
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      const match = url.match(/\/v1\/paths\/(p1|p2)\/entries\/(\w+)$/);
+      if (match) {
+        getEntryCalls.add(match[2]!);
+        return Promise.resolve({
+          data: {
+            id: match[2],
+            path_id: match[1],
+            day: '2024-01-01',
+            edit_id: 1,
+            content: 'x',
+          },
+          status: 200,
+          headers: new Headers(),
+        });
+      }
+      return Promise.resolve({ data: [], status: 200, headers: new Headers() });
+    });
+
+    const pathIds = ref(['p1', 'p2']);
+    const { result } = mount1(pathIds);
+    await flushPromises();
+    await flushPromises();
+
+    expect(getEntryCalls.size).toBe(DEFAULT_CONTENT_WINDOW);
+    for (let i = 0; i < DEFAULT_CONTENT_WINDOW; i++) {
+      expect(getEntryCalls.has(`e${i}`)).toBe(true);
+    }
+    for (const id of p2Ids) {
+      expect(getEntryCalls.has(id)).toBe(false);
+    }
+
+    const p1Entries = result().pathEntries.value.find(
+      (p) => p.pathId === 'p1',
+    )!;
+    const p2Entries = result().pathEntries.value.find(
+      (p) => p.pathId === 'p2',
+    )!;
+    expect(p1Entries.hasMore).toBe(true);
+    expect(p1Entries.remainingCount).toBe(10);
+    expect(p2Entries.hasMore).toBe(true);
+    expect(p2Entries.remainingCount).toBe(5);
+    expect(p2Entries.entries.every((e) => !e.inWindow)).toBe(true);
+
+    // Growing the shared window past 40 finally reaches p2's entries too.
+    result().loadMore();
+    await flushPromises();
+    await flushPromises();
+
+    expect(getEntryCalls.size).toBe(p1Ids.length + p2Ids.length);
+    for (const id of p2Ids) {
+      expect(getEntryCalls.has(id)).toBe(true);
+    }
+    const p2After = result().pathEntries.value.find((p) => p.pathId === 'p2')!;
+    expect(p2After.hasMore).toBe(false);
+    expect(p2After.remainingCount).toBe(0);
   });
 });
 
