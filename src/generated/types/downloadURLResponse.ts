@@ -6,6 +6,6 @@
  */
 
 export interface DownloadURLResponse {
-  url: string;
   expires_in_seconds: number;
+  url: string;
 }

@@ -6,7 +6,7 @@
  */
 
 export interface PathUpdateRequest {
-  title?: string | null;
-  description?: string | null;
   color?: string | null;
+  description?: string | null;
+  title?: string | null;
 }

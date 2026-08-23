@@ -6,6 +6,6 @@
  */
 
 export interface PathCreationApprovalResponse {
-  user_id: string;
   allowed: boolean;
+  user_id: string;
 }

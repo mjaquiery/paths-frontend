@@ -6,8 +6,8 @@
  */
 
 export interface EntryResponse {
-  id: string;
-  path_id: string;
   day: string;
   edit_id: number;
+  id: string;
+  path_id: string;
 }

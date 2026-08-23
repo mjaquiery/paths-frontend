@@ -178,6 +178,11 @@ export const PathNameLinksToPathViewCenteredOnEntryDate: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    // Wait for the entry itself to load before clicking the path name: until
+    // then the link intentionally isn't day-aware yet (see
+    // entry.[pathId].[entryId].vue), so clicking earlier would be racing the
+    // fetch rather than testing the "centered on this date" behavior.
+    await canvas.findByText(entryContentResponseFixture.content);
     await userEvent.click(await canvas.findByText(pathResponseFixture.title));
     await expect(router.currentRoute.value.fullPath).toBe(
       `/paths?pathId=${pathResponseFixture.path_id}&day=${entryContentResponseFixture.day}`,

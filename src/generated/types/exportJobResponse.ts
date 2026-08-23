@@ -7,12 +7,12 @@
 import type { ExportJobResponseState } from './exportJobResponseState';
 
 export interface ExportJobResponse {
-  id: string;
-  state: ExportJobResponseState;
-  requested_path_ids: string[];
+  attempt_count: number;
   created_at: string;
-  updated_at: string;
   expires_at: string | null;
   failure_code?: string | null;
-  attempt_count: number;
+  id: string;
+  requested_path_ids: string[];
+  state: ExportJobResponseState;
+  updated_at: string;
 }

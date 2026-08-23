@@ -7,6 +7,6 @@
 import type { ImageResponse } from './imageResponse';
 
 export interface ImageCaptionUpdateResponse {
-  image: ImageResponse;
   edit_id: number;
+  image: ImageResponse;
 }

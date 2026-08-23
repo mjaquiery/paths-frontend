@@ -6,7 +6,7 @@
  */
 
 export interface ImageDownloadResponse {
+  expires_in_seconds: number;
   image_url: string;
   thumbnail_url: string | null;
-  expires_in_seconds: number;
 }

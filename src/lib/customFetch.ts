@@ -1,4 +1,5 @@
 import { clearSession } from './authSession';
+import { getEtag, setEtag } from './etagStore';
 
 export interface CustomFetchOptions extends RequestInit {
   // Only fires for FormData bodies — fetch has no upload-progress hook, so this
@@ -89,19 +90,25 @@ export const customFetch = async <T>(
   // manually here would produce a malformed multipart request the server can't parse.
   const isFormData = options?.body instanceof FormData;
 
+  const method = (options?.method ?? 'GET').toUpperCase();
+  const isConditionalGet = method === 'GET';
+  const fullUrl = `${baseUrl}${url}`;
+  const cached = isConditionalGet ? await getEtag(fullUrl) : undefined;
+
   const headers: Record<string, string> = {
     ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...authHeader,
+    ...(cached ? { 'If-None-Match': cached.etag } : {}),
     ...(options?.headers as Record<string, string> | undefined),
   };
 
   if (options?.onUploadProgress && isFormData) {
-    return uploadWithProgress<T>(`${baseUrl}${url}`, options, headers);
+    return uploadWithProgress<T>(fullUrl, options, headers);
   }
 
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}${url}`, {
+    response = await fetch(fullUrl, {
       ...options,
       credentials: 'include',
       headers,
@@ -109,12 +116,19 @@ export const customFetch = async <T>(
   } catch {
     throw new Error(NETWORK_ERROR_MESSAGE);
   }
+  if (response.status === 304 && cached) {
+    // Server confirmed our cached body is still current — resolve as a normal
+    // 200 rather than surfacing 304 to callers, who never asked to see it.
+    return { data: cached.body, status: 200, headers: response.headers } as T;
+  }
   if (!response.ok) {
     const detail = await detailFromResponse(response);
     if (response.status === 401) clearSession();
     throw new ApiError(response.status, detail);
   }
   const data = response.status === 204 ? undefined : await response.json();
+  const etag = response.headers.get('ETag');
+  if (isConditionalGet && etag) await setEtag(fullUrl, etag, data);
   return { data, status: response.status, headers: response.headers } as T;
 };
 

@@ -6,7 +6,7 @@
  */
 
 export interface SubscriberResponse {
-  user_id: string;
-  email: string | null;
   display_name: string | null;
+  email: string | null;
+  user_id: string;
 }

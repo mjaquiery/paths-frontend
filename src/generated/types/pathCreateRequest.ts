@@ -6,12 +6,12 @@
  */
 
 export interface PathCreateRequest {
+  /** @pattern ^#[0-9A-Fa-f]{6}$ */
+  color: string;
+  description?: string | null;
   /**
    * @minLength 1
    * @maxLength 120
    */
   title: string;
-  description?: string | null;
-  /** @pattern ^#[0-9A-Fa-f]{6}$ */
-  color: string;
 }

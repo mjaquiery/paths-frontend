@@ -6,13 +6,13 @@
  */
 
 export interface PathResponse {
-  path_id: string;
-  uuid: string;
-  owner_user_id: string;
-  title: string;
-  description: string | null;
   color: string;
-  is_public: boolean;
   created_at: string;
+  description: string | null;
+  is_public: boolean;
+  owner_user_id: string;
+  path_id: string;
+  title: string;
   updated_at: string;
+  uuid: string;
 }

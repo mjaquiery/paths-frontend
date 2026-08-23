@@ -1,1983 +1,196 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "paths backend API",
-    "summary": "Path-centric backend API for Shared Journal PWA",
-    "version": "0.4.0"
-  },
-  "paths": {
-    "/health": {
-      "get": {
-        "tags": [
-          "health"
-        ],
-        "summary": "Health",
-        "operationId": "health",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/paths": {
-      "get": {
-        "tags": [
-          "paths"
-        ],
-        "summary": "List Paths",
-        "operationId": "list_paths",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/PathResponse"
-                  },
-                  "type": "array",
-                  "title": "Response List Paths"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "paths"
-        ],
-        "summary": "Create Path",
-        "operationId": "create_path",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PathCreateRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PathResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/paths/{path_code}": {
-      "patch": {
-        "tags": [
-          "paths"
-        ],
-        "summary": "Update Path",
-        "operationId": "update_path",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PathUpdateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PathResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "paths"
-        ],
-        "summary": "Delete Path",
-        "operationId": "delete_path",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/paths/{path_code}/visibility": {
-      "patch": {
-        "tags": [
-          "paths"
-        ],
-        "summary": "Update Path Visibility",
-        "operationId": "update_path_visibility",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PathVisibilityUpdateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PathResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/paths/{path_code}/entries": {
-      "get": {
-        "tags": [
-          "entries"
-        ],
-        "summary": "List Entries",
-        "operationId": "list_entries",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/EntryResponse"
-                  },
-                  "title": "Response List Entries"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "entries"
-        ],
-        "summary": "Create Entry",
-        "operationId": "create_entry",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_create_entry"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EntryResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/paths/{path_code}/entries/{entry_slug}": {
-      "get": {
-        "tags": [
-          "entries"
-        ],
-        "summary": "Get Entry",
-        "operationId": "get_entry",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          },
-          {
-            "name": "entry_slug",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Entry Slug"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EntryContentResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "entries"
-        ],
-        "summary": "Update Entry",
-        "operationId": "update_entry",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          },
-          {
-            "name": "entry_slug",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Entry Slug"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_update_entry"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EntryResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Optimistic lock mismatch for expected_edit_id.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OptimisticLockHTTPErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "entries"
-        ],
-        "summary": "Delete Entry",
-        "operationId": "delete_entry",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          },
-          {
-            "name": "entry_slug",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Entry Slug"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/paths/{path_code}/entries/{entry_slug}/images": {
-      "get": {
-        "tags": [
-          "entries"
-        ],
-        "summary": "List Entry Images",
-        "operationId": "list_entry_images",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          },
-          {
-            "name": "entry_slug",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Entry Slug"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ImageResponse"
-                  },
-                  "title": "Response List Entry Images"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/paths/{path_code}/subscriptions": {
-      "get": {
-        "tags": [
-          "subscriptions"
-        ],
-        "summary": "List Subscriptions",
-        "operationId": "list_subscriptions",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SubscriberResponse"
-                  },
-                  "title": "Response List Subscriptions"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "subscriptions"
-        ],
-        "summary": "Invite Subscriber",
-        "operationId": "invite_subscriber",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubscriptionInviteRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/InviteResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/paths/{path_code}/subscriptions/{target_user_id}": {
-      "delete": {
-        "tags": [
-          "subscriptions"
-        ],
-        "summary": "Delete Subscription",
-        "operationId": "delete_subscription",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "path_code",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Path Code"
-            }
-          },
-          {
-            "name": "target_user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Target User Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/admin/login": {
-      "post": {
-        "tags": [
-          "admin"
-        ],
-        "summary": "Admin Login",
-        "operationId": "admin_login",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AdminLoginRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminLoginResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/admin/users/{user_id}/path-creation-approval": {
-      "put": {
-        "tags": [
-          "admin"
-        ],
-        "summary": "Set Path Creation Approval",
-        "operationId": "set_path_creation_approval",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "User Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PathCreationApprovalRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PathCreationApprovalResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/account/profile": {
-      "get": {
-        "tags": [
-          "account"
-        ],
-        "summary": "Get Profile",
-        "operationId": "get_profile",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserProfileResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/account/display-name": {
-      "patch": {
-        "tags": [
-          "account"
-        ],
-        "summary": "Update Display Name",
-        "operationId": "update_display_name",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserDisplayNameUpdateRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserProfileResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/account/settings": {
-      "patch": {
-        "tags": [
-          "account"
-        ],
-        "summary": "Update Settings",
-        "operationId": "update_settings",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserSettingsUpdateRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserProfileResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/account/deletion-requests": {
-      "post": {
-        "tags": [
-          "account"
-        ],
-        "summary": "Create Deletion Request",
-        "operationId": "create_deletion_request",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeletionRequestResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/account/deletion-requests/latest": {
-      "get": {
-        "tags": [
-          "account"
-        ],
-        "summary": "Latest Deletion Request",
-        "operationId": "get_latest_deletion_request",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeletionRequestResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/images/{image_id}": {
-      "patch": {
-        "tags": [
-          "images"
-        ],
-        "summary": "Update Image Caption",
-        "operationId": "update_image_caption",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "image_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Image Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ImageCaptionUpdateRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ImageCaptionUpdateResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/images/{image_id}/download-url": {
-      "get": {
-        "tags": [
-          "images"
-        ],
-        "summary": "Get Image Download Url",
-        "operationId": "get_image_download_url",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "image_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Image Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ImageDownloadResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/exports": {
-      "post": {
-        "tags": [
-          "exports"
-        ],
-        "summary": "Create Export",
-        "operationId": "create_export",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExportCreateRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "202": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExportJobResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/exports/{export_id}": {
-      "get": {
-        "tags": [
-          "exports"
-        ],
-        "summary": "Get Export",
-        "operationId": "get_export",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "export_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Export Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExportJobResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/exports/{export_id}/download/json": {
-      "get": {
-        "tags": [
-          "exports"
-        ],
-        "summary": "Download Json",
-        "operationId": "download_export_json",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "export_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Export Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DownloadURLResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/exports/{export_id}/download/images": {
-      "get": {
-        "tags": [
-          "exports"
-        ],
-        "summary": "Download Images",
-        "operationId": "download_export_images",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "export_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Export Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DownloadURLResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/auth/login": {
-      "get": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Oauth Login",
-        "description": "Return the Google OAuth authorization URL for the given callback URI.",
-        "operationId": "auth_login",
-        "parameters": [
-          {
-            "name": "callback_uri",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "description": "URI that Google will redirect to after login",
-              "title": "Callback Uri"
-            },
-            "description": "URI that Google will redirect to after login"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OAuthLoginResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/auth/callback": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Oauth Callback",
-        "description": "Exchange the OAuth code for a user session token.",
-        "operationId": "auth_callback",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/OAuthCallbackRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OAuthCallbackResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Oauth Callback Get",
-        "description": "Handle GET OAuth callback when the backend is the redirect target.\n\nThe callback_uri is extracted from the signed state token rather than\npassed as a query parameter, so it is guaranteed to match the value used\nduring the original login request.",
-        "operationId": "auth_callback_redirect",
-        "parameters": [
-          {
-            "name": "state",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "State"
-            }
-          },
-          {
-            "name": "code",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Code"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OAuthCallbackResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/invitations": {
-      "get": {
-        "tags": [
-          "invitations"
-        ],
-        "summary": "List Invitations",
-        "operationId": "list_invitations",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/InvitationResponse"
-                  },
-                  "type": "array",
-                  "title": "Response List Invitations"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/invitations/{invitation_id}/accept": {
-      "post": {
-        "tags": [
-          "invitations"
-        ],
-        "summary": "Accept Invitation",
-        "operationId": "accept_invitation",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "invitation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Invitation Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/invitations/{invitation_id}/ignore": {
-      "post": {
-        "tags": [
-          "invitations"
-        ],
-        "summary": "Ignore Invitation",
-        "operationId": "ignore_invitation",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "invitation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Invitation Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/invitations/blocklist": {
-      "get": {
-        "tags": [
-          "invitations"
-        ],
-        "summary": "List Blocklist",
-        "operationId": "list_blocklist",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/BlocklistEntryResponse"
-                  },
-                  "type": "array",
-                  "title": "Response List Blocklist"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "invitations"
-        ],
-        "summary": "Block Inviter",
-        "operationId": "block_inviter",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BlocklistAddRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/v1/invitations/blocklist/{blocked_user_id}": {
-      "delete": {
-        "tags": [
-          "invitations"
-        ],
-        "summary": "Unblock User",
-        "operationId": "unblock_user",
-        "security": [
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "blocked_user_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Blocked User Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/": {
-      "get": {
-        "summary": "Root",
-        "operationId": "root",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    }
-  },
   "components": {
     "schemas": {
       "AdminLoginRequest": {
+        "example": {
+          "password": "s3cr3t",
+          "username": "admin"
+        },
         "properties": {
-          "username": {
-            "type": "string",
-            "title": "Username"
-          },
           "password": {
-            "type": "string",
-            "title": "Password"
+            "title": "Password",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "username",
           "password"
         ],
         "title": "AdminLoginRequest",
-        "example": {
-          "password": "s3cr3t",
-          "username": "admin"
-        }
+        "type": "object"
       },
       "AdminLoginResponse": {
+        "example": {
+          "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiJ9.example"
+        },
         "properties": {
           "token": {
-            "type": "string",
-            "title": "Token"
+            "title": "Token",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "token"
         ],
         "title": "AdminLoginResponse",
-        "example": {
-          "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiJ9.example"
-        }
+        "type": "object"
       },
       "BlocklistAddRequest": {
+        "example": {
+          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        },
         "properties": {
           "user_id": {
-            "type": "string",
             "format": "uuid",
-            "title": "User Id"
+            "title": "User Id",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "user_id"
         ],
         "title": "BlocklistAddRequest",
-        "example": {
-          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-        }
+        "type": "object"
       },
       "BlocklistEntryResponse": {
+        "example": {
+          "blocked_user_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+          "created_at": "2024-03-15T09:00:00Z",
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        },
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
           "blocked_user_id": {
-            "type": "string",
             "format": "uuid",
-            "title": "Blocked User Id"
+            "title": "Blocked User Id",
+            "type": "string"
           },
           "created_at": {
-            "type": "string",
             "format": "date-time",
-            "title": "Created At"
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "blocked_user_id",
           "created_at"
         ],
         "title": "BlocklistEntryResponse",
-        "example": {
-          "blocked_user_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-          "created_at": "2024-03-15T09:00:00Z",
-          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-        }
+        "type": "object"
       },
       "Body_create_entry": {
         "properties": {
-          "entry_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Entry Id",
-            "description": "Client-generated id; retries are idempotent."
-          },
-          "day": {
-            "type": "string",
-            "format": "date",
-            "title": "Day"
-          },
-          "content": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Content"
-          },
           "captions": {
             "items": {
               "type": "string"
             },
-            "type": "array",
-            "title": "Captions"
+            "title": "Captions",
+            "type": "array"
+          },
+          "content": {
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "entry_id": {
+            "description": "Client-generated id; retries are idempotent.",
+            "format": "uuid",
+            "title": "Entry Id",
+            "type": "string"
           },
           "images": {
+            "default": [],
             "items": {
-              "type": "string",
-              "contentMediaType": "application/octet-stream"
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
             },
-            "type": "array",
             "title": "Images",
-            "default": []
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "entry_id",
           "day",
           "content"
         ],
-        "title": "Body_create_entry"
+        "title": "Body_create_entry",
+        "type": "object"
       },
       "Body_update_entry": {
         "properties": {
-          "expected_edit_id": {
-            "type": "integer",
-            "minimum": 1,
-            "title": "Expected Edit Id"
-          },
-          "content": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Content"
-          },
           "captions": {
             "items": {
               "type": "string"
             },
-            "type": "array",
-            "title": "Captions"
+            "title": "Captions",
+            "type": "array"
+          },
+          "content": {
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          },
+          "expected_edit_id": {
+            "minimum": 1.0,
+            "title": "Expected Edit Id",
+            "type": "integer"
+          },
+          "images": {
+            "default": [],
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Images",
+            "type": "array"
           },
           "remove_image_ids": {
             "items": {
-              "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "type": "string"
             },
-            "type": "array",
-            "title": "Remove Image Ids"
-          },
-          "images": {
-            "items": {
-              "type": "string",
-              "contentMediaType": "application/octet-stream"
-            },
-            "type": "array",
-            "title": "Images",
-            "default": []
+            "title": "Remove Image Ids",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "expected_edit_id",
           "content"
         ],
-        "title": "Body_update_entry"
+        "title": "Body_update_entry",
+        "type": "object"
       },
       "DeletionRequestResponse": {
+        "example": {
+          "attempt_count": 0,
+          "created_at": "2024-03-15T09:00:00Z",
+          "id": "f6a7b8c9-d0e1-2345-f012-456789012345",
+          "state": "requested",
+          "updated_at": "2024-03-15T09:00:00Z"
+        },
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
+          "attempt_count": {
+            "title": "Attempt Count",
+            "type": "integer"
           },
-          "state": {
-            "type": "string",
-            "enum": [
-              "requested",
-              "running",
-              "complete",
-              "failed"
-            ],
-            "title": "State"
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
           },
           "error_message": {
             "anyOf": [
@@ -2001,22 +214,27 @@
             ],
             "title": "Failure Code"
           },
-          "attempt_count": {
-            "type": "integer",
-            "title": "Attempt Count"
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
           },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
+          "state": {
+            "enum": [
+              "requested",
+              "running",
+              "complete",
+              "failed"
+            ],
+            "title": "State",
+            "type": "string"
           },
           "updated_at": {
-            "type": "string",
             "format": "date-time",
-            "title": "Updated At"
+            "title": "Updated At",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "state",
@@ -2025,76 +243,31 @@
           "updated_at"
         ],
         "title": "DeletionRequestResponse",
-        "example": {
-          "attempt_count": 0,
-          "created_at": "2024-03-15T09:00:00Z",
-          "id": "f6a7b8c9-d0e1-2345-f012-456789012345",
-          "state": "requested",
-          "updated_at": "2024-03-15T09:00:00Z"
-        }
+        "type": "object"
       },
       "DownloadURLResponse": {
+        "example": {
+          "expires_in_seconds": 300,
+          "url": "https://storage.example.com/exports/e5f6a7b8-c9d0-1234-ef01-345678901234/export.json?X-Amz-Expires=300"
+        },
         "properties": {
-          "url": {
-            "type": "string",
-            "title": "Url"
-          },
           "expires_in_seconds": {
-            "type": "integer",
-            "title": "Expires In Seconds"
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "url",
           "expires_in_seconds"
         ],
         "title": "DownloadURLResponse",
-        "example": {
-          "expires_in_seconds": 300,
-          "url": "https://storage.example.com/exports/e5f6a7b8-c9d0-1234-ef01-345678901234/export.json?X-Amz-Expires=300"
-        }
+        "type": "object"
       },
       "EntryContentResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "path_id": {
-            "type": "string",
-            "title": "Path Id"
-          },
-          "day": {
-            "type": "string",
-            "format": "date",
-            "title": "Day"
-          },
-          "edit_id": {
-            "type": "integer",
-            "title": "Edit Id"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
-          "images": {
-            "items": {
-              "$ref": "#/components/schemas/ImageResponse"
-            },
-            "type": "array",
-            "title": "Images"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "path_id",
-          "day",
-          "edit_id",
-          "content"
-        ],
-        "title": "EntryContentResponse",
         "example": {
           "content": "Feeling stronger today. Managed a 20-minute walk.",
           "day": "2024-03-15",
@@ -2112,29 +285,73 @@
             }
           ],
           "path_id": "AB3X7K"
-        }
-      },
-      "EntryResponse": {
+        },
         "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "path_id": {
-            "type": "string",
-            "title": "Path Id"
+          "content": {
+            "title": "Content",
+            "type": "string"
           },
           "day": {
-            "type": "string",
             "format": "date",
-            "title": "Day"
+            "title": "Day",
+            "type": "string"
           },
           "edit_id": {
-            "type": "integer",
-            "title": "Edit Id"
+            "title": "Edit Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/ImageResponse"
+            },
+            "title": "Images",
+            "type": "array"
+          },
+          "path_id": {
+            "title": "Path Id",
+            "type": "string"
           }
         },
-        "type": "object",
+        "required": [
+          "id",
+          "path_id",
+          "day",
+          "edit_id",
+          "content"
+        ],
+        "title": "EntryContentResponse",
+        "type": "object"
+      },
+      "EntryResponse": {
+        "example": {
+          "day": "2024-03-15",
+          "edit_id": 1,
+          "id": "2026_02_20_0",
+          "path_id": "AB3X7K"
+        },
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "edit_id": {
+            "title": "Edit Id",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "path_id": {
+            "title": "Path Id",
+            "type": "string"
+          }
+        },
         "required": [
           "id",
           "path_id",
@@ -2142,98 +359,79 @@
           "edit_id"
         ],
         "title": "EntryResponse",
-        "example": {
-          "day": "2024-03-15",
-          "edit_id": 1,
-          "id": "2026_02_20_0",
-          "path_id": "AB3X7K"
-        }
+        "type": "object"
       },
       "ErrorDetail": {
+        "example": {
+          "code": "optimistic_lock_conflict",
+          "message": "Entry was modified by another request."
+        },
         "properties": {
           "code": {
-            "type": "string",
-            "title": "Code"
+            "title": "Code",
+            "type": "string"
           },
           "message": {
-            "type": "string",
-            "title": "Message"
+            "title": "Message",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "code",
           "message"
         ],
         "title": "ErrorDetail",
-        "example": {
-          "code": "optimistic_lock_conflict",
-          "message": "Entry was modified by another request."
-        }
+        "type": "object"
       },
       "ExportCreateRequest": {
+        "example": {
+          "path_ids": [
+            "AB3X7K"
+          ]
+        },
         "properties": {
           "path_ids": {
             "items": {
               "type": "string"
             },
-            "type": "array",
             "minItems": 1,
-            "title": "Path Ids"
+            "title": "Path Ids",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "path_ids"
         ],
         "title": "ExportCreateRequest",
-        "example": {
-          "path_ids": [
-            "AB3X7K"
-          ]
-        }
+        "type": "object"
       },
       "ExportJobResponse": {
+        "example": {
+          "attempt_count": 1,
+          "created_at": "2024-03-15T09:00:00Z",
+          "expires_at": "2024-03-22T09:05:00Z",
+          "id": "e5f6a7b8-c9d0-1234-ef01-345678901234",
+          "requested_path_ids": [
+            "AB3X7K"
+          ],
+          "state": "ready",
+          "updated_at": "2024-03-15T09:05:00Z"
+        },
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "state": {
-            "type": "string",
-            "enum": [
-              "queued",
-              "running",
-              "ready",
-              "failed",
-              "expired",
-              "cleaned"
-            ],
-            "title": "State"
-          },
-          "requested_path_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Requested Path Ids"
+          "attempt_count": {
+            "title": "Attempt Count",
+            "type": "integer"
           },
           "created_at": {
-            "type": "string",
             "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Updated At"
+            "title": "Created At",
+            "type": "string"
           },
           "expires_at": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date-time"
+                "format": "date-time",
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2252,12 +450,36 @@
             ],
             "title": "Failure Code"
           },
-          "attempt_count": {
-            "type": "integer",
-            "title": "Attempt Count"
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "requested_path_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Requested Path Ids",
+            "type": "array"
+          },
+          "state": {
+            "enum": [
+              "queued",
+              "running",
+              "ready",
+              "failed",
+              "expired",
+              "cleaned"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "state",
@@ -2268,17 +490,7 @@
           "attempt_count"
         ],
         "title": "ExportJobResponse",
-        "example": {
-          "attempt_count": 1,
-          "created_at": "2024-03-15T09:00:00Z",
-          "expires_at": "2024-03-22T09:05:00Z",
-          "id": "e5f6a7b8-c9d0-1234-ef01-345678901234",
-          "requested_path_ids": [
-            "AB3X7K"
-          ],
-          "state": "ready",
-          "updated_at": "2024-03-15T09:05:00Z"
-        }
+        "type": "object"
       },
       "HTTPValidationError": {
         "properties": {
@@ -2286,51 +498,56 @@
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             },
-            "type": "array",
-            "title": "Detail"
+            "title": "Detail",
+            "type": "array"
           }
         },
-        "type": "object",
-        "title": "HTTPValidationError"
+        "title": "HTTPValidationError",
+        "type": "object"
       },
       "HealthResponse": {
+        "example": {
+          "db": "ok",
+          "s3": "ok",
+          "service": "paths-backend",
+          "status": "ok"
+        },
         "properties": {
-          "status": {
-            "type": "string",
-            "title": "Status",
-            "description": "Service health state.",
-            "examples": [
-              "ok"
-            ]
-          },
-          "service": {
-            "type": "string",
-            "title": "Service",
-            "description": "Service identifier.",
-            "examples": [
-              "paths-backend"
-            ]
-          },
           "db": {
-            "type": "string",
-            "title": "Db",
             "description": "Database connectivity status.",
             "examples": [
               "ok",
               "error"
-            ]
+            ],
+            "title": "Db",
+            "type": "string"
           },
           "s3": {
-            "type": "string",
-            "title": "S3",
             "description": "Object storage connectivity status.",
             "examples": [
               "ok",
               "error"
-            ]
+            ],
+            "title": "S3",
+            "type": "string"
+          },
+          "service": {
+            "description": "Service identifier.",
+            "examples": [
+              "paths-backend"
+            ],
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "description": "Service health state.",
+            "examples": [
+              "ok"
+            ],
+            "title": "Status",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "status",
           "service",
@@ -2338,20 +555,19 @@
           "s3"
         ],
         "title": "HealthResponse",
-        "example": {
-          "db": "ok",
-          "s3": "ok",
-          "service": "paths-backend",
-          "status": "ok"
-        }
+        "type": "object"
       },
       "ImageCaptionUpdateRequest": {
+        "example": {
+          "caption": "Sunrise over the ridge",
+          "expected_edit_id": 2
+        },
         "properties": {
           "caption": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 2000
+                "maxLength": 2000,
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2360,37 +576,18 @@
             "title": "Caption"
           },
           "expected_edit_id": {
-            "type": "integer",
-            "minimum": 1,
-            "title": "Expected Edit Id"
+            "minimum": 1.0,
+            "title": "Expected Edit Id",
+            "type": "integer"
           }
         },
-        "type": "object",
         "required": [
           "expected_edit_id"
         ],
         "title": "ImageCaptionUpdateRequest",
-        "example": {
-          "caption": "Sunrise over the ridge",
-          "expected_edit_id": 2
-        }
+        "type": "object"
       },
       "ImageCaptionUpdateResponse": {
-        "properties": {
-          "image": {
-            "$ref": "#/components/schemas/ImageResponse"
-          },
-          "edit_id": {
-            "type": "integer",
-            "title": "Edit Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "image",
-          "edit_id"
-        ],
-        "title": "ImageCaptionUpdateResponse",
         "example": {
           "edit_id": 3,
           "image": {
@@ -2402,13 +599,37 @@
             "id": "d4e5f6a7-b8c9-0123-def0-234567890123",
             "status": "ready"
           }
-        }
+        },
+        "properties": {
+          "edit_id": {
+            "title": "Edit Id",
+            "type": "integer"
+          },
+          "image": {
+            "$ref": "#/components/schemas/ImageResponse"
+          }
+        },
+        "required": [
+          "image",
+          "edit_id"
+        ],
+        "title": "ImageCaptionUpdateResponse",
+        "type": "object"
       },
       "ImageDownloadResponse": {
+        "example": {
+          "expires_in_seconds": 300,
+          "image_url": "https://storage.example.com/images/entry-id/photo.jpg?X-Amz-Expires=300",
+          "thumbnail_url": "https://storage.example.com/images/entry-id/thumb-photo.jpg?X-Amz-Expires=300"
+        },
         "properties": {
+          "expires_in_seconds": {
+            "title": "Expires In Seconds",
+            "type": "integer"
+          },
           "image_url": {
-            "type": "string",
-            "title": "Image Url"
+            "title": "Image Url",
+            "type": "string"
           },
           "thumbnail_url": {
             "anyOf": [
@@ -2420,40 +641,37 @@
               }
             ],
             "title": "Thumbnail Url"
-          },
-          "expires_in_seconds": {
-            "type": "integer",
-            "title": "Expires In Seconds"
           }
         },
-        "type": "object",
         "required": [
           "image_url",
           "thumbnail_url",
           "expires_in_seconds"
         ],
         "title": "ImageDownloadResponse",
-        "example": {
-          "expires_in_seconds": 300,
-          "image_url": "https://storage.example.com/images/entry-id/photo.jpg?X-Amz-Expires=300",
-          "thumbnail_url": "https://storage.example.com/images/entry-id/thumb-photo.jpg?X-Amz-Expires=300"
-        }
+        "type": "object"
       },
       "ImageResponse": {
+        "example": {
+          "byte_size": 204800,
+          "caption": "Sunrise over the ridge",
+          "content_type": "image/jpeg",
+          "entry_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+          "filename": "morning-walk.jpg",
+          "id": "d4e5f6a7-b8c9-0123-def0-234567890123",
+          "status": "ready"
+        },
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "entry_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Entry Id"
-          },
-          "filename": {
-            "type": "string",
-            "title": "Filename"
+          "byte_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Byte Size"
           },
           "caption": {
             "anyOf": [
@@ -2465,10 +683,6 @@
               }
             ],
             "title": "Caption"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
           },
           "content_type": {
             "anyOf": [
@@ -2481,19 +695,25 @@
             ],
             "title": "Content Type"
           },
-          "byte_size": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Byte Size"
+          "entry_id": {
+            "format": "uuid",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "entry_id",
@@ -2504,40 +724,47 @@
           "byte_size"
         ],
         "title": "ImageResponse",
-        "example": {
-          "byte_size": 204800,
-          "caption": "Sunrise over the ridge",
-          "content_type": "image/jpeg",
-          "entry_id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-          "filename": "morning-walk.jpg",
-          "id": "d4e5f6a7-b8c9-0123-def0-234567890123",
-          "status": "ready"
-        }
+        "type": "object"
       },
       "InvitationResponse": {
+        "example": {
+          "created_at": "2024-03-15T09:00:00Z",
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "invited_email": "subscriber@example.com",
+          "inviter_email": "owner@example.com",
+          "inviter_user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "path_code": "AB3X7K",
+          "path_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+          "path_title": "My Travel Journal",
+          "status": "invited",
+          "updated_at": "2024-03-15T09:00:00Z"
+        },
         "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
           "id": {
-            "type": "string",
             "format": "uuid",
-            "title": "Id"
+            "title": "Id",
+            "type": "string"
           },
-          "path_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Path Id"
+          "invited_email": {
+            "title": "Invited Email",
+            "type": "string"
           },
-          "path_code": {
-            "type": "string",
-            "title": "Path Code"
-          },
-          "path_title": {
-            "type": "string",
-            "title": "Path Title"
-          },
-          "inviter_user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Inviter User Id"
+          "invited_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invited User Id"
           },
           "inviter_email": {
             "anyOf": [
@@ -2550,38 +777,34 @@
             ],
             "title": "Inviter Email"
           },
-          "invited_email": {
-            "type": "string",
-            "title": "Invited Email"
+          "inviter_user_id": {
+            "format": "uuid",
+            "title": "Inviter User Id",
+            "type": "string"
           },
-          "invited_user_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Invited User Id"
+          "path_code": {
+            "title": "Path Code",
+            "type": "string"
+          },
+          "path_id": {
+            "format": "uuid",
+            "title": "Path Id",
+            "type": "string"
+          },
+          "path_title": {
+            "title": "Path Title",
+            "type": "string"
           },
           "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
+            "title": "Status",
+            "type": "string"
           },
           "updated_at": {
-            "type": "string",
             "format": "date-time",
-            "title": "Updated At"
+            "title": "Updated At",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "path_id",
@@ -2595,80 +818,66 @@
           "updated_at"
         ],
         "title": "InvitationResponse",
-        "example": {
-          "created_at": "2024-03-15T09:00:00Z",
-          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-          "invited_email": "subscriber@example.com",
-          "inviter_email": "owner@example.com",
-          "inviter_user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-          "path_code": "AB3X7K",
-          "path_id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-          "path_title": "My Travel Journal",
-          "status": "invited",
-          "updated_at": "2024-03-15T09:00:00Z"
-        }
+        "type": "object"
       },
       "InviteResponse": {
+        "example": {
+          "invitation_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "status": "invited"
+        },
         "properties": {
           "invitation_id": {
-            "type": "string",
             "format": "uuid",
-            "title": "Invitation Id"
+            "title": "Invitation Id",
+            "type": "string"
           },
           "status": {
-            "type": "string",
-            "title": "Status"
+            "title": "Status",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "invitation_id",
           "status"
         ],
         "title": "InviteResponse",
-        "example": {
-          "invitation_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-          "status": "invited"
-        }
+        "type": "object"
       },
       "OAuthCallbackRequest": {
+        "example": {
+          "callback_uri": "https://app.example.com/callback",
+          "code": "4/0AY0e-g7...",
+          "state": "a1b2c3d4e5f6"
+        },
         "properties": {
+          "callback_uri": {
+            "title": "Callback Uri",
+            "type": "string"
+          },
           "code": {
-            "type": "string",
-            "title": "Code"
+            "title": "Code",
+            "type": "string"
           },
           "state": {
-            "type": "string",
-            "title": "State"
-          },
-          "callback_uri": {
-            "type": "string",
-            "title": "Callback Uri"
+            "title": "State",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "code",
           "state",
           "callback_uri"
         ],
         "title": "OAuthCallbackRequest",
-        "example": {
-          "callback_uri": "https://app.example.com/callback",
-          "code": "4/0AY0e-g7...",
-          "state": "a1b2c3d4e5f6"
-        }
+        "type": "object"
       },
       "OAuthCallbackResponse": {
+        "example": {
+          "display_name": "Alex Smith",
+          "token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        },
         "properties": {
-          "token": {
-            "type": "string",
-            "title": "Token"
-          },
-          "user_id": {
-            "type": "string",
-            "title": "User Id"
-          },
           "display_name": {
             "anyOf": [
               {
@@ -2679,58 +888,41 @@
               }
             ],
             "title": "Display Name"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "token",
           "user_id",
           "display_name"
         ],
         "title": "OAuthCallbackResponse",
-        "example": {
-          "display_name": "Alex Smith",
-          "token": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-        }
+        "type": "object"
       },
       "OAuthLoginResponse": {
+        "example": {
+          "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=example.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback&response_type=code&scope=openid+profile&state=..."
+        },
         "properties": {
           "authorization_url": {
-            "type": "string",
-            "title": "Authorization Url"
+            "title": "Authorization Url",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "authorization_url"
         ],
         "title": "OAuthLoginResponse",
-        "example": {
-          "authorization_url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=example.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback&response_type=code&scope=openid+profile&state=..."
-        }
+        "type": "object"
       },
       "OptimisticLockErrorResponse": {
-        "properties": {
-          "error": {
-            "$ref": "#/components/schemas/ErrorDetail"
-          },
-          "expected_edit_id": {
-            "type": "integer",
-            "title": "Expected Edit Id"
-          },
-          "current_edit_id": {
-            "type": "integer",
-            "title": "Current Edit Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "error",
-          "expected_edit_id",
-          "current_edit_id"
-        ],
-        "title": "OptimisticLockErrorResponse",
         "example": {
           "current_edit_id": 2,
           "error": {
@@ -2738,19 +930,29 @@
             "message": "Entry was modified by another request."
           },
           "expected_edit_id": 1
-        }
-      },
-      "OptimisticLockHTTPErrorResponse": {
+        },
         "properties": {
-          "detail": {
-            "$ref": "#/components/schemas/OptimisticLockErrorResponse"
+          "current_edit_id": {
+            "title": "Current Edit Id",
+            "type": "integer"
+          },
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          },
+          "expected_edit_id": {
+            "title": "Expected Edit Id",
+            "type": "integer"
           }
         },
-        "type": "object",
         "required": [
-          "detail"
+          "error",
+          "expected_edit_id",
+          "current_edit_id"
         ],
-        "title": "OptimisticLockHTTPErrorResponse",
+        "title": "OptimisticLockErrorResponse",
+        "type": "object"
+      },
+      "OptimisticLockHTTPErrorResponse": {
         "example": {
           "detail": {
             "current_edit_id": 2,
@@ -2760,21 +962,35 @@
             },
             "expected_edit_id": 1
           }
-        }
+        },
+        "properties": {
+          "detail": {
+            "$ref": "#/components/schemas/OptimisticLockErrorResponse"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "OptimisticLockHTTPErrorResponse",
+        "type": "object"
       },
       "PathCreateRequest": {
+        "example": {
+          "color": "#4F46E5",
+          "description": "Tracking sleep, movement, and gratitude.",
+          "title": "Recovery Journal"
+        },
         "properties": {
-          "title": {
-            "type": "string",
-            "maxLength": 120,
-            "minLength": 1,
-            "title": "Title"
+          "color": {
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "title": "Color",
+            "type": "string"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 1024
+                "maxLength": 1024,
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2782,82 +998,80 @@
             ],
             "title": "Description"
           },
-          "color": {
-            "type": "string",
-            "pattern": "^#[0-9A-Fa-f]{6}$",
-            "title": "Color"
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "title",
           "color"
         ],
         "title": "PathCreateRequest",
-        "example": {
-          "color": "#4F46E5",
-          "description": "Tracking sleep, movement, and gratitude.",
-          "title": "Recovery Journal"
-        }
+        "type": "object"
       },
       "PathCreationApprovalRequest": {
+        "example": {
+          "allowed": true
+        },
         "properties": {
           "allowed": {
-            "type": "boolean",
-            "title": "Allowed"
+            "title": "Allowed",
+            "type": "boolean"
           }
         },
-        "type": "object",
         "required": [
           "allowed"
         ],
         "title": "PathCreationApprovalRequest",
-        "example": {
-          "allowed": true
-        }
+        "type": "object"
       },
       "PathCreationApprovalResponse": {
+        "example": {
+          "allowed": true,
+          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        },
         "properties": {
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "User Id"
-          },
           "allowed": {
-            "type": "boolean",
-            "title": "Allowed"
+            "title": "Allowed",
+            "type": "boolean"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "user_id",
           "allowed"
         ],
         "title": "PathCreationApprovalResponse",
-        "example": {
-          "allowed": true,
-          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-        }
+        "type": "object"
       },
       "PathResponse": {
+        "example": {
+          "color": "#4F46E5",
+          "created_at": "2024-03-15T09:00:00Z",
+          "description": "Tracking sleep, movement, and gratitude.",
+          "is_public": false,
+          "owner_user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "path_id": "AB3X7K",
+          "title": "Recovery Journal",
+          "updated_at": "2024-03-15T09:00:00Z",
+          "uuid": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+        },
         "properties": {
-          "path_id": {
-            "type": "string",
-            "title": "Path Id"
+          "color": {
+            "title": "Color",
+            "type": "string"
           },
-          "uuid": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Uuid"
-          },
-          "owner_user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Owner User Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
           },
           "description": {
             "anyOf": [
@@ -2870,26 +1084,34 @@
             ],
             "title": "Description"
           },
-          "color": {
-            "type": "string",
-            "title": "Color"
-          },
           "is_public": {
-            "type": "boolean",
-            "title": "Is Public"
+            "title": "Is Public",
+            "type": "boolean"
           },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
+          "owner_user_id": {
+            "format": "uuid",
+            "title": "Owner User Id",
+            "type": "string"
+          },
+          "path_id": {
+            "title": "Path Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
           },
           "updated_at": {
-            "type": "string",
             "format": "date-time",
-            "title": "Updated At"
+            "title": "Updated At",
+            "type": "string"
+          },
+          "uuid": {
+            "format": "uuid",
+            "title": "Uuid",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "path_id",
           "uuid",
@@ -2902,38 +1124,32 @@
           "updated_at"
         ],
         "title": "PathResponse",
-        "example": {
-          "color": "#4F46E5",
-          "created_at": "2024-03-15T09:00:00Z",
-          "description": "Tracking sleep, movement, and gratitude.",
-          "is_public": false,
-          "owner_user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-          "path_id": "AB3X7K",
-          "title": "Recovery Journal",
-          "updated_at": "2024-03-15T09:00:00Z",
-          "uuid": "b2c3d4e5-f6a7-8901-bcde-f12345678901"
-        }
+        "type": "object"
       },
       "PathUpdateRequest": {
+        "example": {
+          "color": "#10B981",
+          "description": "Revised description.",
+          "title": "Updated Journal"
+        },
         "properties": {
-          "title": {
+          "color": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 120,
-                "minLength": 1
+                "pattern": "^#[0-9A-Fa-f]{6}$",
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Title"
+            "title": "Color"
           },
           "description": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 1024
+                "maxLength": 1024,
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2941,49 +1157,56 @@
             ],
             "title": "Description"
           },
-          "color": {
+          "title": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^#[0-9A-Fa-f]{6}$"
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Color"
+            "title": "Title"
           }
         },
-        "type": "object",
         "title": "PathUpdateRequest",
-        "example": {
-          "color": "#10B981",
-          "description": "Revised description.",
-          "title": "Updated Journal"
-        }
+        "type": "object"
       },
       "PathVisibilityUpdateRequest": {
+        "example": {
+          "is_public": true
+        },
         "properties": {
           "is_public": {
-            "type": "boolean",
-            "title": "Is Public"
+            "title": "Is Public",
+            "type": "boolean"
           }
         },
-        "type": "object",
         "required": [
           "is_public"
         ],
         "title": "PathVisibilityUpdateRequest",
-        "example": {
-          "is_public": true
-        }
+        "type": "object"
       },
       "SubscriberResponse": {
+        "example": {
+          "display_name": "Alex Smith",
+          "email": "subscriber@example.com",
+          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        },
         "properties": {
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "User Id"
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
           },
           "email": {
             "anyOf": [
@@ -2996,56 +1219,48 @@
             ],
             "title": "Email"
           },
-          "display_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Display Name"
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "user_id",
           "email",
           "display_name"
         ],
         "title": "SubscriberResponse",
-        "example": {
-          "display_name": "Alex Smith",
-          "email": "subscriber@example.com",
-          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-        }
+        "type": "object"
       },
       "SubscriptionInviteRequest": {
+        "example": {
+          "email": "newsubscriber@example.com"
+        },
         "properties": {
           "email": {
-            "type": "string",
             "maxLength": 256,
             "pattern": "^[^@\\s]+@[^@\\s]+$",
-            "title": "Email"
+            "title": "Email",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "email"
         ],
         "title": "SubscriptionInviteRequest",
-        "example": {
-          "email": "newsubscriber@example.com"
-        }
+        "type": "object"
       },
       "UserDisplayNameUpdateRequest": {
+        "example": {
+          "display_name": "Alex Smith"
+        },
         "properties": {
           "display_name": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 100
+                "maxLength": 100,
+                "type": "string"
               },
               {
                 "type": "null"
@@ -3054,19 +1269,15 @@
             "title": "Display Name"
           }
         },
-        "type": "object",
         "title": "UserDisplayNameUpdateRequest",
-        "example": {
-          "display_name": "Alex Smith"
-        }
+        "type": "object"
       },
       "UserProfileResponse": {
+        "example": {
+          "display_name": "Alex Smith",
+          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        },
         "properties": {
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "User Id"
-          },
           "display_name": {
             "anyOf": [
               {
@@ -3088,26 +1299,30 @@
               }
             ],
             "title": "Settings Json"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "user_id",
           "display_name"
         ],
         "title": "UserProfileResponse",
-        "example": {
-          "display_name": "Alex Smith",
-          "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-        }
+        "type": "object"
       },
       "UserSettingsUpdateRequest": {
+        "example": {
+          "settings_json": "{\"theme\":\"dark\"}"
+        },
         "properties": {
           "settings_json": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 1024
+                "maxLength": 1024,
+                "type": "string"
               },
               {
                 "type": "null"
@@ -3116,14 +1331,18 @@
             "title": "Settings Json"
           }
         },
-        "type": "object",
         "title": "UserSettingsUpdateRequest",
-        "example": {
-          "settings_json": "{\"theme\":\"dark\"}"
-        }
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
           "loc": {
             "items": {
               "anyOf": [
@@ -3135,45 +1354,1887 @@
                 }
               ]
             },
-            "type": "array",
-            "title": "Location"
+            "title": "Location",
+            "type": "array"
           },
           "msg": {
-            "type": "string",
-            "title": "Message"
+            "title": "Message",
+            "type": "string"
           },
           "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
+            "title": "Error Type",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "loc",
           "msg",
           "type"
         ],
-        "title": "ValidationError"
+        "title": "ValidationError",
+        "type": "object"
       }
     },
     "securitySchemes": {
       "APIKeyCookie": {
-        "type": "apiKey",
         "description": "Session token cookie obtained via Oauth callback",
         "in": "cookie",
-        "name": "session_token"
+        "name": "session_token",
+        "type": "apiKey"
       },
       "HTTPBearer": {
-        "type": "http",
         "description": "****** from the OAuth callback response body",
-        "scheme": "bearer"
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "summary": "Path-centric backend API for Shared Journal PWA",
+    "title": "paths backend API",
+    "version": "0.4.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "root",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Root"
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/v1/account/deletion-requests": {
+      "post": {
+        "operationId": "create_deletion_request",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Deletion Request",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/v1/account/deletion-requests/latest": {
+      "get": {
+        "operationId": "get_latest_deletion_request",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletionRequestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Latest Deletion Request",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/v1/account/display-name": {
+      "patch": {
+        "operationId": "update_display_name",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserDisplayNameUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Display Name",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/v1/account/profile": {
+      "get": {
+        "operationId": "get_profile",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Profile",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/v1/account/settings": {
+      "patch": {
+        "operationId": "update_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserSettingsUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Settings",
+        "tags": [
+          "account"
+        ]
+      }
+    },
+    "/v1/admin/login": {
+      "post": {
+        "operationId": "admin_login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminLoginResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Login",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/users/{user_id}/path-creation-approval": {
+      "put": {
+        "operationId": "set_path_creation_approval",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathCreationApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathCreationApprovalResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Path Creation Approval",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/auth/callback": {
+      "get": {
+        "description": "Handle GET OAuth callback when the backend is the redirect target.\n\nThe callback_uri is extracted from the signed state token rather than\npassed as a query parameter, so it is guaranteed to match the value used\nduring the original login request.",
+        "operationId": "auth_callback_redirect",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "title": "State",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "title": "Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Oauth Callback Get",
+        "tags": [
+          "auth"
+        ]
+      },
+      "post": {
+        "description": "Exchange the OAuth code for a user session token.",
+        "operationId": "auth_callback",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthCallbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Oauth Callback",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/auth/login": {
+      "get": {
+        "description": "Return the Google OAuth authorization URL for the given callback URI.",
+        "operationId": "auth_login",
+        "parameters": [
+          {
+            "description": "URI that Google will redirect to after login",
+            "in": "query",
+            "name": "callback_uri",
+            "required": true,
+            "schema": {
+              "description": "URI that Google will redirect to after login",
+              "title": "Callback Uri",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthLoginResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Oauth Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/v1/entries/versions": {
+      "get": {
+        "description": "Cheap {path_id: {entry_id: edit_id}} map for polling many paths at once.\n\nA dedicated round trip so pollers can diff versions and only fetch full\nentry content for what actually changed, instead of re-fetching every\npath's full entry list on every tick.\n\nUnknown or inaccessible path_ids are silently omitted rather than\nfailing the whole request \u2014 same as a caller not being subscribed to a\npath simply not seeing it in list_paths.",
+        "operationId": "get_entry_versions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "path_ids",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Path Ids",
+              "type": "array"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "additionalProperties": {
+                      "type": "integer"
+                    },
+                    "type": "object"
+                  },
+                  "title": "Response Get Entry Versions",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Entry Versions",
+        "tags": [
+          "entries"
+        ]
+      }
+    },
+    "/v1/exports": {
+      "post": {
+        "operationId": "create_export",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Export",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
+    "/v1/exports/{export_id}": {
+      "get": {
+        "operationId": "get_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportJobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Export",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
+    "/v1/exports/{export_id}/download/images": {
+      "get": {
+        "operationId": "download_export_images",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadURLResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Download Images",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
+    "/v1/exports/{export_id}/download/json": {
+      "get": {
+        "operationId": "download_export_json",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "export_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Export Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DownloadURLResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Download Json",
+        "tags": [
+          "exports"
+        ]
+      }
+    },
+    "/v1/images/{image_id}": {
+      "patch": {
+        "operationId": "update_image_caption",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "image_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Image Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageCaptionUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageCaptionUpdateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Image Caption",
+        "tags": [
+          "images"
+        ]
+      }
+    },
+    "/v1/images/{image_id}/download-url": {
+      "get": {
+        "operationId": "get_image_download_url",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "image_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Image Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageDownloadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Image Download Url",
+        "tags": [
+          "images"
+        ]
+      }
+    },
+    "/v1/invitations": {
+      "get": {
+        "operationId": "list_invitations",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InvitationResponse"
+                  },
+                  "title": "Response List Invitations",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Invitations",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/v1/invitations/blocklist": {
+      "get": {
+        "operationId": "list_blocklist",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BlocklistEntryResponse"
+                  },
+                  "title": "Response List Blocklist",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Blocklist",
+        "tags": [
+          "invitations"
+        ]
+      },
+      "post": {
+        "operationId": "block_inviter",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlocklistAddRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Block Inviter",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/v1/invitations/blocklist/{blocked_user_id}": {
+      "delete": {
+        "operationId": "unblock_user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "blocked_user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Blocked User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Unblock User",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/v1/invitations/{invitation_id}/accept": {
+      "post": {
+        "operationId": "accept_invitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accept Invitation",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/v1/invitations/{invitation_id}/ignore": {
+      "post": {
+        "operationId": "ignore_invitation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invitation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Invitation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ignore Invitation",
+        "tags": [
+          "invitations"
+        ]
+      }
+    },
+    "/v1/paths": {
+      "get": {
+        "operationId": "list_paths",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PathResponse"
+                  },
+                  "title": "Response List Paths",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Paths",
+        "tags": [
+          "paths"
+        ]
+      },
+      "post": {
+        "operationId": "create_path",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Path",
+        "tags": [
+          "paths"
+        ]
+      }
+    },
+    "/v1/paths/{path_code}": {
+      "delete": {
+        "operationId": "delete_path",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Path",
+        "tags": [
+          "paths"
+        ]
+      },
+      "patch": {
+        "operationId": "update_path",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Path",
+        "tags": [
+          "paths"
+        ]
+      }
+    },
+    "/v1/paths/{path_code}/entries": {
+      "get": {
+        "operationId": "list_entries",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EntryResponse"
+                  },
+                  "title": "Response List Entries",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Entries",
+        "tags": [
+          "entries"
+        ]
+      },
+      "post": {
+        "operationId": "create_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_entry"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Entry",
+        "tags": [
+          "entries"
+        ]
+      }
+    },
+    "/v1/paths/{path_code}/entries/{entry_slug}": {
+      "delete": {
+        "operationId": "delete_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "entry_slug",
+            "required": true,
+            "schema": {
+              "title": "Entry Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Entry",
+        "tags": [
+          "entries"
+        ]
+      },
+      "get": {
+        "operationId": "get_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "entry_slug",
+            "required": true,
+            "schema": {
+              "title": "Entry Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryContentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Entry",
+        "tags": [
+          "entries"
+        ]
+      },
+      "put": {
+        "operationId": "update_entry",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "entry_slug",
+            "required": true,
+            "schema": {
+              "title": "Entry Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_entry"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptimisticLockHTTPErrorResponse"
+                }
+              }
+            },
+            "description": "Optimistic lock mismatch for expected_edit_id."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Entry",
+        "tags": [
+          "entries"
+        ]
+      }
+    },
+    "/v1/paths/{path_code}/entries/{entry_slug}/images": {
+      "get": {
+        "operationId": "list_entry_images",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "entry_slug",
+            "required": true,
+            "schema": {
+              "title": "Entry Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ImageResponse"
+                  },
+                  "title": "Response List Entry Images",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Entry Images",
+        "tags": [
+          "entries"
+        ]
+      }
+    },
+    "/v1/paths/{path_code}/subscriptions": {
+      "get": {
+        "operationId": "list_subscriptions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubscriberResponse"
+                  },
+                  "title": "Response List Subscriptions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Subscriptions",
+        "tags": [
+          "subscriptions"
+        ]
+      },
+      "post": {
+        "operationId": "invite_subscriber",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscriptionInviteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Invite Subscriber",
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/v1/paths/{path_code}/subscriptions/{target_user_id}": {
+      "delete": {
+        "operationId": "delete_subscription",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "target_user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Target User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Subscription",
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/v1/paths/{path_code}/visibility": {
+      "patch": {
+        "operationId": "update_path_visibility",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path_code",
+            "required": true,
+            "schema": {
+              "title": "Path Code",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathVisibilityUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Path Visibility",
+        "tags": [
+          "paths"
+        ]
       }
     }
   }

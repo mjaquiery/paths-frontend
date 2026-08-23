@@ -7,10 +7,10 @@
 import type { ImageResponse } from './imageResponse';
 
 export interface EntryContentResponse {
-  id: string;
-  path_id: string;
+  content: string;
   day: string;
   edit_id: number;
-  content: string;
+  id: string;
   images?: ImageResponse[];
+  path_id: string;
 }

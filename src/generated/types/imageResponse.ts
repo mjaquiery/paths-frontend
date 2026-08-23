@@ -6,11 +6,11 @@
  */
 
 export interface ImageResponse {
-  id: string;
+  byte_size: number | null;
+  caption: string | null;
+  content_type: string | null;
   entry_id: string;
   filename: string;
-  caption: string | null;
+  id: string;
   status: string;
-  content_type: string | null;
-  byte_size: number | null;
 }

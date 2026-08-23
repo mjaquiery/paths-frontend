@@ -22,6 +22,8 @@ export * from './errorDetail';
 export * from './exportCreateRequest';
 export * from './exportJobResponse';
 export * from './exportJobResponseState';
+export * from './getEntryVersions200';
+export * from './getEntryVersionsParams';
 export * from './healthResponse';
 export * from './hTTPValidationError';
 export * from './imageCaptionUpdateRequest';

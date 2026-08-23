@@ -10,6 +10,15 @@ export interface QueryCacheEntry {
   value: string;
 }
 
+/** One conditional-GET cache entry: the last ETag seen for a request URL and
+ *  the response body it was attached to, so a future 304 can resolve to it
+ *  without re-parsing anything. See lib/etagStore.ts. */
+export interface EtagCacheEntry {
+  url: string;
+  etag: string;
+  body: unknown;
+}
+
 /** A local-only, never-synced draft of in-progress entry text/images.
  *
  * Keyed by "pathId:day" for new entries or "pathId:entryId" for edits, so there's at most
@@ -29,6 +38,7 @@ const db = new Dexie('pathsFrontend') as Dexie & {
   pathPreferences: EntityTable<PathPreference, 'pathId'>;
   queryCache: EntityTable<QueryCacheEntry, 'key'>;
   localDrafts: EntityTable<LocalEntryDraft, 'draftKey'>;
+  etagCache: EntityTable<EtagCacheEntry, 'url'>;
 };
 
 export { db };
@@ -80,6 +90,18 @@ db.version(7).stores({
   entryContent: null,
   entryImages: null,
   localDrafts: '&draftKey,pathId',
+});
+
+// Version 8: add etagCache for conditional-GET support in lib/customFetch.ts —
+// a separate table from queryCache since it's keyed by request URL, not by
+// TanStack Query key, and needs its own clear-on-logout lifecycle.
+db.version(8).stores({
+  pathPreferences: '&pathId,hidden',
+  queryCache: '&key',
+  entryContent: null,
+  entryImages: null,
+  localDrafts: '&draftKey,pathId',
+  etagCache: '&url',
 });
 
 export async function isPathHidden(pathId: string) {

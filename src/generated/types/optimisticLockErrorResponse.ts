@@ -7,7 +7,7 @@
 import type { ErrorDetail } from './errorDetail';
 
 export interface OptimisticLockErrorResponse {
+  current_edit_id: number;
   error: ErrorDetail;
   expected_edit_id: number;
-  current_edit_id: number;
 }

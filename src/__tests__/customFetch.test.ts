@@ -4,6 +4,15 @@ const mockFetch = vi.fn();
 
 vi.stubGlobal('fetch', mockFetch);
 
+const mockGetEtag = vi.fn();
+const mockSetEtag = vi.fn();
+const mockClearEtags = vi.fn();
+vi.mock('../lib/etagStore', () => ({
+  getEtag: (...args: unknown[]) => mockGetEtag(...args),
+  setEtag: (...args: unknown[]) => mockSetEtag(...args),
+  clearEtags: (...args: unknown[]) => mockClearEtags(...args),
+}));
+
 // Stub localStorage for bearer-token tests
 const localStorageStore: Record<string, string> = {};
 vi.stubGlobal('localStorage', {
@@ -31,6 +40,12 @@ beforeEach(() => {
     headers: new Headers(),
     json: vi.fn().mockResolvedValue({}),
   });
+  mockGetEtag.mockReset();
+  mockGetEtag.mockResolvedValue(undefined);
+  mockSetEtag.mockReset();
+  mockSetEtag.mockResolvedValue(undefined);
+  mockClearEtags.mockReset();
+  mockClearEtags.mockResolvedValue(undefined);
   // Clear stored token between tests
   delete localStorageStore['session_token'];
 });
@@ -265,5 +280,75 @@ describe('customFetch', () => {
     };
     expect(result.data).toBeUndefined();
     expect(result.status).toBe(204);
+  });
+
+  it('sends If-None-Match with the cached etag on a GET request', async () => {
+    mockGetEtag.mockResolvedValue({
+      etag: 'W/"abc123"',
+      body: { cached: true },
+    });
+
+    const { customFetch } = await import('../lib/customFetch');
+    await customFetch('/v1/paths');
+
+    const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const headers = fetchOptions.headers as Record<string, string>;
+    expect(headers['If-None-Match']).toBe('W/"abc123"');
+  });
+
+  it('does not look up or send an etag for a non-GET request', async () => {
+    const { customFetch } = await import('../lib/customFetch');
+    await customFetch('/v1/paths', { method: 'POST', body: '{}' });
+
+    expect(mockGetEtag).not.toHaveBeenCalled();
+    const [, fetchOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const headers = fetchOptions.headers as Record<string, string>;
+    expect(headers['If-None-Match']).toBeUndefined();
+  });
+
+  it('resolves a 304 using the cached body instead of parsing the empty response', async () => {
+    mockGetEtag.mockResolvedValue({
+      etag: 'W/"abc123"',
+      body: { title: 'cached' },
+    });
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 304,
+      headers: new Headers(),
+      json: vi.fn().mockRejectedValue(new Error('should not be called on 304')),
+    });
+
+    const { customFetch } = await import('../lib/customFetch');
+    const result = (await customFetch('/v1/paths')) as {
+      data: unknown;
+      status: number;
+    };
+    expect(result.data).toEqual({ title: 'cached' });
+    expect(result.status).toBe(200);
+  });
+
+  it('stores the new etag and body when a GET responds 200 with an ETag header', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ ETag: 'W/"new-etag"' }),
+      json: vi.fn().mockResolvedValue({ title: 'fresh' }),
+    });
+
+    const { customFetch } = await import('../lib/customFetch');
+    await customFetch('/v1/paths');
+
+    expect(mockSetEtag).toHaveBeenCalledWith(
+      expect.stringContaining('/v1/paths'),
+      'W/"new-etag"',
+      { title: 'fresh' },
+    );
+  });
+
+  it('does not store an etag when the response carries none', async () => {
+    const { customFetch } = await import('../lib/customFetch');
+    await customFetch('/v1/paths');
+
+    expect(mockSetEtag).not.toHaveBeenCalled();
   });
 });
