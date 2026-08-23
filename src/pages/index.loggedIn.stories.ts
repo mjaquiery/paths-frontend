@@ -13,7 +13,7 @@ import type {
   PathResponse,
   ImageResponse,
 } from '../generated/types';
-import { toLocalISODate } from '../utils/date';
+import { focusDayIndex, toLocalISODate } from '../utils/date';
 import {
   withAppShell,
   withLoggedInUser,
@@ -248,11 +248,12 @@ export const WriteEntryUsesTheSelectedDay: Story = {
     await userEvent.click(weekDays[otherIndex]!);
 
     // Independently derive that day's date the same way DayBrowser does —
-    // the Sun-Sat week containing today, offset by the clicked cell's index.
-    const sunday = new Date();
-    sunday.setDate(sunday.getDate() - sunday.getDay());
-    const expectedDate = new Date(sunday);
-    expectedDate.setDate(sunday.getDate() + otherIndex);
+    // a 7-day window starting focusDayIndex days before the selected day
+    // (today, by default), offset by the clicked cell's index.
+    const start = new Date();
+    start.setDate(start.getDate() - focusDayIndex(today, today));
+    const expectedDate = new Date(start);
+    expectedDate.setDate(start.getDate() + otherIndex);
     const expectedDay = toLocalISODate(expectedDate);
     expect(expectedDay).not.toBe(today);
 
