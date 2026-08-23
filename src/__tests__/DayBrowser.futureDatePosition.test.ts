@@ -23,6 +23,26 @@ function selectedWeekDayIndex(wrapper: ReturnType<typeof mount>): number {
 }
 
 describe('DayBrowser future date positioning', () => {
+  it('places today 6th (index 5), leaving the last slot for tomorrow', () => {
+    const wrapper = mount(DayBrowser, {
+      props: {
+        visiblePaths: [],
+        pathEntries: [],
+        currentUserId: 'u1',
+        ensureDayLoaded: () => {},
+      },
+      global: { stubs },
+    });
+
+    expect(selectedWeekDayIndex(wrapper)).toBe(5);
+
+    const cells = wrapper.findAll('.db-week-day');
+    expect(cells).toHaveLength(7);
+    expect(cells[6]!.find('.db-week-daynum').text()).toBe(
+      String(new Date(daysFromNow(1) + 'T00:00:00').getDate()),
+    );
+  });
+
   it('centers tomorrow at the 4th position (index 3) when jumped to via the date picker', async () => {
     const wrapper = mount(DayBrowser, {
       props: {
