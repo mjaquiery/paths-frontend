@@ -1,5 +1,10 @@
 <template>
-  <ion-modal :is-open="isOpen" aria-label="Delete Path" @didDismiss="onDismiss">
+  <ion-modal
+    :is-open="isOpen"
+    aria-label="Delete Path"
+    :backdrop-dismiss="!deleting"
+    @didDismiss="onDismiss"
+  >
     <ion-header>
       <ion-toolbar>
         <ion-title>Delete Path</ion-title>

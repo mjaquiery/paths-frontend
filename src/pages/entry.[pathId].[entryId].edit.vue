@@ -342,11 +342,14 @@ async function submit() {
       },
     });
 
-    await queryClient.invalidateQueries({
+    // Navigate immediately — invalidation and draft cleanup don't need to
+    // block leaving the page, and awaiting them here made "Save" feel stuck
+    // for a full network round-trip after the entry was already saved.
+    router.push(entryViewLink.value);
+    void queryClient.invalidateQueries({
       queryKey: ['v1', 'paths', pathId, 'entries'],
     });
-    await clearDraft();
-    router.push(entryViewLink.value);
+    void clearDraft();
   } catch (err: unknown) {
     if (isApiErrorWithStatus(err, 409)) {
       conflictError.value =

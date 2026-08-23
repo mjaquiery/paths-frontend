@@ -2,6 +2,7 @@
   <ion-modal
     :is-open="isOpen"
     :aria-label="path ? 'Edit Path' : 'New Path'"
+    :backdrop-dismiss="!saving"
     @didDismiss="onDismiss"
   >
     <div class="pf-header df-ui">
