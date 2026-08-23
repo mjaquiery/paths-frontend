@@ -2,6 +2,7 @@ import { IonApp } from '@ionic/vue';
 
 import { router } from './router';
 import { db } from '../src/lib/db';
+import { setCurrentUser, logout } from '../src/lib/authSession';
 import AppFooter from '../src/components/AppFooter.vue';
 
 interface StoryUser {
@@ -16,12 +17,18 @@ const DEFAULT_USER: StoryUser = {
   display_name: 'Alex M.',
 };
 
-/** Decorator: seeds localStorage as if `user` had already logged in. */
+/**
+ * Decorator: seeds localStorage as if `user` had already logged in. Goes
+ * through setCurrentUser() rather than writing localStorage directly — pages
+ * read the shared `currentUser` ref from lib/authSession.ts (populated once
+ * at module load), not localStorage on every render, so a later story
+ * reaching around it would never be seen.
+ */
 export function withLoggedInUser(user: StoryUser = DEFAULT_USER) {
   return (story: () => unknown) => ({
     components: { story },
     setup() {
-      localStorage.setItem('user', JSON.stringify(user));
+      setCurrentUser(user);
     },
     template: '<story />',
   });
@@ -43,13 +50,12 @@ export function withAppShell() {
   });
 }
 
-/** Decorator: clears any logged-in user from localStorage. */
+/** Decorator: clears any logged-in user, mirroring the real logout(). */
 export function withLoggedOut() {
   return (story: () => unknown) => ({
     components: { story },
     setup() {
-      localStorage.removeItem('user');
-      localStorage.removeItem('session_token');
+      logout();
     },
     template: '<story />',
   });

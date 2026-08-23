@@ -161,29 +161,17 @@ import { useLocalDraft } from '../composables/useLocalDraft';
 import { pickImages } from '../composables/useImagePicker';
 import { usePhotoRemoveConfirm } from '../composables/usePhotoRemoveConfirm';
 import { describeError } from '../lib/errors';
+import { currentUser } from '../lib/authSession';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import PhotoStripItem from '../components/PhotoStripItem.vue';
 import SavingOverlay from '../components/SavingOverlay.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import { toLocalISODate } from '../utils/date';
 import { dateViewPath, pathViewPath } from '../utils/viewLinks';
-import type { OAuthCallbackResponse } from '../generated/types';
 
 const route = useRoute();
 const router = useRouter();
 const queryClient = useQueryClient();
-
-const currentUser = ref<OAuthCallbackResponse | null>(null);
-onMounted(() => {
-  const stored = localStorage.getItem('user');
-  if (stored) {
-    try {
-      currentUser.value = JSON.parse(stored) as OAuthCallbackResponse;
-    } catch {
-      currentUser.value = null;
-    }
-  }
-});
 
 const { data: allPaths } = usePaths();
 const ownedPaths = computed(

@@ -27,7 +27,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthCallback } from '../generated/apiClient';
 import type { OAuthCallbackResponse } from '../generated/types';
 import { describeError } from '../lib/errors';
-import { consumeReturnPath } from '../lib/authSession';
+import { consumeReturnPath, setCurrentUser } from '../lib/authSession';
 
 const router = useRouter();
 const route = useRoute();
@@ -55,7 +55,7 @@ onMounted(async () => {
     if (result.data) {
       const { token, ...safeData } = result.data as OAuthCallbackResponse;
       localStorage.setItem('session_token', token);
-      localStorage.setItem('user', JSON.stringify(safeData));
+      setCurrentUser(safeData as OAuthCallbackResponse);
     }
   } catch (err: unknown) {
     error.value = describeError('complete login', err);

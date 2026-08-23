@@ -66,21 +66,20 @@
 
 <script setup lang="ts">
 import { IonPage, IonContent } from '@ionic/vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import DayBrowser from '../components/DayBrowser.vue';
 import BottomBar from '../components/BottomBar.vue';
-import type { OAuthCallbackResponse } from '../generated/types';
 import { usePaths } from '../composables/usePaths';
 import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { useGoogleLogin } from '../composables/useGoogleLogin';
+import { currentUser } from '../lib/authSession';
 import { toLocalISODate } from '../utils/date';
 
 const route = useRoute();
 const { loggingIn, loginError, loginWithGoogle } = useGoogleLogin();
-const currentUser = ref<OAuthCallbackResponse | null>(null);
 
 const initialDate =
   typeof route.query.day === 'string' ? route.query.day : undefined;
@@ -105,18 +104,6 @@ const canCreateAny = computed(
       (p) => p.owner_user_id === currentUser.value!.user_id,
     ),
 );
-
-onMounted(() => {
-  const stored = localStorage.getItem('user');
-  if (stored) {
-    try {
-      currentUser.value = JSON.parse(stored) as OAuthCallbackResponse;
-    } catch {
-      localStorage.removeItem('user');
-      localStorage.removeItem('session_token');
-    }
-  }
-});
 </script>
 
 <style scoped>
