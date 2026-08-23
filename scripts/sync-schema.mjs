@@ -3,9 +3,6 @@
 //
 // BACKEND_ENV selects where from:
 //   - "staging" / "production": the matching fly.io backend's live /openapi.json.
-//     Note: today there is only one backend deployment (https://paths.fly.dev), so both
-//     resolve to it. If a real staging/production split is stood up later, update the two
-//     entries in KNOWN_ENVS below — everything else about this script stays the same.
 //   - anything else: treated as a literal base URL (e.g. `http://localhost:8000` for a local
 //     dev backend). This is a local-dev convenience only; CI always uses staging/production.
 //
@@ -15,7 +12,7 @@ import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const KNOWN_ENVS = {
-  staging: 'https://paths.fly.dev',
+  staging: 'https://paths-staging.fly.dev',
   production: 'https://paths.fly.dev',
 };
 
