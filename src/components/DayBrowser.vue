@@ -4,7 +4,18 @@
     <div class="db-header">
       <div class="db-header-text">
         <span class="db-weekday">{{ weekdayLabel }}</span>
-        <h1 class="db-date">{{ longDateLabel }}</h1>
+        <div class="db-date-picker">
+          <h1 class="db-date">{{ longDateLabel }}</h1>
+          <input
+            ref="dateInputEl"
+            type="date"
+            class="db-date-input"
+            :value="selectedDate"
+            aria-label="Jump to date"
+            @click="openDatePicker"
+            @change="onDateInputChange"
+          />
+        </div>
       </div>
       <div class="db-header-actions">
         <button
@@ -160,6 +171,24 @@ function shiftDay(delta: number) {
 
 function selectDay(dateStr: string) {
   selectedDate.value = dateStr;
+}
+
+const dateInputEl = ref<HTMLInputElement | null>(null);
+
+function openDatePicker() {
+  // showPicker() is unsupported in some browsers (older Safari) — the plain
+  // click that triggers this handler already opens the native date input's
+  // picker there, so a missing/throwing showPicker is safe to ignore.
+  try {
+    dateInputEl.value?.showPicker?.();
+  } catch {
+    // ignore — no-op fallback to the browser's default click behavior
+  }
+}
+
+function onDateInputChange(event: Event) {
+  const value = (event.target as HTMLInputElement).value;
+  if (value) selectedDate.value = value;
 }
 
 const todayStr = toLocalISODate(new Date());
@@ -347,6 +376,23 @@ defineExpose({ selectedDate });
   font-weight: 400;
   font-size: 1.6rem;
   color: var(--color-ink);
+}
+
+.db-date-picker {
+  position: relative;
+  display: inline-block;
+}
+
+.db-date-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+  margin: 0;
 }
 
 .db-header-actions {

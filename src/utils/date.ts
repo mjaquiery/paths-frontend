@@ -15,10 +15,11 @@ export function toLocalISODate(date: Date): string {
 /**
  * Index (0-6) of the focus day within a 7-day week strip.
  *
- * Recent focus days are pulled toward the end of the strip so the strip
- * never has to show days after today: today lands last (6), yesterday
- * second-to-last (5), the day before that one earlier (4). Anything older
- * (or in the future) is centered at index 3, with 3 days either side.
+ * Recent focus days are pulled toward the end of the strip, but stop one
+ * short of the last slot: today lands 6th (index 5), yesterday 5th (index
+ * 4). That trailing slot always holds the day after the focus day, so
+ * looking at today (or yesterday) still shows a peek at tomorrow. Anything
+ * older, or in the future, is centered at index 3, with 3 days either side.
  */
 export function focusDayIndex(focusDate: string, todayDate: string): number {
   const focus = new Date(focusDate + 'T00:00:00');
@@ -28,10 +29,8 @@ export function focusDayIndex(focusDate: string, todayDate: string): number {
   );
   switch (daysAgo) {
     case 0:
-      return 6;
-    case 1:
       return 5;
-    case 2:
+    case 1:
       return 4;
     default:
       return 3;

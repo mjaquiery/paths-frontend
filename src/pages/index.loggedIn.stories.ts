@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fireEvent, userEvent, waitFor, within } from 'storybook/test';
 import { http, HttpResponse } from 'msw';
 
 import IndexPage from './index.vue';
@@ -404,6 +404,38 @@ export const SelectingADayFiltersEntries: Story = {
     await expect(
       canvas.queryByText('Arrived in Kyoto! First impressions overwhelming.'),
     ).not.toBeInTheDocument();
+  },
+};
+
+export const SelectingBigDateJumpsToChosenDay: Story = {
+  parameters: { msw: { handlers: dayBrowserDefaultHandlers } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText(
+        'Arrived in Kyoto! First impressions overwhelming.',
+      ),
+    ).toBeInTheDocument();
+
+    // The spelled-out big date has a native <input type="date"> overlaid on
+    // it — changing its value (as the native picker would) should jump the
+    // whole browser to that day, same as clicking a week-strip cell does.
+    const dateInput = canvasElement.querySelector(
+      '.db-date-input',
+    ) as HTMLInputElement;
+    const target = lastYearToday();
+    dateInput.value = target;
+    await fireEvent.change(dateInput);
+
+    await expect(
+      canvas.queryByText('Arrived in Kyoto! First impressions overwhelming.'),
+    ).not.toBeInTheDocument();
+    await expect(
+      await canvas.findByText(
+        'First day of spring last year — walked home through the park.',
+      ),
+    ).toBeInTheDocument();
+    await expect(dateInput.value).toBe(target);
   },
 };
 
