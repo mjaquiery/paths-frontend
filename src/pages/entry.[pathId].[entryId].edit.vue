@@ -2,9 +2,7 @@
   <ion-page>
     <ion-header class="editor-toolbar-header">
       <div class="editor-header">
-        <router-link class="text-btn" :to="entryViewLink">
-          Cancel
-        </router-link>
+        <router-link class="text-btn" :to="entryViewLink"> Cancel </router-link>
         <div class="editor-header-title">
           <span class="editor-header-label">{{ path?.title }}</span>
           <span class="editor-header-date">{{ entryData?.day }}</span>
