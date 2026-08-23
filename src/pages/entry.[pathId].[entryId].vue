@@ -35,9 +35,13 @@
         </div>
 
         <p class="entry-path-label">
-          <router-link v-if="path" :to="pathViewLink" class="entry-path-link">{{
-            path.title
-          }}</router-link>
+          <router-link
+            v-if="path && entryDay"
+            :to="pathViewLink"
+            class="entry-path-link"
+            >{{ path.title }}</router-link
+          >
+          <template v-else-if="path">{{ path.title }}</template>
           <template v-else>Loading…</template>
         </p>
         <h1 class="entry-date">
