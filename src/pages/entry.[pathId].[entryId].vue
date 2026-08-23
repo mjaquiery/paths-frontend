@@ -51,16 +51,21 @@
         </h1>
 
         <p v-if="deleteError" class="entry-error">{{ deleteError }}</p>
-        <p v-if="content === undefined" class="entry-body-placeholder">
-          Fetching…
+        <p v-if="entryNotFound" class="entry-body-placeholder">
+          This entry couldn't be found. It may have been deleted.
         </p>
-        <p v-else-if="!content" class="entry-body-placeholder">(no text)</p>
-        <MarkdownContent
-          v-else
-          class="entry-body"
-          :content="content"
-          :images="images"
-        />
+        <template v-else>
+          <p v-if="content === undefined" class="entry-body-placeholder">
+            Fetching…
+          </p>
+          <p v-else-if="!content" class="entry-body-placeholder">(no text)</p>
+          <MarkdownContent
+            v-else
+            class="entry-body"
+            :content="content"
+            :images="images"
+          />
+        </template>
 
         <template v-if="unreferencedImages.length > 0">
           <p class="entry-section-label">
@@ -132,7 +137,7 @@ import { usePaths } from '../composables/usePaths';
 import { usePathVisibility } from '../composables/usePathVisibility';
 import { useMultiPathEntries } from '../composables/useMultiPathEntries';
 import { useOnThisDay } from '../composables/useOnThisDay';
-import { describeError } from '../lib/errors';
+import { describeError, isApiErrorWithStatus } from '../lib/errors';
 import MarkdownContent from '../components/MarkdownContent.vue';
 import EntryImage from '../components/EntryImage.vue';
 import ImageLightbox from '../components/ImageLightbox.vue';
@@ -188,12 +193,16 @@ const canEdit = computed(
     path.value?.owner_user_id === currentUser.value.user_id,
 );
 
-const { data: entryData } = useGetEntry(pathId, entryId, {
+const { data: entryData, error: entryError } = useGetEntry(pathId, entryId, {
   query: { select: (r) => r.data as EntryContentResponse },
 });
 const { data: imagesData } = useListEntryImages(pathId, entryId, {
   query: { select: (r) => r.data as ImageResponse[] },
 });
+
+const entryNotFound = computed(() =>
+  isApiErrorWithStatus(entryError.value, 404),
+);
 
 const content = computed(() => entryData.value?.content);
 const images = computed(() => imagesData.value ?? []);
@@ -295,10 +304,13 @@ async function performDelete() {
   deleteError.value = '';
   try {
     await doDeleteEntry({ pathCode: pathId.value, entrySlug: entryId.value });
-    await queryClient.invalidateQueries({
+    // Navigate away before invalidating: this entry's own detail query
+    // shares the ['v1','paths',pathId,'entries',...] prefix, so an awaited
+    // invalidation here would refetch (and 404 on) the entry we just left.
+    goBack();
+    void queryClient.invalidateQueries({
       queryKey: ['v1', 'paths', pathId.value, 'entries'],
     });
-    goBack();
   } catch (err: unknown) {
     deleteError.value = describeError('delete entry', err);
   }

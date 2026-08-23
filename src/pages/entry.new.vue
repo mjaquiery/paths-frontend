@@ -296,11 +296,14 @@ async function submit() {
         images: pendingImages.value.map((img) => img.file),
       },
     });
-    await queryClient.invalidateQueries({
+    // Navigate immediately — invalidation and draft cleanup don't need to
+    // block leaving the page, and awaiting them here made "Save" feel stuck
+    // for a full network round-trip after the entry was already created.
+    goBack();
+    void queryClient.invalidateQueries({
       queryKey: ['v1', 'paths', selectedPathId.value, 'entries'],
     });
-    await clearDraft();
-    goBack();
+    void clearDraft();
   } catch (err: unknown) {
     error.value = describeError('create entry', err);
   }

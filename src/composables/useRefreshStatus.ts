@@ -1,6 +1,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useIsFetching, useQueryClient } from '@tanstack/vue-query';
 import type { QueryCacheNotifyEvent } from '@tanstack/query-core';
+import { ApiError } from '../lib/customFetch';
 
 export type RefreshStatusType = 'ok' | 'fetching' | 'offline' | 'error';
 
@@ -91,7 +92,12 @@ export function useRefreshStatus() {
         event.action.type === 'error' ||
         event.query.state.status === 'error'
       ) {
-        hasError.value = true;
+        // A 404 means the entry/path genuinely doesn't exist (e.g. it was
+        // just deleted, or a stale link) — not a connectivity problem, so it
+        // shouldn't flip the app-wide "Unable to connect" indicator.
+        const err = event.query.state.error;
+        const isNotFound = err instanceof ApiError && err.status === 404;
+        if (!isNotFound) hasError.value = true;
       }
     });
   });

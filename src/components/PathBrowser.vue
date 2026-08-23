@@ -18,6 +18,9 @@
         <ion-spinner name="crescent" aria-label="Loading entries" />
         <span>Loading entries…</span>
       </div>
+      <p v-else-if="pathNotFound" class="pb-empty">
+        This path couldn't be found. It may have been deleted.
+      </p>
       <template v-else-if="visibleEntries.length > 0">
         <div
           v-for="entry in visibleEntries"
@@ -90,6 +93,8 @@ const props = defineProps<{
   entries: EntryWithContent[];
   isLoading?: boolean;
   hasMore?: boolean;
+  /** The selected path isn't in the user's own path list — deleted, or a stale/bad link. */
+  pathNotFound?: boolean;
   /** When set, scrolls to and highlights the entry for this day once it renders. */
   centerDay?: string;
 }>();

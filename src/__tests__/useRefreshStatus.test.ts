@@ -6,6 +6,7 @@ import {
   formatRelativeTime,
   useRefreshStatus,
 } from '../composables/useRefreshStatus';
+import { ApiError } from '../lib/customFetch';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -163,6 +164,30 @@ describe('useRefreshStatus', () => {
     expect(exposed.hasError.value).toBe(true);
     expect(exposed.statusType.value).toBe('error');
     expect(exposed.statusText.value).toBe('Unable to connect');
+
+    wrapper.unmount();
+  });
+
+  it('does not set hasError when an entry query 404s (entry not found, not offline)', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const { wrapper, exposed } = mountWithStatus(queryClient);
+    await flushPromises();
+
+    // A deleted/nonexistent entry's detail query matches the same
+    // ['v1','paths',pathId,'entries',...] key prefix as the entry-list
+    // query this composable watches, so its 404 must not be mistaken for a
+    // connectivity failure.
+    await queryClient.prefetchQuery({
+      queryKey: ['v1', 'paths', 'p1', 'entries', 'e1'],
+      queryFn: () => Promise.reject(new ApiError(404, 'not found')),
+      retry: false,
+    });
+    await nextTick();
+
+    expect(exposed.hasError.value).toBe(false);
+    expect(exposed.statusType.value).toBe('ok');
 
     wrapper.unmount();
   });
