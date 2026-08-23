@@ -23,6 +23,16 @@ const today = toLocalISODate(new Date());
 // canCreateAny (which gates "+ Write Entry") requires owning a visible path.
 const ownedPath = { ...pathResponseFixture, owner_user_id: 'user-1' };
 
+const secondPath = {
+  ...pathResponseFixture,
+  path_id: 'p2',
+  uuid: 'u2',
+  title: "Sam's Travel",
+  color: '#f5a623',
+  owner_user_id: 'user-2',
+  is_public: true,
+};
+
 const mswHandlers = withDefaultHandlers(
   http.get('*/v1/paths', () => HttpResponse.json([ownedPath])),
   http.get('*/v1/paths/:pathCode/entries', () =>
@@ -56,7 +66,9 @@ export const FullPage: Story = {
         exact: false,
       }),
     ).toBeInTheDocument();
-    await expect(canvas.getByLabelText('Path')).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('button', { name: ownedPath.title }),
+    ).toBeInTheDocument();
     await expect(
       canvas.getByRole('link', { name: '+ Write Entry' }),
     ).toBeInTheDocument();
@@ -90,6 +102,65 @@ export const PathNotFound: Story = {
         "This path couldn't be found. It may have been deleted.",
         { exact: false },
       ),
+    ).toBeInTheDocument();
+  },
+};
+
+// With no ?pathId in the URL, every visible path is shown at once and their
+// entries merge into a single feed ordered by overall recency — not grouped
+// per path — with each row tagged by which path it came from.
+export const MultiplePathsMergedByDate: Story = {
+  parameters: {
+    msw: {
+      handlers: withDefaultHandlers(
+        http.get('*/v1/paths', () =>
+          HttpResponse.json([ownedPath, secondPath]),
+        ),
+        http.get('*/v1/paths/:pathCode/entries', ({ params }) =>
+          HttpResponse.json([
+            {
+              ...entryResponseFixture,
+              id: `${params.pathCode}-e1`,
+              path_id: params.pathCode as string,
+              day: today,
+            },
+          ]),
+        ),
+        http.get('*/v1/paths/:pathCode/entries/:entrySlug', ({ params }) =>
+          HttpResponse.json({
+            ...entryContentResponseFixture,
+            id: params.entrySlug as string,
+            path_id: params.pathCode as string,
+            day: today,
+            content:
+              params.pathCode === secondPath.path_id
+                ? 'Landed in Tokyo'
+                : 'Wrote in my journal',
+          }),
+        ),
+        http.get('*/v1/paths/:pathCode/entries/:entrySlug/images', () =>
+          HttpResponse.json([]),
+        ),
+      ),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole('button', { name: ownedPath.title }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('button', { name: secondPath.title }),
+    ).toBeInTheDocument();
+    await expect(
+      await canvas.findByText('Wrote in my journal', { exact: false }),
+    ).toBeInTheDocument();
+    await expect(
+      await canvas.findByText('Landed in Tokyo', { exact: false }),
+    ).toBeInTheDocument();
+    // More than one path selected — each row is tagged with its own path.
+    await expect(
+      await canvas.findByText(`· ${secondPath.title}`),
     ).toBeInTheDocument();
   },
 };

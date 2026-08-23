@@ -1,44 +1,59 @@
 <template>
   <div class="path-browser df-ui">
     <div class="pb-header">
-      <select
-        v-model="localSelectedPathId"
-        class="pb-path-select"
-        aria-label="Path"
-        :style="{ borderColor: selectedPath?.color }"
-      >
-        <option v-for="path in paths" :key="path.path_id" :value="path.path_id">
+      <div class="pb-path-toggles" role="group" aria-label="Paths shown">
+        <button
+          v-for="path in paths"
+          :key="path.path_id"
+          type="button"
+          class="pb-path-toggle"
+          :class="{ 'pb-path-toggle--on': isSelected(path.path_id) }"
+          :style="{ '--path-color': path.color }"
+          :aria-pressed="isSelected(path.path_id)"
+          @click="toggle(path.path_id)"
+        >
           {{ path.title }}
-        </option>
-      </select>
+        </button>
+      </div>
     </div>
 
     <div class="pb-entry-section">
+      <p v-if="notFoundPathIds.length > 0" class="pb-empty">
+        {{
+          notFoundPathIds.length > 1
+            ? "Some of these paths couldn't be found. They may have been deleted."
+            : "This path couldn't be found. It may have been deleted."
+        }}
+      </p>
       <div v-if="isLoading" class="pb-loading" data-testid="pb-loading">
         <ion-spinner name="crescent" aria-label="Loading entries" />
         <span>Loading entries…</span>
       </div>
-      <p v-else-if="pathNotFound" class="pb-empty">
-        This path couldn't be found. It may have been deleted.
-      </p>
       <template v-else-if="visibleEntries.length > 0">
         <div
           v-for="entry in visibleEntries"
-          :key="entry.id"
-          :ref="(el) => registerEntryEl(entry.day, el)"
+          :key="`${entry.pathId}:${entry.id}`"
+          :ref="(el) => registerEntryEl(entry.pathId, entry.day, el)"
           class="pb-entry df-path-bar"
-          :class="{ 'pb-entry--centered': entry.day === props.centerDay }"
-          :style="{ '--path-color': selectedPath?.color }"
+          :class="{
+            'pb-entry--centered': entry.day === props.centerDay,
+          }"
+          :style="{ '--path-color': entry.pathColor }"
         >
           <router-link
             class="pb-entry-main"
             :to="{
-              path: `/entry/${props.selectedPathId}/${entry.id}`,
+              path: `/entry/${entry.pathId}/${entry.id}`,
               query: { from: 'paths' },
             }"
             :aria-label="`View entry from ${dateLabel(entry.day)}`"
           >
-            <p class="pb-entry-date">{{ dateLabel(entry.day) }}</p>
+            <p class="pb-entry-date">
+              {{ dateLabel(entry.day) }}
+              <span v-if="showPathLabels" class="pb-entry-path">
+                · {{ entry.pathTitle }}</span
+              >
+            </p>
             <p class="pb-entry-preview df-body">
               <ion-spinner
                 v-if="entry.content === undefined"
@@ -50,14 +65,14 @@
               <template v-else>{{ entry.content || '(no text)' }}</template>
             </p>
           </router-link>
-          <div v-if="(entry.images?.length ?? 0) > 0" class="pb-entry-photos">
+          <div v-if="entry.images.length > 0" class="pb-entry-photos">
             <EntryImage
-              v-for="(img, idx) in entry.images!.slice(0, 3)"
+              v-for="(img, idx) in entry.images.slice(0, 3)"
               :key="img.id"
               :image-id="img.id"
               :alt="img.filename"
               class="pb-entry-photo"
-              @open="openLightbox(entry.images!, idx, entry.day)"
+              @open="openLightbox(entry.images, idx, entry.day)"
             />
           </div>
         </div>
@@ -65,7 +80,9 @@
           Load earlier entries
         </button>
       </template>
-      <p v-else class="pb-empty">No entries yet.</p>
+      <p v-else-if="notFoundPathIds.length === 0" class="pb-empty">
+        No entries yet.
+      </p>
     </div>
 
     <ImageLightbox
@@ -83,45 +100,78 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { IonSpinner } from '@ionic/vue';
 
 import type { ImageResponse, PathResponse } from '../generated/types';
-import type { EntryWithContent } from '../composables/useMultiPathEntries';
+import type { PathEntries } from '../composables/useMultiPathEntries';
 import EntryImage from './EntryImage.vue';
 import ImageLightbox from './ImageLightbox.vue';
 
 const props = defineProps<{
   paths: PathResponse[];
-  selectedPathId: string;
-  entries: EntryWithContent[];
+  selectedPathIds: string[];
+  pathEntries: PathEntries[];
   isLoading?: boolean;
   hasMore?: boolean;
-  /** The selected path isn't in the user's own path list — deleted, or a stale/bad link. */
-  pathNotFound?: boolean;
+  /** Selected path ids absent from the user's own path list — deleted, or stale/bad links. */
+  notFoundPathIds?: string[];
   /** When set, scrolls to and highlights the entry for this day once it renders. */
   centerDay?: string;
 }>();
 
 const emit = defineEmits<{
-  'update:selectedPathId': [string];
+  'update:selectedPathIds': [string[]];
   'load-more': [];
 }>();
 
-const localSelectedPathId = computed({
-  get: () => props.selectedPathId,
-  set: (value: string) => emit('update:selectedPathId', value),
+const notFoundPathIds = computed(() => props.notFoundPathIds ?? []);
+
+function isSelected(pathId: string): boolean {
+  return props.selectedPathIds.includes(pathId);
+}
+
+function toggle(pathId: string) {
+  const next = isSelected(pathId)
+    ? props.selectedPathIds.filter((id) => id !== pathId)
+    : [...props.selectedPathIds, pathId];
+  emit('update:selectedPathIds', next);
+}
+
+// A path badge on every entry only earns its place once there's more than one
+// path's entries to tell apart in the merged, date-ordered feed below.
+const showPathLabels = computed(() => props.selectedPathIds.length > 1);
+
+interface MergedEntry {
+  id: string;
+  pathId: string;
+  pathTitle: string;
+  pathColor: string;
+  day: string;
+  content: string | undefined;
+  images: ImageResponse[];
+}
+
+const pathById = computed(
+  () => new Map(props.paths.map((p) => [p.path_id, p])),
+);
+
+const visibleEntries = computed<MergedEntry[]>(() => {
+  const merged: MergedEntry[] = [];
+  for (const { pathId, entries } of props.pathEntries) {
+    const path = pathById.value.get(pathId);
+    if (!path) continue;
+    for (const entry of entries) {
+      if (!entry.inWindow) continue;
+      merged.push({
+        id: entry.id,
+        pathId,
+        pathTitle: path.title,
+        pathColor: path.color,
+        day: entry.day,
+        content: entry.content,
+        images: entry.images ?? [],
+      });
+    }
+  }
+  return merged.sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0));
 });
-
-const selectedPath = computed(() =>
-  props.paths.find((p) => p.path_id === props.selectedPathId),
-);
-
-const sortedEntries = computed(() =>
-  [...props.entries].sort((a, b) =>
-    a.day < b.day ? 1 : a.day > b.day ? -1 : 0,
-  ),
-);
-
-const visibleEntries = computed(() =>
-  sortedEntries.value.filter((entry) => entry.inWindow),
-);
 
 const lightbox = ref<{
   images: ImageResponse[];
@@ -141,9 +191,10 @@ function dateLabel(day: string): string {
 }
 
 const entryEls = new Map<string, HTMLElement>();
-function registerEntryEl(day: string, el: unknown) {
-  if (el instanceof HTMLElement) entryEls.set(day, el);
-  else entryEls.delete(day);
+function registerEntryEl(pathId: string, day: string, el: unknown) {
+  const key = `${pathId}:${day}`;
+  if (el instanceof HTMLElement) entryEls.set(key, el);
+  else entryEls.delete(key);
 }
 
 // Scrolls to the day the caller wants this view "centred" on (e.g. arriving
@@ -154,7 +205,11 @@ watch(
   async () => {
     if (!props.centerDay) return;
     await nextTick();
-    entryEls.get(props.centerDay)?.scrollIntoView({ block: 'center' });
+    const match = visibleEntries.value.find((e) => e.day === props.centerDay);
+    if (!match) return;
+    entryEls
+      .get(`${match.pathId}:${match.day}`)
+      ?.scrollIntoView({ block: 'center' });
   },
   { immediate: true },
 );
@@ -174,14 +229,30 @@ watch(
   border-bottom: 1px solid var(--color-rule);
 }
 
-.pb-path-select {
-  border: 1px solid var(--color-rule);
+.pb-path-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pb-path-toggle {
+  border: 1px solid var(--path-color, var(--color-rule));
   border-radius: 999px;
   background: none;
   font-family: var(--font-sans);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  padding: 0.35rem 0.9rem;
+  padding: 0.3rem 0.8rem;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+
+.pb-path-toggle--on {
+  background: color-mix(
+    in srgb,
+    var(--path-color, var(--color-ink)) 15%,
+    transparent
+  );
   color: var(--color-ink);
 }
 
@@ -251,6 +322,13 @@ watch(
   letter-spacing: 0.06em;
   color: var(--color-ink-muted);
   text-transform: uppercase;
+}
+
+.pb-entry-path {
+  /* Not --path-color: an arbitrary user-chosen path color can't be guaranteed
+     to meet text contrast against the paper background (unlike its use as a
+     decorative accent bar/border elsewhere), so this stays a fixed ink tone. */
+  color: var(--color-ink-muted);
 }
 
 .pb-entry-preview {

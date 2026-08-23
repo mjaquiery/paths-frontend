@@ -71,12 +71,17 @@ function byDayDesc(a: EntryResponse, b: EntryResponse): number {
  *
  * `entries` always includes every entry a path has (cheap: just id/day/edit_id from
  * `listEntries`), so day-membership checks (calendar dots, "on this day") never regress —
- * but each entry's `content`/`images` are only fetched for a bounded, per-path "requested"
- * window, since fetching-and-rendering everything at once for a long-lived path is what made
- * opening it freeze the UI. The window starts as the `windowSize` most recent entries (by
- * day) and only ever grows (via `loadMore`/`ensureDayLoaded`), so an entry already shown
- * never disappears again just because a background refresh reshuffled what "most recent"
- * means (e.g. a new entry synced in from another device).
+ * but each entry's `content`/`images` are only fetched for a bounded "requested" window,
+ * since fetching-and-rendering everything at once for a long-lived path is what made
+ * opening it freeze the UI. That window is shared across every selected path — the
+ * `windowSize` most recent entries overall, not per path — so a page showing several
+ * paths at once stays in one coherent, date-ordered recency window instead of each path
+ * independently loading its own most-recent N regardless of how they interleave once
+ * merged (a rarely-updated path would otherwise keep showing entries from years ago next
+ * to a busy path's last few weeks). The window only ever grows (via `loadMore`/
+ * `ensureDayLoaded`), so an entry already shown never disappears again just because a
+ * background refresh reshuffled what "most recent" means (e.g. a new entry synced in from
+ * another device).
  *
  * When an edit_id bump replaces one content query with another (same entry, new key),
  * `lastGoodContent` keeps that entry's previous content/images on screen until the new
@@ -158,39 +163,33 @@ export function useMultiPathEntries(
   // records rebuilt immutably on change (rather than mutated Sets/Maps) to keep Vue's
   // reactivity straightforward. Only ever grows for a given pathId.
   const requestedIds = ref<Record<string, Record<string, true>>>({});
-  // Per-path recency cap, raised by loadMore(). Kept separate from requestedIds so a
-  // background refresh that reorders "most recent" can still grow requestedIds to match.
-  const caps = ref<Record<string, number>>({});
+  // Recency cap shared across every selected path, raised by loadMore(). The window is
+  // "the N most recent entries overall", not "N per path" — otherwise a rarely-updated
+  // path would still have its oldest entries loaded just because they fit under its own
+  // cap, showing up out of place once merged into one date-ordered feed with a
+  // frequently-updated path. Kept separate from requestedIds so a background refresh
+  // that reorders "most recent" can still grow requestedIds to match.
+  const globalCap = ref(windowSize);
 
-  function capFor(pathId: string): number {
-    return caps.value[pathId] ?? windowSize;
-  }
-
-  function growRequested(pathId: string, sortedEntries: EntryResponse[]) {
-    const existing = requestedIds.value[pathId] ?? {};
-    const cap = capFor(pathId);
+  function growRequested() {
+    const merged = entryLists.value
+      .flatMap(({ entries }) => entries)
+      .sort(byDayDesc);
     let changed = false;
-    const next = { ...existing };
-    for (const entry of sortedEntries.slice(0, cap)) {
-      if (!next[entry.id]) {
-        next[entry.id] = true;
+    const next = { ...requestedIds.value };
+    for (const entry of merged.slice(0, globalCap.value)) {
+      const existingForPath = next[entry.path_id] ?? {};
+      if (!existingForPath[entry.id]) {
+        next[entry.path_id] = { ...existingForPath, [entry.id]: true };
         changed = true;
       }
     }
     if (changed) {
-      requestedIds.value = { ...requestedIds.value, [pathId]: next };
+      requestedIds.value = next;
     }
   }
 
-  watch(
-    entryLists,
-    (lists) => {
-      for (const { pathId, entries } of lists) {
-        growRequested(pathId, [...entries].sort(byDayDesc));
-      }
-    },
-    { immediate: true, deep: true },
-  );
+  watch(entryLists, growRequested, { immediate: true, deep: true });
 
   const windowedEntryLists = computed(() =>
     entryLists.value.map(({ pathId, entries, isListLoading }) => {
@@ -262,10 +261,9 @@ export function useMultiPathEntries(
     }
   }
 
-  function loadMore(pathId: string) {
-    caps.value = { ...caps.value, [pathId]: capFor(pathId) + windowSize };
-    const current = entryLists.value.find((p) => p.pathId === pathId);
-    if (current) growRequested(pathId, [...current.entries].sort(byDayDesc));
+  function loadMore() {
+    globalCap.value += windowSize;
+    growRequested();
   }
 
   const pathEntries = computed<PathEntries[]>(() => {
