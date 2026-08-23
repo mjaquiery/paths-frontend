@@ -11,7 +11,7 @@
             <span v-if="currentUser" class="settings-username">{{
               currentUser.display_name || currentUser.user_id
             }}</span>
-            <button class="text-link" @click="logout">Logout</button>
+            <button class="text-link" @click="handleLogout">Logout</button>
           </div>
         </div>
 
@@ -244,7 +244,7 @@
 
 <script setup lang="ts">
 import { IonPage, IonContent } from '@ionic/vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 
@@ -259,30 +259,22 @@ import {
 } from '../generated/apiClient';
 import { usePaths } from '../composables/usePaths';
 import { usePathVisibility } from '../composables/usePathVisibility';
+import { currentUser, logout } from '../lib/authSession';
 import ExportCard from '../components/ExportCard.vue';
 import PathFormModal from '../components/PathFormModal.vue';
 import PathDeleteModal from '../components/PathDeleteModal.vue';
 import PathShareModal from '../components/PathShareModal.vue';
-import type { OAuthCallbackResponse, PathResponse } from '../generated/types';
+import type { PathResponse } from '../generated/types';
 
 const router = useRouter();
 const queryClient = useQueryClient();
 
-const currentUser = ref<OAuthCallbackResponse | null>(null);
-onMounted(() => {
-  const stored = localStorage.getItem('user');
-  if (stored) {
-    try {
-      currentUser.value = JSON.parse(stored) as OAuthCallbackResponse;
-    } catch {
-      currentUser.value = null;
-    }
-  }
-});
-
-function logout() {
-  localStorage.removeItem('user');
-  localStorage.removeItem('session_token');
+function handleLogout() {
+  logout();
+  // Drop every cached response body (in-memory and its IndexedDB persistence)
+  // so a shared browser never shows the next signed-in account stale data
+  // from this one.
+  queryClient.clear();
   router.replace('/');
 }
 

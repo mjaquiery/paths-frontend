@@ -147,11 +147,8 @@ import EntryImage from '../components/EntryImage.vue';
 import ImageLightbox from '../components/ImageLightbox.vue';
 import { referencedImageFilenames } from '../utils/markdown';
 import { dateViewPath, pathViewPath } from '../utils/viewLinks';
-import type {
-  EntryContentResponse,
-  ImageResponse,
-  OAuthCallbackResponse,
-} from '../generated/types';
+import { currentUser } from '../lib/authSession';
+import type { EntryContentResponse, ImageResponse } from '../generated/types';
 
 const route = useRoute<'/entry.[pathId].[entryId]'>();
 const router = useRouter();
@@ -173,18 +170,6 @@ const cameFromPaths = computed(() => route.query.from === 'paths');
 const entryLinkQuery = computed(() =>
   cameFromPaths.value ? { from: 'paths' } : {},
 );
-
-const currentUser = ref<OAuthCallbackResponse | null>(null);
-onMounted(() => {
-  const stored = localStorage.getItem('user');
-  if (stored) {
-    try {
-      currentUser.value = JSON.parse(stored) as OAuthCallbackResponse;
-    } catch {
-      currentUser.value = null;
-    }
-  }
-});
 
 const { data: allPaths } = usePaths();
 const { visiblePaths } = usePathVisibility(allPaths);
