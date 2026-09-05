@@ -12,11 +12,31 @@ export function useMarkdownEditor(
   content: Ref<string>,
   textareaRef: Ref<{ $el: HTMLElement } | null>,
 ) {
-  /** Scroll the textarea host into view so the cursor stays visible as text grows. */
+  /** Scroll the textarea host into view above the keyboard as the cursor grows. */
   async function onTextareaInput(event: Event) {
     await nextTick();
     const el = event.target as HTMLElement | null;
-    el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (!el) return;
+
+    const scroller = await (
+      el.closest('ion-content') as HTMLIonContentElement | null
+    )?.getScrollElement();
+    if (!scroller) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      return;
+    }
+
+    // iOS Safari never shrinks window.innerHeight for the on-screen keyboard —
+    // only visualViewport does — so el.scrollIntoView() reasons about the
+    // wrong (unshrunk) viewport and thinks the caret is visible when the
+    // keyboard is actually covering it. Compare against visualViewport instead.
+    const visibleBottom = window.visualViewport
+      ? window.visualViewport.height + window.visualViewport.offsetTop
+      : window.innerHeight;
+    const overflow = el.getBoundingClientRect().bottom - visibleBottom;
+    if (overflow > 0) {
+      scroller.scrollBy({ top: overflow + 16, behavior: 'smooth' });
+    }
   }
 
   /** Wrap the current selection (or insert at the cursor) with markdown syntax. */
