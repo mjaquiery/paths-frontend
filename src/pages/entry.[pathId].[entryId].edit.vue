@@ -264,7 +264,9 @@ watch(
   async (data) => {
     if (!data || contentInitialised) return;
     contentInitialised = true;
-    day.value = data.day;
+    // Same guard as content below: don't clobber an edit already in
+    // progress if the initial fetch happens to resolve after it started.
+    if (!day.value) day.value = data.day;
     await restore();
     // Only fall back to the server content if no local draft was restored — an
     // in-progress edit takes priority over what's already saved server-side.

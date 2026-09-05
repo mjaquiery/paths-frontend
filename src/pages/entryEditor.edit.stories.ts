@@ -578,9 +578,11 @@ export const SavingWithImageChangesShowsPercentProgress: Story = {
 export const DateFieldShowsCurrentDay: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const dateInput = (await canvas.findByLabelText(
-      'Date',
-    )) as HTMLInputElement;
+    // The date input exists in the DOM from first render (empty) — wait for
+    // the entry to actually finish loading (same watch sets both) before
+    // reading its value, or this races the fetch and sees '' instead.
+    await canvas.findByDisplayValue('Morning run along the river.');
+    const dateInput = canvas.getByLabelText('Date') as HTMLInputElement;
     await expect(dateInput.value).toBe('2024-03-15');
   },
 };
@@ -612,9 +614,12 @@ export const EditingDateSendsDayAndNavigatesToNewSlug: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const dateInput = (await canvas.findByLabelText(
-      'Date',
-    )) as HTMLInputElement;
+    // Wait for the initial load (which sets the date field) before changing
+    // it — otherwise this races that same fetch, and the field's own
+    // "don't clobber an in-progress edit" guard would just restore whatever
+    // was typed here first, defeating the point of this story.
+    await canvas.findByDisplayValue('Morning run along the river.');
+    const dateInput = canvas.getByLabelText('Date') as HTMLInputElement;
 
     // A single synthetic input event rather than userEvent.type — native
     // date inputs don't accept plain keyboard character input the same way
