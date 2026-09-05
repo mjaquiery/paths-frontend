@@ -2006,6 +2006,18 @@
             "type": "array",
             "title": "Remove Image Ids"
           },
+          "day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
           "images": {
             "items": {
               "type": "string",

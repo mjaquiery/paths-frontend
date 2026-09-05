@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, userEvent, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { http, HttpResponse } from 'msw';
 
 import EntryViewPage from './entry.[pathId].[entryId].vue';
@@ -219,6 +219,90 @@ export const DateLinksToThatDayInDateView: Story = {
 // original path/date view — otherwise Back would only step to the previous
 // entry, and the user could end up more than one page away from where they
 // started.
+// A link opened with the entry's old slug (from before its date was last
+// changed) must still resolve — the backend's slug-history table takes care
+// of that — but the address bar should settle on the current slug rather
+// than staying on the stale one.
+export const OpeningWithStaleSlugRedirectsToCanonicalSlug: Story = {
+  decorators: [
+    withLoggedInUser({
+      token: 'tok',
+      user_id: pathResponseFixture.owner_user_id,
+      display_name: 'Alex M.',
+    }),
+  ],
+  loaders: [
+    routeLoader(
+      `/entry/${pathResponseFixture.path_id}/old-slug-before-date-change`,
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText(entryContentResponseFixture.content);
+    await waitFor(() =>
+      expect(router.currentRoute.value.path).toBe(
+        `/entry/${pathResponseFixture.path_id}/${entryContentResponseFixture.id}`,
+      ),
+    );
+  },
+};
+
+export const PrivatePathHasNoCanonicalLinkTag: Story = {
+  decorators: [
+    withLoggedInUser({
+      token: 'tok',
+      user_id: pathResponseFixture.owner_user_id,
+      display_name: 'Alex M.',
+    }),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText(entryContentResponseFixture.content);
+    await expect(
+      document.getElementById('canonical-link'),
+    ).not.toBeInTheDocument();
+  },
+};
+
+export const PublicPathHasCanonicalLinkTag: Story = {
+  decorators: [
+    withLoggedInUser({
+      token: 'tok',
+      user_id: pathResponseFixture.owner_user_id,
+      display_name: 'Alex M.',
+    }),
+  ],
+  parameters: {
+    msw: {
+      handlers: [
+        http.get('*/v1/paths', () =>
+          HttpResponse.json([{ ...pathResponseFixture, is_public: true }]),
+        ),
+        http.get('*/v1/paths/:pathCode/entries', () =>
+          HttpResponse.json([entryResponseFixture]),
+        ),
+        http.get('*/v1/paths/:pathCode/entries/:entrySlug', () =>
+          HttpResponse.json(entryContentResponseFixture),
+        ),
+        http.get('*/v1/paths/:pathCode/entries/:entrySlug/images', () =>
+          HttpResponse.json(entryContentResponseFixture.images ?? []),
+        ),
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText(entryContentResponseFixture.content);
+    await waitFor(() =>
+      expect(document.getElementById('canonical-link')).toBeInTheDocument(),
+    );
+    const link = document.getElementById('canonical-link') as HTMLLinkElement;
+    await expect(link.href).toBe(
+      `${window.location.origin}/entry/${pathResponseFixture.path_id}/${entryContentResponseFixture.id}`,
+    );
+  },
+};
+
 export const OnThisDayLinkForwardsFromParam: Story = {
   decorators: [
     withLoggedInUser({

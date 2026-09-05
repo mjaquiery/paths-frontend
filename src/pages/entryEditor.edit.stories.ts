@@ -1,5 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
+import {
+  expect,
+  fireEvent,
+  screen,
+  userEvent,
+  waitFor,
+  within,
+} from 'storybook/test';
 import { http, HttpResponse, delay } from 'msw';
 
 import EntryEditPage from './entry.[pathId].[entryId].edit.vue';
@@ -9,6 +16,7 @@ import {
   routeLoader,
   clearLocalDraftsLoader,
 } from '../../.storybook/decorators';
+import { router } from '../../.storybook/router';
 import { withDefaultHandlers } from '../../.storybook/msw';
 import { db } from '../lib/db';
 
@@ -563,6 +571,67 @@ export const SavingWithImageChangesShowsPercentProgress: Story = {
           }),
         ).not.toBeInTheDocument(),
       { timeout: 8000 },
+    );
+  },
+};
+
+export const DateFieldShowsCurrentDay: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const dateInput = (await canvas.findByLabelText(
+      'Date',
+    )) as HTMLInputElement;
+    await expect(dateInput.value).toBe('2024-03-15');
+  },
+};
+
+export const EditingDateSendsDayAndNavigatesToNewSlug: Story = {
+  parameters: {
+    msw: {
+      handlers: withDefaultHandlers(
+        ...entryReadHandlers(),
+        // Asserts the exact form field the backend's optional date-change
+        // support expects (see paths repo's update_entry route) — a wrong
+        // field name here would silently no-op the date change server-side.
+        http.put(
+          '*/v1/paths/:pathCode/entries/:entrySlug',
+          async ({ request }) => {
+            const body = await request.formData();
+            expect(body.get('day')).toBe('2024-04-01');
+            return HttpResponse.json({
+              id: '2024_04_01_0',
+              path_id: path.path_id,
+              day: '2024-04-01',
+              edit_id: 2,
+              content: 'Morning run along the river.',
+            });
+          },
+        ),
+      ),
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const dateInput = (await canvas.findByLabelText(
+      'Date',
+    )) as HTMLInputElement;
+
+    // A single synthetic input event rather than userEvent.type — native
+    // date inputs don't accept plain keyboard character input the same way
+    // a text field does (see PathFormModal.stories.ts for the same pattern).
+    await fireEvent.input(dateInput, { target: { value: '2024-04-01' } });
+    await expect(dateInput.value).toBe('2024-04-01');
+
+    await userEvent.click(canvas.getByText('Save'));
+
+    // Changing the date changes the entry's slug — the page should land on
+    // the *new* slug the server returned, not the one the route was opened
+    // with (which the backend's slug-history table would still resolve, but
+    // there's no reason to bounce through it first).
+    await waitFor(() =>
+      expect(router.currentRoute.value.path).toBe(
+        `/entry/${path.path_id}/2024_04_01_0`,
+      ),
     );
   },
 };

@@ -5,7 +5,12 @@
         <router-link class="text-btn" :to="entryViewLink"> Cancel </router-link>
         <div class="editor-header-title">
           <span class="editor-header-label">{{ path?.title }}</span>
-          <span class="editor-header-date">{{ entryData?.day }}</span>
+          <input
+            v-model="day"
+            type="date"
+            class="editor-header-date-input"
+            aria-label="Date"
+          />
         </div>
         <button
           class="pill-btn"
@@ -170,6 +175,7 @@ import SavingOverlay from '../components/SavingOverlay.vue';
 import { useMarkdownEditor } from '../composables/useMarkdownEditor';
 import type {
   EntryContentResponse,
+  EntryResponse,
   ImageCaptionUpdateResponse,
   ImageResponse,
 } from '../generated/types';
@@ -179,7 +185,7 @@ const router = useRouter();
 const queryClient = useQueryClient();
 
 const pathId = route.params.pathId;
-const entryId = route.params.entryId;
+const entryId = computed(() => route.params.entryId);
 
 // Forwarded from the entry view so Cancel/Save return there with the same
 // "came from path view" hint still intact (date view is the default; see
@@ -188,7 +194,7 @@ const fromQuery = computed(() =>
   route.query.from === 'paths' ? { from: 'paths' } : {},
 );
 const entryViewLink = computed(() => ({
-  path: `/entry/${pathId}/${entryId}`,
+  path: `/entry/${pathId}/${entryId.value}`,
   query: fromQuery.value,
 }));
 
@@ -200,6 +206,18 @@ const { data: entryData } = useGetEntry(pathId, entryId, {
 });
 const { data: imagesData } = useListEntryImages(pathId, entryId, {
   query: { select: (r) => r.data as ImageResponse[] },
+});
+
+// A direct link to this entry's edit page may carry an old slug (its day was
+// changed since); the backend still resolves it, but the address bar should
+// settle on the current slug rather than staying on a stale one.
+watch(entryData, (data) => {
+  if (data && data.id !== entryId.value) {
+    router.replace({
+      path: `/entry/${pathId}/${data.id}/edit`,
+      query: route.query,
+    });
+  }
 });
 
 const uploadProgress = ref(0);
@@ -228,6 +246,7 @@ const saveLabel = computed(() => {
   return `Saving… ${uploadProgress.value}%`;
 });
 const textareaRef = ref<InstanceType<typeof IonTextarea> | null>(null);
+const day = ref('');
 
 const {
   content,
@@ -245,6 +264,7 @@ watch(
   async (data) => {
     if (!data || contentInitialised) return;
     contentInitialised = true;
+    day.value = data.day;
     await restore();
     // Only fall back to the server content if no local draft was restored — an
     // in-progress edit takes priority over what's already saved server-side.
@@ -335,22 +355,31 @@ async function submit() {
       expectedEditId = (result.data as ImageCaptionUpdateResponse).edit_id;
     }
 
-    await doUpdateEntry({
+    const result = await doUpdateEntry({
       pathCode: pathId,
-      entrySlug: entryId,
+      entrySlug: entryId.value,
       data: {
         expected_edit_id: expectedEditId,
         content: content.value,
         captions: pendingImages.value.map((img) => img.caption),
         remove_image_ids: removedImageIds.value,
+        day: day.value,
         images: pendingImages.value.map((img) => img.file),
       },
     });
 
+    // Navigate to the slug the server actually returned rather than the
+    // route's — if the date changed, that's a new slug, and there's no
+    // reason to bounce through the old one first (it still works, but the
+    // canonicalization watch above would just redirect again immediately).
+    const savedEntry = result.data as EntryResponse;
     // Navigate immediately — invalidation and draft cleanup don't need to
     // block leaving the page, and awaiting them here made "Save" feel stuck
     // for a full network round-trip after the entry was already saved.
-    router.push(entryViewLink.value);
+    router.push({
+      path: `/entry/${pathId}/${savedEntry.id}`,
+      query: fromQuery.value,
+    });
     void queryClient.invalidateQueries({
       queryKey: ['v1', 'paths', pathId, 'entries'],
     });
@@ -419,9 +448,14 @@ ion-content {
   color: var(--color-ink-muted);
 }
 
-.editor-header-date {
+.editor-header-date-input {
+  border: none;
+  background: none;
+  font-family: inherit;
   font-size: 0.95rem;
   color: var(--color-ink);
+  text-align: center;
+  padding: 0;
 }
 
 .pill-btn {

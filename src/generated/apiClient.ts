@@ -1096,6 +1096,9 @@ export const updateEntry = async (
       formData.append(`remove_image_ids`, value),
     );
   }
+  if (bodyUpdateEntry.day !== undefined && bodyUpdateEntry.day !== null) {
+    formData.append(`day`, bodyUpdateEntry.day);
+  }
   if (bodyUpdateEntry.images !== undefined) {
     bodyUpdateEntry.images.forEach((value) => formData.append(`images`, value));
   }

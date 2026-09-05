@@ -11,5 +11,6 @@ export interface BodyUpdateEntry {
   content: string;
   captions?: string[];
   remove_image_ids?: string[];
+  day?: string | null;
   images?: Blob[];
 }
