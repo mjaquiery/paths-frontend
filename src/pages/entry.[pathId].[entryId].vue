@@ -148,6 +148,7 @@ import ImageLightbox from '../components/ImageLightbox.vue';
 import { referencedImageFilenames } from '../utils/markdown';
 import { dateViewPath, pathViewPath } from '../utils/viewLinks';
 import { currentUser } from '../lib/authSession';
+import { useCanonicalLink } from '../composables/useCanonicalLink';
 import type { EntryContentResponse, ImageResponse } from '../generated/types';
 
 const route = useRoute<'/entry.[pathId].[entryId]'>();
@@ -191,6 +192,26 @@ const { data: imagesData } = useListEntryImages(pathId, entryId, {
 
 const entryNotFound = computed(() =>
   isApiErrorWithStatus(entryError.value, 404),
+);
+
+// A link to this entry may carry an old slug (the entry's day was changed
+// since); the backend still resolves it, but the address bar/bookmarks
+// should settle on the current slug rather than staying on a stale one.
+watch(entryData, (data) => {
+  if (data && data.id !== entryId.value) {
+    router.replace({
+      path: `/entry/${pathId.value}/${data.id}`,
+      query: route.query,
+    });
+  }
+});
+
+useCanonicalLink(
+  computed(() =>
+    path.value?.is_public && entryData.value
+      ? `${window.location.origin}/entry/${pathId.value}/${entryData.value.id}`
+      : undefined,
+  ),
 );
 
 const content = computed(() => entryData.value?.content);
