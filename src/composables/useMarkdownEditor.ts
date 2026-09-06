@@ -15,6 +15,12 @@ export function useMarkdownEditor(
   /** Scroll the textarea host into view above the keyboard as the cursor grows. */
   async function onTextareaInput(event: Event) {
     await nextTick();
+    // ion-textarea's auto-grow resize runs in a Stencil writeTask, which is
+    // scheduled via requestAnimationFrame rather than Vue's nextTick — so
+    // right after nextTick() the host element's height (and therefore
+    // getBoundingClientRect()) can still reflect last keystroke's size.
+    // Wait one frame so the measurement below reflects the grown height.
+    await new Promise((resolve) => requestAnimationFrame(resolve));
     const el = event.target as HTMLElement | null;
     if (!el) return;
 
