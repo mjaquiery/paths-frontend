@@ -36,12 +36,6 @@ vi.mock('../composables/useInstallBanner', () => ({
 
 vi.mock('../composables/useVirtualKeyboard', () => ({
   useVirtualKeyboard: vi.fn(),
-  virtualKeyboardDebug: ref({
-    innerHeight: 0,
-    vvHeight: 0,
-    vvOffsetTop: 0,
-    keyboardHeight: 0,
-  }),
 }));
 
 import App from '../App.vue';

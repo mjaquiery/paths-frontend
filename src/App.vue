@@ -8,13 +8,6 @@
         @login="showLoginModal = true"
       />
     </div>
-    <!-- TEMP debug overlay for the iOS standalone-PWA keyboard investigation — remove once confirmed fixed -->
-    <div v-if="keyboardDebug" class="kb-debug" aria-hidden="true">
-      ih:{{ keyboardDebug.innerHeight }} vv:{{ keyboardDebug.vvHeight }} off:{{
-        keyboardDebug.vvOffsetTop
-      }}
-      kh:{{ keyboardDebug.keyboardHeight }}
-    </div>
     <ion-toast
       :is-open="!!deferredPrompt || showIosInstallHint"
       :message="
@@ -70,25 +63,6 @@ ion-toast::part(cancel) {
 ion-toast::part(message) {
   color: var(--color-ink);
 }
-
-/* TEMP debug overlay for the iOS standalone-PWA keyboard investigation —
-   remove once confirmed fixed. Pinned to the top so it stays visible
-   regardless of whether the keyboard-height detection it's reporting on is
-   itself working. */
-.kb-debug {
-  position: fixed;
-  top: env(safe-area-inset-top, 0px);
-  left: 0;
-  right: 0;
-  z-index: 9999;
-  pointer-events: none;
-  background: rgba(0, 0, 0, 0.75);
-  color: #0f0;
-  font-family: monospace;
-  font-size: 0.65rem;
-  padding: 2px 4px;
-  text-align: center;
-}
 </style>
 
 <script setup lang="ts">
@@ -99,10 +73,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useInstallBanner } from './composables/useInstallBanner';
-import {
-  useVirtualKeyboard,
-  virtualKeyboardDebug,
-} from './composables/useVirtualKeyboard';
+import { useVirtualKeyboard } from './composables/useVirtualKeyboard';
 import { sessionExpired } from './lib/authSession';
 import AppFooter from './components/AppFooter.vue';
 import SessionExpiredBanner from './components/SessionExpiredBanner.vue';
@@ -123,10 +94,6 @@ const isEntryEditorRoute = computed(
 
 const { deferredPrompt, showIosInstallHint, promptInstall, dismissInstall } =
   useInstallBanner();
-
-// TEMP debug overlay for the iOS standalone-PWA keyboard investigation —
-// remove once confirmed fixed.
-const keyboardDebug = virtualKeyboardDebug;
 
 const installToastButtons = [
   { text: 'Install', handler: promptInstall },

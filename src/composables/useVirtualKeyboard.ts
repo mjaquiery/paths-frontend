@@ -1,4 +1,4 @@
-import { onMounted, onBeforeUnmount, ref } from 'vue';
+import { onMounted, onBeforeUnmount } from 'vue';
 
 /**
  * Tracks the height of the iOS/Android virtual keyboard using the
@@ -30,26 +30,9 @@ function getKeyboardHeight(): number {
   return Math.max(0, maxObservedHeight - current);
 }
 
-// TEMP diagnostics for the iOS standalone-PWA keyboard-overlap investigation —
-// remove once confirmed fixed. Surfaces what iOS is actually reporting, since
-// this behavior can't be verified without a live device and has already
-// diverged from documented behavior once (see module comment above).
-export const virtualKeyboardDebug = ref({
-  innerHeight: 0,
-  vvHeight: 0,
-  vvOffsetTop: 0,
-  keyboardHeight: 0,
-});
-
 function applyKeyboardHeight() {
   const kh = getKeyboardHeight();
   document.documentElement.style.setProperty('--keyboard-height', `${kh}px`);
-  virtualKeyboardDebug.value = {
-    innerHeight: window.innerHeight,
-    vvHeight: window.visualViewport?.height ?? 0,
-    vvOffsetTop: window.visualViewport?.offsetTop ?? 0,
-    keyboardHeight: kh,
-  };
 }
 
 export function useVirtualKeyboard() {
