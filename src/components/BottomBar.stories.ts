@@ -12,6 +12,7 @@ const meta: Meta<typeof BottomBar> = {
     altLabel: 'Browse paths',
     altTo: '/paths',
     canCreate: true,
+    hasPaths: true,
     writeEntryQuery: { day: '2024-01-01' },
   },
 };
@@ -38,6 +39,22 @@ export const HidesWriteEntryWhenCannotCreate: Story = {
     await expect(
       canvas.queryByRole('link', { name: '+ Write Entry' }),
     ).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByRole('button', { name: '+ Create Path' }),
+    ).not.toBeInTheDocument();
+  },
+};
+
+export const ShowsCreatePathWhenUserHasNoPaths: Story = {
+  args: { canCreate: false, hasPaths: false },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.queryByRole('link', { name: '+ Write Entry' }),
+    ).not.toBeInTheDocument();
+    await expect(
+      canvas.getByRole('button', { name: '+ Create Path' }),
+    ).toBeInTheDocument();
   },
 };
 

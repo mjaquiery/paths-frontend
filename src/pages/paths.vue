@@ -20,6 +20,7 @@
       alt-label="Browse days"
       alt-to="/"
       :can-create="canCreateAny"
+      :has-paths="hasPaths"
       :write-entry-query="{ day: todayStr, pathId: writeEntryPathId }"
     />
   </ion-page>
@@ -117,6 +118,12 @@ const canCreateAny = computed(
     visiblePaths.value.some(
       (p) => p.owner_user_id === currentUser.value!.user_id,
     ),
+);
+
+// Assumed true while paths are still loading, so the CTA doesn't flash
+// "+ Create Path" for an existing user before their paths arrive.
+const hasPaths = computed(
+  () => pathsLoading.value || (allPaths.value?.length ?? 0) > 0,
 );
 </script>
 

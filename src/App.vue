@@ -9,10 +9,16 @@
       />
     </div>
     <ion-toast
-      :is-open="!!deferredPrompt"
-      message="Install Paths for offline access"
+      :is-open="!!deferredPrompt || showIosInstallHint"
+      :message="
+        showIosInstallHint
+          ? 'Install Paths: tap Share, then \'Add to Home Screen\''
+          : 'Install Paths for offline access'
+      "
       position="bottom"
-      :buttons="installToastButtons"
+      :buttons="
+        showIosInstallHint ? iosInstallToastButtons : installToastButtons
+      "
       @didDismiss="dismissInstall"
     />
     <SessionExpiredModal
@@ -86,12 +92,15 @@ const isEntryEditorRoute = computed(
     route.name === '/entry.[pathId].[entryId].edit',
 );
 
-const { deferredPrompt, promptInstall, dismissInstall } = useInstallBanner();
+const { deferredPrompt, showIosInstallHint, promptInstall, dismissInstall } =
+  useInstallBanner();
 
 const installToastButtons = [
   { text: 'Install', handler: promptInstall },
   { text: 'Not now', role: 'cancel' },
 ];
+
+const iosInstallToastButtons = [{ text: 'Got it', role: 'cancel' }];
 
 // A 401 anywhere (see lib/customFetch.ts) already cleared the stored session — SessionExpiredBanner
 // surfaces that with a persistent, non-timing-out banner (rather than a toast that vanishes after a

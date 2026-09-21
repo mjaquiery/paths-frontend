@@ -58,6 +58,7 @@
         alt-label="Browse paths"
         alt-to="/paths"
         :can-create="canCreateAny"
+        :has-paths="hasPaths"
         :write-entry-query="{ day: currentDay }"
       />
     </template>
@@ -84,8 +85,14 @@ const { loggingIn, loginError, loginWithGoogle } = useGoogleLogin();
 const initialDate =
   typeof route.query.day === 'string' ? route.query.day : undefined;
 
-const { data: allPaths } = usePaths();
+const { data: allPaths, isPending: pathsLoading } = usePaths();
 const { visiblePaths } = usePathVisibility(allPaths);
+
+// Assumed true while paths are still loading, so the CTA doesn't flash
+// "+ Create Path" for an existing user before their paths arrive.
+const hasPaths = computed(
+  () => pathsLoading.value || (allPaths.value?.length ?? 0) > 0,
+);
 
 const visiblePathIds = computed(() => visiblePaths.value.map((p) => p.path_id));
 const { pathEntries: multiPathEntries, ensureDayLoaded } =
