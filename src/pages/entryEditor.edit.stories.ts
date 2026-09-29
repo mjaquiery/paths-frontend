@@ -157,15 +157,48 @@ export const EditingUpdatesContent: Story = {
     await userEvent.type(textarea, ' Updated.');
     await expect(textarea.value).toBe('Morning run along the river. Updated.');
     // useLocalDraft's autosave write is debounced (500ms) and, by design,
-    // isn't cancelled on unmount (so a quick navigate-away still saves) —
-    // wait for it to land here so it can't race SavingSucceeds' (the next
-    // story's) clearLocalDraftsLoader()/restore() cycle on the same draft key.
+    // flushed on unmount (so a quick navigate-away still saves) — wait for
+    // it to land here so it can't race SavingSucceeds' (the next story's)
+    // clearLocalDraftsLoader()/restore() cycle on the same draft key.
     await waitFor(async () => {
       const draft = await db.localDrafts.get(
         `${path.path_id}:entry:${entryId}`,
       );
       expect(draft?.content).toBe('Morning run along the river. Updated.');
     });
+  },
+};
+
+// A draft left over from before the entry was edited elsewhere (server
+// edit_id 1 here, draft started from 0) must still be shown — it's the
+// user's unsaved work — but flagged, with a way back to the latest version.
+export const StaleDraftShowsWarning: Story = {
+  loaders: [
+    routeLoader(editUrl),
+    clearLocalDraftsLoader(),
+    async () => {
+      await db.localDrafts.put({
+        draftKey: `${path.path_id}:entry:${entryId}`,
+        pathId: path.path_id,
+        entryId,
+        day: '2024-03-15',
+        content: 'Old unsaved edit.',
+        baseEditId: 0,
+        updatedAt: Date.now(),
+      });
+      return {};
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByDisplayValue('Old unsaved edit.');
+    await userEvent.click(
+      await canvas.findByText('Discard my edits and load the latest'),
+    );
+    await canvas.findByDisplayValue('Morning run along the river.');
+    await expect(
+      canvas.queryByText('changed elsewhere', { exact: false }),
+    ).not.toBeInTheDocument();
   },
 };
 
