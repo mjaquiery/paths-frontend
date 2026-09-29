@@ -23,6 +23,17 @@
     </ion-header>
     <ion-content>
       <div class="editor-page df-ui">
+        <div v-if="draftIsStale" class="stale-draft-notice" role="alert">
+          This entry was changed elsewhere after you started these unsaved
+          edits. Saving will replace that newer version.
+          <button
+            type="button"
+            class="stale-draft-discard"
+            @click="discardDraft"
+          >
+            Discard my edits and load the latest
+          </button>
+        </div>
         <div class="editor-toolbar">
           <template v-if="contentTab === 'write'">
             <button type="button" @click="wrapSelection('**')">
@@ -252,10 +263,20 @@ const {
   content,
   restore,
   clear: clearDraft,
+  isStale: draftIsStale,
+  discardDraft,
 } = useLocalDraft(
   ref(pathId),
   computed(() => entryData.value?.day ?? ''),
   ref(entryId),
+  computed(() =>
+    entryData.value
+      ? {
+          content: entryData.value.content ?? '',
+          editId: entryData.value.edit_id,
+        }
+      : null,
+  ),
 );
 
 let contentInitialised = false;
@@ -267,10 +288,9 @@ watch(
     // Same guard as content below: don't clobber an edit already in
     // progress if the initial fetch happens to resolve after it started.
     if (!day.value) day.value = data.day;
+    // Loads the local draft if there is one (an in-progress edit takes
+    // priority over what's saved server-side), else the server content.
     await restore();
-    // Only fall back to the server content if no local draft was restored — an
-    // in-progress edit takes priority over what's already saved server-side.
-    if (!content.value) content.value = data.content ?? '';
   },
   { immediate: true },
 );
@@ -537,6 +557,27 @@ ion-content {
   background: color-mix(in srgb, #f5a623 15%, var(--color-paper));
   border-radius: 4px;
   padding: 0.5rem 0.75rem;
+}
+
+.stale-draft-notice {
+  background: color-mix(in srgb, #f5a623 15%, var(--color-paper));
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.stale-draft-discard {
+  display: block;
+  margin-top: 0.35rem;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .editor-section-label {

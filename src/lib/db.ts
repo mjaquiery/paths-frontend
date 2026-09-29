@@ -31,6 +31,9 @@ export interface LocalEntryDraft {
   entryId: string | null;
   day: string;
   content: string;
+  // Server edit_id the draft was started from (existing entries only). Not
+  // indexed, so no schema version bump is needed; absent on older drafts.
+  baseEditId?: number;
   updatedAt: number;
 }
 

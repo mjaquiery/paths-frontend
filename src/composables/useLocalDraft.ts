@@ -1,4 +1,4 @@
-import { onBeforeUnmount, ref, watch, type Ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue';
 import { db, type LocalEntryDraft } from '../lib/db';
 
 const AUTOSAVE_DEBOUNCE_MS = 500;
@@ -13,13 +13,22 @@ const AUTOSAVE_MAX_WAIT_MS = 3000;
  *
  * Pending edits are flushed when the editor unmounts (Cancel, swipe/browser back, any
  * other navigation away) and when the page is hidden (app backgrounded or closed).
+ *
+ * When editing an existing entry, pass the latest server copy as `baseline`. Content
+ * matching it is never stored (so an untouched editor can't leave a draft that later
+ * shadows newer server edits), and each draft remembers the server edit_id it was
+ * started from, so `isStale` can flag a draft whose entry has since changed elsewhere.
  */
 export function useLocalDraft(
   pathId: Ref<string>,
   day: Ref<string>,
   entryId: Ref<string | null>,
+  baseline?: Ref<{ content: string; editId: number } | null>,
 ) {
   const content = ref('');
+  // Server edit_id the current draft was started from; null for legacy drafts
+  // saved before this was tracked (their origin is unknown).
+  const draftBaseEditId = ref<number | null>(null);
   let debounceHandle: ReturnType<typeof setTimeout> | undefined;
   let maxWaitHandle: ReturnType<typeof setTimeout> | undefined;
   // Snapshot of the slot + text to write, taken when the edit happened, so a
@@ -38,10 +47,21 @@ export function useLocalDraft(
     if (!pathId.value) return;
     restoring = true;
     try {
-      const draft = await db.localDrafts.get(draftKey());
-      content.value = draft?.content ?? '';
+      const key = draftKey();
+      const draft = await db.localDrafts.get(key);
+      const base = baseline?.value;
+      if (!base) {
+        content.value = draft?.content ?? '';
+      } else if (!draft || draft.content === base.content) {
+        if (draft) await db.localDrafts.delete(key);
+        content.value = base.content;
+        draftBaseEditId.value = base.editId;
+      } else {
+        content.value = draft.content;
+        draftBaseEditId.value = draft.baseEditId ?? null;
+      }
     } catch {
-      content.value = '';
+      content.value = baseline?.value?.content ?? '';
     } finally {
       restoring = false;
     }
@@ -75,12 +95,19 @@ export function useLocalDraft(
     () => {
       // Skip the write triggered by restore() itself setting content.value.
       if (restoring || !pathId.value) return;
+      const base = baseline?.value;
+      const unchanged = !!base && content.value === base.content;
+      // Back in sync with the server copy: nothing unsaved, so any new edits
+      // start from the current version.
+      if (unchanged) draftBaseEditId.value = base.editId;
       pending = {
         draftKey: draftKey(),
         pathId: pathId.value,
         entryId: entryId.value,
         day: day.value,
-        content: content.value,
+        // Empty content means "delete the draft" to flush().
+        content: unchanged ? '' : content.value,
+        baseEditId: draftBaseEditId.value ?? undefined,
         updatedAt: Date.now(),
       };
       clearTimeout(debounceHandle);
@@ -116,6 +143,31 @@ export function useLocalDraft(
     void flush();
   });
 
+  const isStale = computed(() => {
+    const base = baseline?.value;
+    return (
+      !!base &&
+      content.value !== base.content &&
+      draftBaseEditId.value !== base.editId
+    );
+  });
+
+  /** Throw away the local draft and load the latest server copy instead. */
+  async function discardDraft(): Promise<void> {
+    const key = draftKey();
+    restoring = true;
+    content.value = baseline?.value?.content ?? '';
+    restoring = false;
+    draftBaseEditId.value = baseline?.value?.editId ?? null;
+    cancelTimers();
+    pending = null;
+    try {
+      await db.localDrafts.delete(key);
+    } catch {
+      // IndexedDB may be unavailable.
+    }
+  }
+
   async function clear(): Promise<void> {
     const key = draftKey();
     content.value = '';
@@ -130,5 +182,5 @@ export function useLocalDraft(
     }
   }
 
-  return { content, restore, clear };
+  return { content, restore, clear, isStale, discardDraft };
 }

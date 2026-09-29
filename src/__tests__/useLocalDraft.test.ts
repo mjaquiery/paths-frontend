@@ -17,16 +17,20 @@ import { useLocalDraft } from '../composables/useLocalDraft';
 
 const put = db.localDrafts.put as unknown as ReturnType<typeof vi.fn>;
 
+const get = db.localDrafts.get as unknown as ReturnType<typeof vi.fn>;
+const del = db.localDrafts.delete as unknown as ReturnType<typeof vi.fn>;
+
 function mountDraft(
   pathId: Ref<string>,
   day: Ref<string> = ref('2026-09-29'),
   entryId: Ref<string | null> = ref(null),
+  baseline?: Ref<{ content: string; editId: number } | null>,
 ) {
   let api!: ReturnType<typeof useLocalDraft>;
   const wrapper = mount(
     defineComponent({
       setup() {
-        api = useLocalDraft(pathId, day, entryId);
+        api = useLocalDraft(pathId, day, entryId, baseline);
         return () => null;
       },
     }),
@@ -118,7 +122,6 @@ describe('useLocalDraft', () => {
   });
 
   it('restores the draft once a path is selected after mount', async () => {
-    const get = db.localDrafts.get as unknown as ReturnType<typeof vi.fn>;
     get.mockResolvedValueOnce({ content: 'saved earlier' });
     const pathId = ref('');
     const { api } = mountDraft(pathId);
@@ -126,5 +129,96 @@ describe('useLocalDraft', () => {
     pathId.value = 'p1';
     await flushPromises();
     expect(api.content.value).toBe('saved earlier');
+  });
+
+  describe('editing an existing entry (with a server baseline)', () => {
+    function mountEdit(serverContent: string, editId: number) {
+      const baseline = ref({ content: serverContent, editId });
+      const mounted = mountDraft(
+        ref('p1'),
+        ref('2026-09-29'),
+        ref('e1'),
+        baseline,
+      );
+      return { ...mounted, baseline };
+    }
+
+    it('does not save the unedited server content as a draft', async () => {
+      const { wrapper, api } = mountEdit('server text', 7);
+      await api.restore();
+      expect(api.content.value).toBe('server text');
+      await vi.advanceTimersByTimeAsync(5000);
+      wrapper.unmount();
+      await flushPromises();
+      expect(put).not.toHaveBeenCalled();
+    });
+
+    it('deletes the draft when edits are reverted back to the server content', async () => {
+      const { api } = mountEdit('server text', 7);
+      await api.restore();
+      api.content.value = 'server text!';
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(put).toHaveBeenCalledTimes(1);
+      api.content.value = 'server text';
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(put).toHaveBeenCalledTimes(1);
+      expect(del).toHaveBeenCalledWith('p1:entry:e1');
+    });
+
+    it('records the server version the draft was started from', async () => {
+      const { api, baseline } = mountEdit('server text', 7);
+      await api.restore();
+      // A background refetch picks up a newer version mid-edit.
+      baseline.value = { content: 'newer', editId: 8 };
+      api.content.value = 'my edit';
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(put).toHaveBeenCalledWith(
+        expect.objectContaining({ content: 'my edit', baseEditId: 7 }),
+      );
+      expect(api.isStale.value).toBe(true);
+    });
+
+    it('restores a draft started from the current server version without warning', async () => {
+      get.mockResolvedValueOnce({ content: 'my edit', baseEditId: 7 });
+      const { api } = mountEdit('server text', 7);
+      await api.restore();
+      expect(api.content.value).toBe('my edit');
+      expect(api.isStale.value).toBe(false);
+    });
+
+    it('flags a draft started from an older server version as stale', async () => {
+      get.mockResolvedValueOnce({ content: 'my edit', baseEditId: 6 });
+      const { api } = mountEdit('edited elsewhere', 7);
+      await api.restore();
+      expect(api.content.value).toBe('my edit');
+      expect(api.isStale.value).toBe(true);
+    });
+
+    it('treats a legacy draft (no baseEditId) as stale unless it matches the server', async () => {
+      get.mockResolvedValueOnce({ content: 'server text' });
+      const { api } = mountEdit('server text', 7);
+      await api.restore();
+      expect(api.content.value).toBe('server text');
+      expect(api.isStale.value).toBe(false);
+      expect(del).toHaveBeenCalledWith('p1:entry:e1');
+
+      get.mockResolvedValueOnce({ content: 'old shadow' });
+      await api.restore();
+      expect(api.content.value).toBe('old shadow');
+      expect(api.isStale.value).toBe(true);
+    });
+
+    it('discardDraft loads the latest server content and drops the draft', async () => {
+      get.mockResolvedValueOnce({ content: 'my edit', baseEditId: 6 });
+      const { wrapper, api } = mountEdit('edited elsewhere', 7);
+      await api.restore();
+      await api.discardDraft();
+      expect(api.content.value).toBe('edited elsewhere');
+      expect(api.isStale.value).toBe(false);
+      expect(del).toHaveBeenCalledWith('p1:entry:e1');
+      wrapper.unmount();
+      await flushPromises();
+      expect(put).not.toHaveBeenCalled();
+    });
   });
 });
