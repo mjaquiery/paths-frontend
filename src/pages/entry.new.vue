@@ -314,9 +314,12 @@ async function submit() {
 
 /* No footer clearance is reserved on this page (see ion-content override
    below) since AppFooter is hidden here — the on-screen keyboard covering
-   it would defeat the point of keeping Save reachable while typing. */
+   it would defeat the point of keeping Save reachable while typing. Instead
+   reserve --keyboard-height (see useVirtualKeyboard) so content scrolled to
+   the bottom — the growing textarea, the photo list below it — ends up
+   above the keyboard rather than hidden behind it. */
 ion-content {
-  --padding-bottom: 1rem !important;
+  --padding-bottom: calc(1rem + var(--keyboard-height, 0px)) !important;
 }
 
 .editor-toolbar-header {
