@@ -46,7 +46,6 @@
               path: `/entry/${entry.pathId}/${entry.id}`,
               query: { from: 'paths' },
             }"
-            :aria-label="`View entry from ${dateLabel(entry.day)}`"
           >
             <p class="pb-entry-date">
               {{ dateLabel(entry.day) }}

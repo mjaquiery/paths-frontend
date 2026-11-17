@@ -95,7 +95,6 @@
           <router-link
             class="db-entry-main"
             :to="`/entry/${pe.pathId}/${pe.entryId}`"
-            :aria-label="`View entry from ${pe.pathTitle}`"
           >
             <p class="db-entry-path">{{ pe.pathTitle }}</p>
             <p class="db-entry-preview df-body">

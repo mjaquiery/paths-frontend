@@ -109,8 +109,9 @@ export const Default: Story = {
     await expect(canvas.getByText('shared')).toBeInTheDocument();
     await expect(canvas.getByText('Alex M.')).toBeInTheDocument();
     // Pending invitations show path_title and inviter_email, not path_code.
+    // Invitations load via a separate query from paths, so wait for them.
     await expect(
-      canvas.getByText("Maya's Cooking Journey"),
+      await canvas.findByText("Maya's Cooking Journey"),
     ).toBeInTheDocument();
     await expect(
       canvas.getByText('maya@example.com', { exact: false }),
